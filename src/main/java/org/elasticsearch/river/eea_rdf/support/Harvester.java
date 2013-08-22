@@ -16,17 +16,15 @@ import com.hp.hpl.jena.rdf.model.*;
 
 import java.util.HashSet;
 import java.lang.StringBuffer;
+import java.util.List;
+import java.util.Arrays;
 
 public class Harvester implements Runnable {
 
 		private final ESLogger logger = Loggers.getLogger(Harvester.class);
 
-		private String rdfUrl;
-		private TimeValue rdfPoll;
-		private String rdfSet;
-		private String rdfFrom;
-		private String rdfUntil;
-		private TimeValue rdfTimeout;
+		private List<String> rdfUrls;
+	  private TimeValue rdfTimeout;
 
 		private Client client;
 		private String riverIndexName;
@@ -39,27 +37,8 @@ public class Harvester implements Runnable {
 		private Boolean closed = false;
 
 		public Harvester rdfUrl(String url) {
-				this.rdfUrl = url;
-				return this;
-		}
-
-		public Harvester rdfPoll(TimeValue poll) {
-				this.rdfPoll = poll;
-				return this;
-		}
-
-		public Harvester rdfSet(String set) {
-				this.rdfSet = set;
-				return this;
-		}
-
-		public Harvester rdfFrom(String from) {
-				this.rdfFrom = from;
-				return this;
-		}
-
-		public  Harvester rdfUntil(String until) {
-				this.rdfUntil = until;
+				url = url.substring(1, url.length() - 1);
+				rdfUrls = Arrays.asList(url.split(","));
 				return this;
 		}
 
@@ -111,10 +90,8 @@ public class Harvester implements Runnable {
 	  public void run() {
 
 				logger.info(
-						"starting RDF harvester: URL [{}], set [{}]," +
-						" from [{}], until [{}], indexing to [{}]/[{}]," +
-						"poll [{}]", rdfUrl, rdfSet, rdfFrom, rdfUntil,
-						indexName, typeName, rdfPoll);
+						"Starting RDF harvester: URLs [{}], index name [{}], typeName {}",
+						rdfUrls, indexName, typeName);
 
 
 				while (true) {
@@ -122,76 +99,84 @@ public class Harvester implements Runnable {
 								delay("Ended harvest");
 								return;
 						}
-						Model model = ModelFactory.createDefaultModel();
-						RDFDataMgr.read(model, rdfUrl, RDFLanguages.RDFXML);
 
-						BulkRequestBuilder bulkRequest = client.prepareBulk();
+						for(String url:rdfUrls) {
 
-						HashSet<Property> properties = new HashSet<Property>();
 
-						StmtIterator iter = model.listStatements();
-						while(iter.hasNext()) {
-								Statement st = iter.nextStatement();
-								properties.add(st.getPredicate());
-						}
+								logger.info("Harvesting url [{}]", url);
 
-						ResIterator rsiter = model.listSubjects();
+								Model model = ModelFactory.createDefaultModel();
+								RDFDataMgr.read(model, url.trim(), RDFLanguages.RDFXML);
 
-						while(rsiter.hasNext()){
-								Resource rs = rsiter.nextResource();
-								StringBuffer json = new StringBuffer();
-								json.append("{");
+								BulkRequestBuilder bulkRequest = client.prepareBulk();
 
-								for(Property prop: properties) {
-										NodeIterator niter = model.listObjectsOfProperty(rs,prop);
-										if(niter.hasNext()) {
-												StringBuffer result = new StringBuffer();
-												result.append("[\"");
+								HashSet<Property> properties = new HashSet<Property>();
 
-												int count = 0;
-												String currValue = "";
-
-												while(niter.hasNext()) {
-														count++;
-														currValue = niter.next().toString().trim();
-
-														result.append(currValue);
-														result.append("\",");
-												}
-
-												result.setCharAt(result.length()-1, ']');
-												if(count == 1) {
-														currValue = "\"" + currValue + "\"";
-														result = new StringBuffer(currValue);
-												}
-												json.append("\"");
-												json.append(prop.toString());
-												json.append("\" : ");
-												json.append(result.toString());
-												json.append(",");
-										}
+								StmtIterator iter = model.listStatements();
+								while(iter.hasNext()) {
+										Statement st = iter.nextStatement();
+										properties.add(st.getPredicate());
 								}
 
-								json.setCharAt(json.length() - 1, '}');
+								ResIterator rsiter = model.listSubjects();
 
-								bulkRequest.add(client.prepareIndex("eeardf", "eeardf", rs.toString())
-																	.setSource(json.toString()));
-								BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+								while(rsiter.hasNext()){
+										Resource rs = rsiter.nextResource();
+										StringBuffer json = new StringBuffer();
+										json.append("{");
 
+										for(Property prop: properties) {
+												NodeIterator niter = model.listObjectsOfProperty(rs,prop);
+												if(niter.hasNext()) {
+														StringBuffer result = new StringBuffer();
+														result.append("[\"");
+
+														int count = 0;
+														String currValue = "";
+
+														while(niter.hasNext()) {
+																count++;
+																currValue = niter.next()
+																						.toString().trim()
+																						.replaceAll("\n", "");
+
+																result.append(currValue);
+																result.append("\",");
+														}
+
+														result.setCharAt(result.length()-1, ']');
+														if(count == 1) {
+																currValue = "\"" + currValue + "\"";
+																result = new StringBuffer(currValue);
+														}
+														json.append("\"");
+														json.append(prop.toString());
+														json.append("\" : ");
+														json.append(result.toString());
+														json.append(",\n");
+												}
+										}
+
+										json.setCharAt(json.length() - 2, '}');
+
+										bulkRequest.add(client.prepareIndex("eeardf", "eeardf", rs.toString())
+												.setSource(json.toString()));
+										BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+
+								}
 						}
+
 
 						closed = true;
 				}
 		}
 
 		private void delay(String reason) {
-				if (rdfPoll.millis() > 0L) {
-						logger.info(
-								"Info: {}, waiting {} for url [{}] set [{}]",
-								reason, rdfPoll, rdfUrl, rdfSet);
-				}
+				logger.info("Info: {}, waiting for urls [{}] ",
+										reason, rdfUrls);
+
 				try {
-						Thread.sleep(rdfPoll.millis());
+						Thread.sleep(6000);
 				} catch (InterruptedException e) {}
 
 		}

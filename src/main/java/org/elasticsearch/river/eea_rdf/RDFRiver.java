@@ -41,20 +41,11 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 
 				if (settings.settings().containsKey("eeaRDF")) {
 			 				Map<String, Object> eeaSettings = (Map<String, Object>)settings.
-									settings().get("eeaRDF");
+													settings().get("eeaRDF");
 
 							harvester
 											.rdfUrl(XContentMapValues.nodeStringValue(
-														eeaSettings.get("url"), "http://localhost"))
-											.rdfPoll(XContentMapValues.nodeTimeValue(
-														eeaSettings.get("poll"),
-														TimeValue.timeValueMinutes(60)))
-											.rdfSet(XContentMapValues.nodeStringValue(
-														eeaSettings.get("set"), null))
-											.rdfFrom(XContentMapValues.nodeStringValue(
-														eeaSettings.get("from"),	null))
-											.rdfUntil(XContentMapValues.nodeStringValue(
-														eeaSettings.get("until"),	null))
+														eeaSettings.get("urls"), "http://localhost"))
 											.rdfTimeout(XContentMapValues.nodeTimeValue(
 														eeaSettings.get("timeout"),
 														TimeValue.timeValueSeconds(60)));
@@ -62,11 +53,33 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 				else {
 						throw new	ElasticSearchIllegalArgumentException(
 								"There are no eeaRDF settings in the	river settings");
-
-						/*
-						 * TODO: Support other indexes
-						 */
 				}
+
+				if(settings.settings().containsKey("index")){
+						Map<String, Object> indexSettings = (Map<String, Object>)settings.
+												settings().get("index");
+						harvester
+										.index(XContentMapValues.nodeStringValue(
+													indexSettings.get("index"),
+													"eeaRDF"))
+										.type(XContentMapValues.nodeStringValue(
+													indexSettings.get("type"),
+													"eeaRDF"))
+										.maxBulkActions(XContentMapValues.nodeIntegerValue(
+													indexSettings.get("bulk_size"),
+													100))
+										.maxConcurrentRequests(XContentMapValues.nodeIntegerValue(
+													indexSettings.get("max_bulk_requests"),
+													30));
+				}
+				else {
+						harvester
+										.index("eeardf")
+										.type("eeardf")
+										.maxBulkActions(100)
+										.maxConcurrentRequests(130);
+				}
+
 		}
 
 		@Override
@@ -83,5 +96,5 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 				logger.info("closing EEA RDF river {}", riverName.name());
 				harvester.setClose(true);
 				harvesterThread.interrupt();
-																				    }
+		}
 }
