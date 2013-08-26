@@ -139,6 +139,7 @@ public class Harvester implements Runnable {
 																currValue = niter.next()
 																						.toString().trim()
 																						.replaceAll("\n", "");
+																currValue = currValue.replaceAll("\"", "\'");
 
 																result.append(currValue);
 																result.append("\",");
