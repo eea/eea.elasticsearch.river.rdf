@@ -15,9 +15,9 @@ import org.apache.jena.riot.RDFLanguages ;
 import com.hp.hpl.jena.rdf.model.*;
 
 import java.util.HashSet;
-import java.lang.StringBuffer;
 import java.util.List;
 import java.util.Arrays;
+import java.lang.StringBuffer;
 
 public class Harvester implements Runnable {
 
@@ -96,14 +96,14 @@ public class Harvester implements Runnable {
 
 				while (true) {
 						if(this.closed){
-								delay("Ended harvest");
+								delay("Ended harvest", "");
 								return;
 						}
 
 						for(String url:rdfUrls) {
 
-
 								logger.info("Harvesting url [{}]", url);
+
 
 								Model model = ModelFactory.createDefaultModel();
 								RDFDataMgr.read(model, url.trim(), RDFLanguages.RDFXML);
@@ -171,12 +171,18 @@ public class Harvester implements Runnable {
 				}
 		}
 
-		private void delay(String reason) {
-				logger.info("Info: {}, waiting for urls [{}] ",
-										reason, rdfUrls);
+		private void delay(String reason, String url) {
+				int time = 2000;
+				if(!url.isEmpty()) {
+						logger.info("Info: {}, waiting for url [{}] ", reason, url);
+				}
+				else {
+						logger.info("Info: {}", reason);
+						time = 4000;
+				}
 
 				try {
-						Thread.sleep(6000);
+						Thread.sleep(time);
 				} catch (InterruptedException e) {}
 
 		}
