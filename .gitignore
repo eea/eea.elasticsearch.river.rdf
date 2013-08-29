@@ -1,1 +1,9 @@
 run
+/target/archive-tmp
+/target/classes
+/target/eea-rdf-river-plugin-1.0-sources.jar
+/target/elasticsearch-eea-rdf-river-plugin-0.90.2.jar
+/target/lib
+/target/maven-archiver
+/target/maven-status
+/targer/test-classes

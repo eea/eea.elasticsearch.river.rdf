@@ -23,6 +23,7 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 		private final static String DEFAULT_TYPE_NAME = "eeaRDF";
 		private final static int DEFAULT_BULK_SIZE = 100;
 		private final static int DEFAULT_BULK_REQ = 30;
+		private final static String DEFAULT_QUERY = "SELECT ?s ?p ?o WHERE {?s ?p ?o} LIMIT 10";
 
 		private volatile Harvester harvester;
 	  private volatile Thread harvesterThread;
@@ -45,7 +46,12 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 
 							harvester
 											.rdfUrl(XContentMapValues.nodeStringValue(
-														eeaSettings.get("urls"), "http://localhost"))
+														eeaSettings.get("urls"), "[]"))
+											.rdfEndpoint(XContentMapValues.nodeStringValue(
+														eeaSettings.get("endpoint"), "http://localhost"))
+											/*TODO: select all when available*/
+											.rdfQuery(XContentMapValues.nodeStringValue(
+														eeaSettings.get("query"), DEFAULT_QUERY))
 											.rdfTimeout(XContentMapValues.nodeTimeValue(
 														eeaSettings.get("timeout"),
 														TimeValue.timeValueSeconds(60)));
@@ -61,10 +67,10 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 						harvester
 										.index(XContentMapValues.nodeStringValue(
 													indexSettings.get("index"),
-													"eeaRDF"))
+													"rdfdata"))
 										.type(XContentMapValues.nodeStringValue(
 													indexSettings.get("type"),
-													"eeaRDF"))
+													"resource"))
 										.maxBulkActions(XContentMapValues.nodeIntegerValue(
 													indexSettings.get("bulk_size"),
 													100))
@@ -74,8 +80,8 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 				}
 				else {
 						harvester
-										.index("eeardf")
-										.type("eeardf")
+										.index("rdfdata")
+										.type("resource")
 										.maxBulkActions(100)
 										.maxConcurrentRequests(130);
 				}
