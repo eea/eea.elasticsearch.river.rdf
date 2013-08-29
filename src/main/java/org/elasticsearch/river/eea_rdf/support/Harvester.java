@@ -150,10 +150,10 @@ public class Harvester implements Runnable {
 											*/
 
 										try {
-												String predicate = sol
+												String subject = sol
 																					.getResource(iterS.next())
 																							.toString();
-												String subject = sol
+												String predicate = sol
 																					.getResource(iterS.next())
 																							.toString();
 												String object = sol.get(iterS.next()).toString();
@@ -164,7 +164,7 @@ public class Harvester implements Runnable {
 																		NodeFactory.createLiteral(object)));
 
 										} catch(NoSuchElementException nsee) {
-											logger.info("Could not index {} {}: Query result was not a triple",
+											logger.info("Could not index [{}] / {}: Query result was not a triple",
 													sol.toString(), nsee.toString());
 										}
 
@@ -235,10 +235,10 @@ public class Harvester implements Runnable {
 
 											while(niter.hasNext()) {
 													count++;
-													currValue = niter.next()
-																	.toString().trim()
-																		.replaceAll("\n", " ");
-													currValue = currValue.replaceAll("\"", "\'");
+													currValue = niter.next().toString().trim();
+													currValue = currValue.replaceAll("[\n\r]", " ")
+																				.replaceAll("\"", "\'")
+																				.replaceAll("\t", "    ");
 													result.append("\"");
 													result.append(currValue);
 													result.append("\",");
@@ -249,6 +249,7 @@ public class Harvester implements Runnable {
 													currValue = "\"" + currValue + "\"";
 													result = new StringBuffer(currValue);
 											}
+
 											json.append("\"");
 											json.append(prop.toString());
 											json.append("\" : ");
