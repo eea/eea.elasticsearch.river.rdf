@@ -134,7 +134,9 @@ public class Harvester implements Runnable {
 
 				while (true) {
 						if(this.closed){
-								delay("Ended harvest", "");
+								logger.info("Ended harvest for endpoint [{}], query [{}]," +
+										"URLs [{}], index name {}, type name {}",
+										rdfEndpoint, rdfQuery, rdfUrls, indexName, typeName);
 								return;
 						}
 
@@ -300,7 +302,7 @@ public class Harvester implements Runnable {
 					}
 		}
 
-
+		@Deprecated
 		private void delay(String reason, String url) {
 				int time = 1000;
 				if(!url.isEmpty()) {
