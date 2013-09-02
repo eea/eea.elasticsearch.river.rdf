@@ -11,6 +11,7 @@ import org.elasticsearch.ElasticSearchIllegalArgumentException;
 
 import org.elasticsearch.river.AbstractRiverComponent;
 import org.elasticsearch.river.eea_rdf.support.Harvester;
+import org.elasticsearch.river.eea_rdf.settings.EEASettings;
 import org.elasticsearch.river.River;
 import org.elasticsearch.river.RiverIndexName;
 import org.elasticsearch.river.RiverName;
@@ -19,12 +20,6 @@ import org.elasticsearch.river.RiverSettings;
 import java.util.Map;
 
 public class RDFRiver extends AbstractRiverComponent implements River {
-		private final static String DEFAULT_INDEX_NAME = "eeaRDF";
-		private final static String DEFAULT_TYPE_NAME = "eeaRDF";
-		private final static int DEFAULT_BULK_SIZE = 100;
-		private final static int DEFAULT_BULK_REQ = 30;
-		private final static String DEFAULT_QUERY = "SELECT ?s ?p ?o WHERE {?s ?p ?o} LIMIT 10";
-
 		private volatile Harvester harvester;
 	  private volatile Thread harvesterThread;
 
@@ -48,10 +43,14 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 											.rdfUrl(XContentMapValues.nodeStringValue(
 														eeaSettings.get("urls"), "[]"))
 											.rdfEndpoint(XContentMapValues.nodeStringValue(
-														eeaSettings.get("endpoint"), "http://localhost"))
-											/*TODO: select all when available*/
+														eeaSettings.get("endpoint"),
+														EEASettings.DEFAULT_ENDPOINT))
 											.rdfQuery(XContentMapValues.nodeStringValue(
-														eeaSettings.get("query"), DEFAULT_QUERY))
+														eeaSettings.get("query"),
+														EEASettings.DEFAULT_QUERY))
+											.rdfQueryType(XContentMapValues.nodeStringValue(
+														eeaSettings.get("queryType"),
+														EEASettings.DEFAULT_QUERYTYPE))
 											.rdfTimeout(XContentMapValues.nodeTimeValue(
 														eeaSettings.get("timeout"),
 														TimeValue.timeValueSeconds(60)));
@@ -80,8 +79,8 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 				}
 				else {
 						harvester
-										.index("rdfdata")
-										.type("resource")
+										.index(EEASettings.DEFAULT_INDEX_NAME)
+										.type(EEASettings.DEFAULT_TYPE_NAME)
 										.maxBulkActions(100)
 										.maxConcurrentRequests(130);
 				}

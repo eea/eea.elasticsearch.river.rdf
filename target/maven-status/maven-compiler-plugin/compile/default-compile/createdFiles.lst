@@ -2,3 +2,4 @@ org/elasticsearch/plugin/river/eea_rdf/eea_rdf_river_plugin/RDFRiverPlugin.class
 org/elasticsearch/river/eea_rdf/RDFRiver.class
 org/elasticsearch/river/eea_rdf/support/Harvester.class
 org/elasticsearch/river/eea_rdf/RDFRiverModule.class
+org/elasticsearch/river/eea_rdf/settings/EEASettings.class

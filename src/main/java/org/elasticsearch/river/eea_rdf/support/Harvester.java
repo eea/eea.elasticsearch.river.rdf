@@ -8,6 +8,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.*;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.river.eea_rdf.settings.EEASettings;
 
 import org.apache.jena.riot.RDFDataMgr ;
 import org.apache.jena.riot.RDFLanguages ;
@@ -41,6 +42,7 @@ public class Harvester implements Runnable {
 		private List<String> rdfUrls;
 		private String rdfEndpoint;
 		private String rdfQuery;
+		private int rdfQueryType;
 	  private TimeValue rdfTimeout;
 
 		private Client client;
@@ -66,6 +68,14 @@ public class Harvester implements Runnable {
 
 		public Harvester rdfQuery(String query) {
 				this.rdfQuery = query;
+				return this;
+		}
+
+		public Harvester rdfQueryType(String queryType) {
+				if(queryType.equals("select"))
+						this.rdfQueryType = 1;
+				else
+						this.rdfQueryType = 0;
 				return this;
 		}
 
@@ -135,46 +145,61 @@ public class Harvester implements Runnable {
 						QueryExecution qexec = QueryExecutionFactory.sparqlService(
 									rdfEndpoint,
 									query);
-						try {
-								ResultSet results = qexec.execSelect();
-								Model sparqlModel = ModelFactory.createDefaultModel();
+						if(rdfQueryType == 1) {
+								try {
+										ResultSet results = qexec.execSelect();
+										Model sparqlModel = ModelFactory.createDefaultModel();
 
-								Graph graph = sparqlModel.getGraph();
+										Graph graph = sparqlModel.getGraph();
 
-								while(results.hasNext()) {
-										QuerySolution sol = results.nextSolution();
-										Iterator<String> iterS = sol.varNames();
+										while(results.hasNext()) {
+												QuerySolution sol = results.nextSolution();
+												Iterator<String> iterS = sol.varNames();
 
-										/**
-										  * Each QuerySolution is a triple
-											*/
+												/**
+													* Each QuerySolution is a triple
+													*/
 
-										try {
-												String subject = sol
-																					.getResource(iterS.next())
-																							.toString();
-												String predicate = sol
-																					.getResource(iterS.next())
-																							.toString();
-												String object = sol.get(iterS.next()).toString();
+												try {
+														String subject = sol
+																							.getResource("s")//iterS.next())
+																									.toString();
+														String predicate = sol
+																							.getResource("p")//iterS.next())
+																									.toString();
+														String object = sol.get("o")//iterS.next())
+																									.toString();
 
-												graph.add(new Triple(
-																		NodeFactory.createURI(subject),
-																		NodeFactory.createURI(predicate),
-																		NodeFactory.createLiteral(object)));
+														graph.add(new Triple(
+																				NodeFactory.createURI(subject),
+																				NodeFactory.createURI(predicate),
+																				NodeFactory.createLiteral(object)));
 
-										} catch(NoSuchElementException nsee) {
-											logger.info("Could not index [{}] / {}: Query result was not a triple",
-													sol.toString(), nsee.toString());
+												} catch(NoSuchElementException nsee) {
+														logger.info("Could not index [{}] / {}: Query result was not a triple",
+																		sol.toString(), nsee.toString());
+												}
+
+												BulkRequestBuilder bulkRequest = client.prepareBulk();
+												addModelToES(sparqlModel, bulkRequest);
 										}
+								} catch(Exception e) {
+										logger.info("Exception on endpoint stuff [{}]",
+																e.toString());
+								} finally { qexec.close();}
+						}
+						else{
+								try{
+										Model constructModel = ModelFactory.createDefaultModel();
+										qexec.execConstruct(constructModel);
 
 										BulkRequestBuilder bulkRequest = client.prepareBulk();
-										addModelToES(sparqlModel, bulkRequest);
-								}
-						} catch(Exception e) {
-								logger.info("Exception on endpoint stuff [{}]",
-														e.toString());
-						} finally { qexec.close();}
+										addModelToES(constructModel, bulkRequest);
+
+								} catch (Exception e) {
+										logger.info("Could not index due to [{}]", e.toString());
+								} finally {qexec.close();}
+						}
 
 						/**
 							* Harvest from RDF dumps
@@ -220,6 +245,7 @@ public class Harvester implements Runnable {
 					ResIterator rsiter = model.listSubjects();
 
 					while(rsiter.hasNext()){
+
 							Resource rs = rsiter.nextResource();
 							StringBuffer json = new StringBuffer();
 							json.append("{");
@@ -235,10 +261,17 @@ public class Harvester implements Runnable {
 
 											while(niter.hasNext()) {
 													count++;
-													currValue = niter.next().toString().trim();
-													currValue = currValue.replaceAll("[\n\r]", " ")
-																				.replaceAll("\"", "\'")
-																				.replaceAll("\t", "    ");
+
+													RDFNode n = niter.next();
+													if(n.isLiteral()) {
+															currValue = n.asLiteral()
+																					.getLexicalForm();
+													} else if(n.isResource()) {
+															currValue = n.asResource().getURI();
+													}
+
+													currValue = EEASettings.parseForJson(currValue);
+
 													result.append("\"");
 													result.append(currValue);
 													result.append("\",");
@@ -260,8 +293,9 @@ public class Harvester implements Runnable {
 
 							json.setCharAt(json.length() - 2, '}');
 							bulkRequest.add(client.prepareIndex(indexName, typeName, rs.toString())
-										.setSource(json.toString()));
+									.setSource(json.toString()));
 							BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+
 
 					}
 		}
