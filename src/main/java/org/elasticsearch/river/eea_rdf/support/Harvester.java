@@ -24,7 +24,7 @@ import com.hp.hpl.jena.graph.GraphMaker;
 import com.hp.hpl.jena.graph.Graph;
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.graph.NodeFactory;
-
+import com.hp.hpl.jena.datatypes.RDFDatatype;
 
 import java.util.HashSet;
 import java.util.List;
@@ -33,6 +33,8 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.lang.StringBuffer;
 import java.lang.Exception;
+import java.lang.Integer;
+import java.lang.Byte;
 import java.lang.ClassCastException;
 
 public class Harvester implements Runnable {
@@ -260,28 +262,54 @@ public class Harvester implements Runnable {
 
 											int count = 0;
 											String currValue = "";
-
+											Boolean quote = false;
 											while(niter.hasNext()) {
 													count++;
 
 													RDFNode n = niter.next();
+													quote = false;
+
 													if(n.isLiteral()) {
-															currValue = n.asLiteral()
-																					.getLexicalForm();
+															Object literalValue = n.asLiteral().getValue();
+															try {
+																	Class literalJavaClass = n.asLiteral()
+																															.getDatatype()
+																															.getJavaClass();
+
+																	if(literalJavaClass.equals(Boolean.class)
+																			|| literalJavaClass.equals(Byte.class)
+																			|| literalJavaClass.equals(Double.class)
+																			|| literalJavaClass.equals(Float.class)
+																			|| literalJavaClass.equals(Integer.class)
+																			|| literalJavaClass.equals(Long.class)
+																			|| literalJavaClass.equals(Short.class)) {
+
+																		currValue += literalValue;
+																		}	else {
+																				currValue =	EEASettings.parseForJson(
+																						n.asLiteral().getLexicalForm());
+																				quote = true;
+																		}
+															} catch (java.lang.NullPointerException npe) {
+																	currValue = EEASettings.parseForJson(
+																			n.asLiteral().getLexicalForm());
+																	quote = true;
+															}
+
 													} else if(n.isResource()) {
 															currValue = n.asResource().getURI();
+															quote = true;
+													}
+													if(quote) {
+															currValue = "\"" + currValue + "\"";
 													}
 
-													currValue = EEASettings.parseForJson(currValue);
-
-													result.append("\"");
 													result.append(currValue);
-													result.append("\",");
+													result.append(", ");
 											}
 
-											result.setCharAt(result.length()-1, ']');
+											result.setCharAt(result.length()-2, ']');
 											if(count == 1) {
-													currValue = "\"" + currValue + "\"";
 													result = new StringBuffer(currValue);
 											}
 

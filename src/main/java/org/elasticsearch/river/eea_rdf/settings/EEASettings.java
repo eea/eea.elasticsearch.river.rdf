@@ -18,7 +18,7 @@ public class EEASettings {
 								.replace('\"', '\'')
 								.replace("\t", "    ")
 								.replace("\\'", "\'")
-								.replaceAll("\\\\x[a-f0-9][a-f_0-9]", "_");
+								.replaceAll("\\\\x[a-fA-F0-9][a-fA-F0-9]", "_");
 
 	}
 }
