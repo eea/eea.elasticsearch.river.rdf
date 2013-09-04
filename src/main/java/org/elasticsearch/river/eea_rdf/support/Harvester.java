@@ -84,9 +84,7 @@ public class Harvester implements Runnable {
 	public Harvester rdfPropList(String list) {
 		list = list.substring(1, list.length() -1);
 		rdfPropList = Arrays.asList(list.split(","));
-		if(list.isEmpty())
-			rdfPropList.clear();
-		else
+		if(!list.isEmpty())
 			hasList = true;
 		return this;
 	}

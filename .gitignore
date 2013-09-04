@@ -6,4 +6,4 @@ run
 /target/lib
 /target/maven-archiver
 /target/maven-status
-/targer/test-classes
+/target/test-classes
