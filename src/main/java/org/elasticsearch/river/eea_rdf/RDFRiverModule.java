@@ -6,7 +6,6 @@ import org.elasticsearch.river.River;
 public class RDFRiverModule extends AbstractModule {
 		@Override
 		public void configure(){
-				bind(River.class).to(RDFRiver.class).asEagerSingleton();
+			bind(River.class).to(RDFRiver.class).asEagerSingleton();
 		}
-
 }

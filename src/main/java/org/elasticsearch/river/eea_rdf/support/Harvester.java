@@ -39,313 +39,301 @@ import java.lang.ClassCastException;
 
 public class Harvester implements Runnable {
 
-		private final ESLogger logger = Loggers.getLogger(Harvester.class);
+	private final ESLogger logger = Loggers.getLogger(Harvester.class);
 
-		private List<String> rdfUrls;
-		private String rdfEndpoint;
-		private String rdfQuery;
-		private int rdfQueryType;
-	  private TimeValue rdfTimeout;
+	private List<String> rdfUrls;
+	private String rdfEndpoint;
+	private String rdfQuery;
+	private int rdfQueryType;
+	private List<String> rdfPropList;
+	private Boolean rdfListType = false;
+	private Boolean hasList = false;
 
-		private Client client;
-		private String riverIndexName;
-		private String riverName;
-		private String indexName;
-		private String typeName;
-		private int maxBulkActions;
-		private int maxConcurrentRequests;
+	private Client client;
+	private String indexName;
+	private String typeName;
+	private int maxBulkActions;
+	private int maxConcurrentRequests;
 
-		private Boolean closed = false;
+	private Boolean closed = false;
 
-		public Harvester rdfUrl(String url) {
-				url = url.substring(1, url.length() - 1);
-				rdfUrls = Arrays.asList(url.split(","));
-				return this;
-		}
+	public Harvester rdfUrl(String url) {
+		url = url.substring(1, url.length() - 1);
+		rdfUrls = Arrays.asList(url.split(","));
+		return this;
+	}
 
-		public Harvester rdfEndpoint(String endpoint) {
-				this.rdfEndpoint = endpoint;
-				return this;
-		}
+	public Harvester rdfEndpoint(String endpoint) {
+		this.rdfEndpoint = endpoint;
+		return this;
+	}
 
-		public Harvester rdfQuery(String query) {
-				this.rdfQuery = query;
-				return this;
-		}
+	public Harvester rdfQuery(String query) {
+		this.rdfQuery = query;
+		return this;
+	}
 
-		public Harvester rdfQueryType(String queryType) {
-				if(queryType.equals("select"))
-						this.rdfQueryType = 1;
-				else
-						this.rdfQueryType = 0;
-				return this;
-		}
+	public Harvester rdfQueryType(String queryType) {
+		if(queryType.equals("select"))
+			this.rdfQueryType = 1;
+		else
+			this.rdfQueryType = 0;
+		return this;
+	}
 
-		public Harvester rdfTimeout(TimeValue timeout) {
-				this.rdfTimeout = timeout;
-				return this;
-		}
+	public Harvester rdfPropList(String list) {
+		list = list.substring(1, list.length() -1);
+		rdfPropList = Arrays.asList(list.split(","));
+		if(list.isEmpty())
+			rdfPropList.clear();
+		else
+			hasList = true;
+		return this;
+	}
 
-		public Harvester client(Client client) {
-				this.client = client;
-				return this;
-		}
+	public Harvester rdfListType(String listType) {
+		if(listType.equals("white"))
+			this.rdfListType = true;
+		return this;
+	}
 
-		public Harvester riverIndexName(String riverIndexName) {
-				this.riverIndexName = riverIndexName;
-				return this;
-		}
+	public Harvester client(Client client) {
+		this.client = client;
+		return this;
+	}
 
-		public Harvester riverName(String riverName) {
-				this.riverName = riverName;
-				return this;
-		}
+	public Harvester index(String indexName) {
+		this.indexName = indexName;
+		return this;
+	}
 
-		public Harvester index(String indexName) {
-				this.indexName = indexName;
-				return this;
-		}
+	public Harvester type(String typeName) {
+		this.typeName = typeName;
+		return this;
+	}
 
-		public Harvester type(String typeName) {
-				this.typeName = typeName;
-				return this;
-		}
+	public Harvester maxBulkActions(int maxBulkActions) {
+		this.maxBulkActions = maxBulkActions;
+		return this;
+	}
 
-		public Harvester maxBulkActions(int maxBulkActions) {
-				this.maxBulkActions = maxBulkActions;
-				return this;
-		}
+	public Harvester maxConcurrentRequests(int maxConcurrentRequests) {
+		this.maxConcurrentRequests = maxConcurrentRequests;
+		return this;
+	}
 
-		public Harvester maxConcurrentRequests(int maxConcurrentRequests) {
-				this.maxConcurrentRequests = maxConcurrentRequests;
-				return this;
-		}
+	public void setClose(Boolean value) {
+		this.closed = value;
+	}
 
-		public void setClose(Boolean value) {
-				this.closed = value;
-		}
+	@Override
+	public void run() {
 
-		@Override
-	  public void run() {
+		logger.info(
+				"Starting RDF harvester: endpoint [{}], query [{}]," +
+				"URLs [{}], index name [{}], typeName {}",
+				rdfEndpoint, rdfQuery, rdfUrls, indexName, typeName);
 
-				logger.info(
-						"Starting RDF harvester: endpoint [{}], query [{}]," +
-						"URLs [{}], index name [{}], typeName {}",
+		while (true) {
+			if(this.closed){
+				logger.info("Ended harvest for endpoint [{}], query [{}]," +
+						"URLs [{}], index name {}, type name {}",
 						rdfEndpoint, rdfQuery, rdfUrls, indexName, typeName);
+				return;
+			}
 
+			/**
+			 * Harvest from SPARQL endpoint
+			 */
+			Query query = QueryFactory.create(rdfQuery);
+			QueryExecution qexec = QueryExecutionFactory.sparqlService(
+					rdfEndpoint,
+					query);
+			if(rdfQueryType == 1) {
+				try {
+					ResultSet results = qexec.execSelect();
+					Model sparqlModel = ModelFactory.createDefaultModel();
 
-				while (true) {
-						if(this.closed){
-								logger.info("Ended harvest for endpoint [{}], query [{}]," +
-										"URLs [{}], index name {}, type name {}",
-										rdfEndpoint, rdfQuery, rdfUrls, indexName, typeName);
-								return;
-						}
+					Graph graph = sparqlModel.getGraph();
 
-						/**
-							* Harvest from SPARQL endpoint
-							*/
-						Query query = QueryFactory.create(rdfQuery);
-						QueryExecution qexec = QueryExecutionFactory.sparqlService(
-									rdfEndpoint,
-									query);
-						if(rdfQueryType == 1) {
-								try {
-										ResultSet results = qexec.execSelect();
-										Model sparqlModel = ModelFactory.createDefaultModel();
-
-										Graph graph = sparqlModel.getGraph();
-
-										while(results.hasNext()) {
-												QuerySolution sol = results.nextSolution();
-												Iterator<String> iterS = sol.varNames();
-
-												/**
-													* Each QuerySolution is a triple
-													*/
-
-												try {
-														String subject = sol
-																							.getResource("s")//iterS.next())
-																									.toString();
-														String predicate = sol
-																							.getResource("p")//iterS.next())
-																									.toString();
-														String object = sol.get("o")//iterS.next())
-																									.toString();
-
-														graph.add(new Triple(
-																				NodeFactory.createURI(subject),
-																				NodeFactory.createURI(predicate),
-																				NodeFactory.createLiteral(object)));
-
-												} catch(NoSuchElementException nsee) {
-														logger.info("Could not index [{}] / {}: Query result was not a triple",
-																		sol.toString(), nsee.toString());
-												}
-
-												BulkRequestBuilder bulkRequest = client.prepareBulk();
-												addModelToES(sparqlModel, bulkRequest);
-										}
-								} catch(Exception e) {
-										logger.info("Exception on endpoint stuff [{}]",
-																e.toString());
-								} finally { qexec.close();}
-						}
-						else{
-								try{
-										Model constructModel = ModelFactory.createDefaultModel();
-										qexec.execConstruct(constructModel);
-
-										BulkRequestBuilder bulkRequest = client.prepareBulk();
-										addModelToES(constructModel, bulkRequest);
-
-								} catch (Exception e) {
-										logger.info("Could not index due to [{}]", e.toString());
-								} finally {qexec.close();}
-						}
+					while(results.hasNext()) {
+						QuerySolution sol = results.nextSolution();
+						Iterator<String> iterS = sol.varNames();
 
 						/**
-							* Harvest from RDF dumps
-							*/
+						 * Each QuerySolution is a triple
+						 */
+						try {
+							String subject = sol.getResource("s").toString();
+							String predicate = sol.getResource("p").toString();
+							String object = sol.get("o").toString();
 
-						for(String url:rdfUrls) {
+							graph.add(new Triple(
+										NodeFactory.createURI(subject),
+										NodeFactory.createURI(predicate),
+										NodeFactory.createLiteral(object)));
 
-								if(url.isEmpty()) continue;
+						} catch(NoSuchElementException nsee) {
+							logger.info("Could not index [{}] / {}: Query result was" +
+									"not a triple",	sol.toString(), nsee.toString());
+						}
 
-								logger.info("Harvesting url [{}]", url);
+						BulkRequestBuilder bulkRequest = client.prepareBulk();
+						addModelToES(sparqlModel, bulkRequest);
+					}
+				} catch(Exception e) {
+					logger.info("Exception on endpoint stuff [{}]", e.toString());
+				} finally { qexec.close();}
+			}
+			else{
+				try{
+					Model constructModel = ModelFactory.createDefaultModel();
+					qexec.execConstruct(constructModel);
 
+					BulkRequestBuilder bulkRequest = client.prepareBulk();
+					addModelToES(constructModel, bulkRequest);
 
-								Model model = ModelFactory.createDefaultModel();
-								RDFDataMgr.read(model, url.trim(), RDFLanguages.RDFXML);
+				} catch (Exception e) {
+					logger.info("Could not index due to [{}]", e.toString());
+				} finally {qexec.close();}
+			}
 
-								BulkRequestBuilder bulkRequest = client.prepareBulk();
+			/**
+			 * Harvest from RDF dumps
+			 */
+			for(String url:rdfUrls) {
+				if(url.isEmpty()) continue;
 
-								addModelToES(model, bulkRequest);
-								}
+				logger.info("Harvesting url [{}]", url);
 
+				Model model = ModelFactory.createDefaultModel();
+				RDFDataMgr.read(model, url.trim(), RDFLanguages.RDFXML);
+				BulkRequestBuilder bulkRequest = client.prepareBulk();
 
+				addModelToES(model, bulkRequest);
+			}
 
-						closed = true;
-				}
+			closed = true;
+		}
+	}
+
+	/**
+	 * Index all the resources in a Jena Model to ES
+	 *
+	 * @param model the model to index
+	 * @param bulkRequest a BulkRequestBuilder
+	 */
+	private void addModelToES(Model model, BulkRequestBuilder bulkRequest) {
+		HashSet<Property> properties = new HashSet<Property>();
+		StmtIterator iter = model.listStatements();
+
+		while(iter.hasNext()) {
+			Statement st = iter.nextStatement();
+			properties.add(st.getPredicate());
+
 		}
 
-		/**
-			* Index all the resources in a Jena Model to ES
-			*
-			* @param model the model to index
-			* @param bulkRequest a BulkRequestBuilder
-			*/
-		private void addModelToES(Model model, BulkRequestBuilder bulkRequest) {
-					HashSet<Property> properties = new HashSet<Property>();
+		ResIterator rsiter = model.listSubjects();
 
-					StmtIterator iter = model.listStatements();
-					while(iter.hasNext()) {
-							Statement st = iter.nextStatement();
-							properties.add(st.getPredicate());
+		while(rsiter.hasNext()){
 
-					}
+			Resource rs = rsiter.nextResource();
+			StringBuffer json = new StringBuffer();
+			json.append("{");
 
-					ResIterator rsiter = model.listSubjects();
+			for(Property prop: properties) {
+				if(hasList && (
+						(rdfListType && !rdfPropList.contains(prop.toString())) ||
+						(!rdfListType && rdfPropList.contains(prop.toString())))) {
+				continue;
+			}
 
-					while(rsiter.hasNext()){
+				NodeIterator niter = model.listObjectsOfProperty(rs,prop);
+				if(niter.hasNext()) {
+					StringBuffer result = new StringBuffer();
+					result.append("[");
 
-							Resource rs = rsiter.nextResource();
-							StringBuffer json = new StringBuffer();
-							json.append("{");
+					int count = 0;
+					String currValue = "";
+					Boolean quote = false;
+					while(niter.hasNext()) {
+						count++;
+						RDFNode n = niter.next();
+						quote = false;
 
-							for(Property prop: properties) {
-									NodeIterator niter = model.listObjectsOfProperty(rs,prop);
-									if(niter.hasNext()) {
-											StringBuffer result = new StringBuffer();
-											result.append("[");
+						if(n.isLiteral()) {
+							Object literalValue = n.asLiteral().getValue();
+							try {
+								Class literalJavaClass = n.asLiteral()
+									.getDatatype()
+									.getJavaClass();
 
-											int count = 0;
-											String currValue = "";
-											Boolean quote = false;
-											while(niter.hasNext()) {
-													count++;
+								if(literalJavaClass.equals(Boolean.class)
+										|| literalJavaClass.equals(Byte.class)
+										|| literalJavaClass.equals(Double.class)
+										|| literalJavaClass.equals(Float.class)
+										|| literalJavaClass.equals(Integer.class)
+										|| literalJavaClass.equals(Long.class)
+										|| literalJavaClass.equals(Short.class)) {
 
-													RDFNode n = niter.next();
-													quote = false;
-
-													if(n.isLiteral()) {
-															Object literalValue = n.asLiteral().getValue();
-															try {
-																	Class literalJavaClass = n.asLiteral()
-																															.getDatatype()
-																															.getJavaClass();
-
-																	if(literalJavaClass.equals(Boolean.class)
-																			|| literalJavaClass.equals(Byte.class)
-																			|| literalJavaClass.equals(Double.class)
-																			|| literalJavaClass.equals(Float.class)
-																			|| literalJavaClass.equals(Integer.class)
-																			|| literalJavaClass.equals(Long.class)
-																			|| literalJavaClass.equals(Short.class)) {
-
-																		currValue += literalValue;
-																		}	else {
-																				currValue =	EEASettings.parseForJson(
-																						n.asLiteral().getLexicalForm());
-																				quote = true;
-																		}
-															} catch (java.lang.NullPointerException npe) {
-																	currValue = EEASettings.parseForJson(
-																			n.asLiteral().getLexicalForm());
-																	quote = true;
-															}
-
-													} else if(n.isResource()) {
-															currValue = n.asResource().getURI();
-															quote = true;
-													}
-													if(quote) {
-															currValue = "\"" + currValue + "\"";
-													}
-
-													result.append(currValue);
-													result.append(", ");
-											}
-
-											result.setCharAt(result.length()-2, ']');
-											if(count == 1) {
-													result = new StringBuffer(currValue);
-											}
-
-											json.append("\"");
-											json.append(prop.toString());
-											json.append("\" : ");
-											json.append(result.toString());
-											json.append(",\n");
-									}
+									currValue += literalValue;
+								}	else {
+									currValue =	EEASettings.parseForJson(
+											n.asLiteral().getLexicalForm());
+									quote = true;
+								}
+							} catch (java.lang.NullPointerException npe) {
+								currValue = EEASettings.parseForJson(
+										n.asLiteral().getLexicalForm());
+								quote = true;
 							}
 
-							json.setCharAt(json.length() - 2, '}');
-							bulkRequest.add(client.prepareIndex(indexName, typeName, rs.toString())
-									.setSource(json.toString()));
-							BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+						} else if(n.isResource()) {
+							currValue = n.asResource().getURI();
+							quote = true;
+						}
+						if(quote) {
+							currValue = "\"" + currValue + "\"";
+						}
 
-
+						result.append(currValue);
+						result.append(", ");
 					}
+
+					result.setCharAt(result.length()-2, ']');
+					if(count == 1) {
+						result = new StringBuffer(currValue);
+					}
+
+					json.append("\"");
+					json.append(prop.toString());
+					json.append("\" : ");
+					json.append(result.toString());
+					json.append(",\n");
+				}
+			}
+
+			json.setCharAt(json.length() - 2, '}');
+			bulkRequest.add(client.prepareIndex(indexName, typeName, rs.toString())
+					.setSource(json.toString()));
+			BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+
+		}
+	}
+
+	@Deprecated
+	private void delay(String reason, String url) {
+		int time = 1000;
+		if(!url.isEmpty()) {
+			logger.info("Info: {}, waiting for url [{}] ", reason, url);
+		}
+		else {
+			logger.info("Info: {}", reason);
+			time = 2000;
 		}
 
-		@Deprecated
-		private void delay(String reason, String url) {
-				int time = 1000;
-				if(!url.isEmpty()) {
-						logger.info("Info: {}, waiting for url [{}] ", reason, url);
-				}
-				else {
-						logger.info("Info: {}", reason);
-						time = 2000;
-				}
-
-				try {
-						Thread.sleep(time);
-				} catch (InterruptedException e) {}
-
-		}
-
-
+		try {
+			Thread.sleep(time);
+		} catch (InterruptedException e) {}
+	}
 }

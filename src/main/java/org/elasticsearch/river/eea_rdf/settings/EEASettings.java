@@ -1,6 +1,6 @@
 package org.elasticsearch.river.eea_rdf.settings;
 
-public class EEASettings {
+public abstract class EEASettings {
 
 	public final static String DEFAULT_INDEX_NAME = "rdfdata";
 	public final static String DEFAULT_TYPE_NAME = "resource";
@@ -9,16 +9,14 @@ public class EEASettings {
 	public final static String DEFAULT_QUERY = "SELECT ?s ?p ?o WHERE {?s ?p ?o} LIMIT 10";
 	public final static String DEFAULT_ENDPOINT =	"http://semantic.eea.europa.eu/sparql";
 	public final static String DEFAULT_QUERYTYPE = "select";
-
-	public EEASettings(){
-	}
+	public final static String DEFAULT_PROPLIST = "[]";
+	public final static String DEFAULT_LIST_TYPE = "white";
 
 	public static String parseForJson(String text) {
-			return text.trim().replaceAll("[\n\r]", " ")
-								.replace('\"', '\'')
-								.replace("\t", "    ")
-								.replace("\\'", "\'")
-								.replaceAll("\\\\x[a-fA-F0-9][a-fA-F0-9]", "_");
-
+		return text.trim().replaceAll("[\n\r]", " ")
+			.replace('\"', '\'')
+			.replace("\t", "    ")
+			.replace("\\'", "\'")
+			.replaceAll("\\\\x[a-fA-F0-9][a-fA-F0-9]", "_");
 	}
 }

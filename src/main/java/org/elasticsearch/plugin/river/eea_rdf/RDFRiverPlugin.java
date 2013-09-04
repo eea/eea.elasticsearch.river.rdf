@@ -13,16 +13,16 @@ public class RDFRiverPlugin extends AbstractPlugin {
 
 	@Override
 	public String name() {
-			return "eea-rdf-river";
+		return "eea-rdf-river";
 	}
 
 	@Override
   public String description() {
-			return "Turtle RDF River Plugin";
+		return "Turtle RDF River Plugin";
 	}
 
 	public void onModule(RiversModule module) {
-			module.registerRiver("eeaRDF", RDFRiverModule.class);
+		module.registerRiver("eeaRDF", RDFRiverModule.class);
 	}
 }
 
