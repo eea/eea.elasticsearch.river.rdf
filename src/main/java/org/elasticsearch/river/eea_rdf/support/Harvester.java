@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.lang.StringBuffer;
 import java.lang.Exception;
@@ -48,6 +49,8 @@ public class Harvester implements Runnable {
 	private List<String> rdfPropList;
 	private Boolean rdfListType = false;
 	private Boolean hasList = false;
+	private Map<String, String> normalizationMap;
+	private Boolean willNormalize = false;
 
 	private Client client;
 	private String indexName;
@@ -92,6 +95,14 @@ public class Harvester implements Runnable {
 	public Harvester rdfListType(String listType) {
 		if(listType.equals("white"))
 			this.rdfListType = true;
+		return this;
+	}
+
+	public Harvester rdfNormalizationMap(Map<String, String> normalizationMap) {
+		if(normalizationMap != null || !normalizationMap.isEmpty()) {
+			willNormalize = true;
+			this.normalizationMap = normalizationMap;
+		}
 		return this;
 	}
 
@@ -223,12 +234,17 @@ public class Harvester implements Runnable {
 	 */
 	private void addModelToES(Model model, BulkRequestBuilder bulkRequest) {
 		HashSet<Property> properties = new HashSet<Property>();
+
 		StmtIterator iter = model.listStatements();
 
 		while(iter.hasNext()) {
 			Statement st = iter.nextStatement();
-			properties.add(st.getPredicate());
-
+			Property prop = st.getPredicate();
+			if(!hasList
+					|| (rdfListType && rdfPropList.contains(prop.toString()))
+					|| (!rdfListType && !rdfPropList.contains(prop.toString()))) {
+				properties.add(prop);
+			}
 		}
 
 		ResIterator rsiter = model.listSubjects();
@@ -240,12 +256,12 @@ public class Harvester implements Runnable {
 			json.append("{");
 
 			for(Property prop: properties) {
-				if(hasList && (
+	/*			if(hasList && (
 						(rdfListType && !rdfPropList.contains(prop.toString())) ||
 						(!rdfListType && rdfPropList.contains(prop.toString())))) {
 				continue;
 			}
-
+*/
 				NodeIterator niter = model.listObjectsOfProperty(rs,prop);
 				if(niter.hasNext()) {
 					StringBuffer result = new StringBuffer();
@@ -253,46 +269,10 @@ public class Harvester implements Runnable {
 
 					int count = 0;
 					String currValue = "";
-					Boolean quote = false;
+
 					while(niter.hasNext()) {
 						count++;
-						RDFNode n = niter.next();
-						quote = false;
-
-						if(n.isLiteral()) {
-							Object literalValue = n.asLiteral().getValue();
-							try {
-								Class literalJavaClass = n.asLiteral()
-									.getDatatype()
-									.getJavaClass();
-
-								if(literalJavaClass.equals(Boolean.class)
-										|| literalJavaClass.equals(Byte.class)
-										|| literalJavaClass.equals(Double.class)
-										|| literalJavaClass.equals(Float.class)
-										|| literalJavaClass.equals(Integer.class)
-										|| literalJavaClass.equals(Long.class)
-										|| literalJavaClass.equals(Short.class)) {
-
-									currValue += literalValue;
-								}	else {
-									currValue =	EEASettings.parseForJson(
-											n.asLiteral().getLexicalForm());
-									quote = true;
-								}
-							} catch (java.lang.NullPointerException npe) {
-								currValue = EEASettings.parseForJson(
-										n.asLiteral().getLexicalForm());
-								quote = true;
-							}
-
-						} else if(n.isResource()) {
-							currValue = n.asResource().getURI();
-							quote = true;
-						}
-						if(quote) {
-							currValue = "\"" + currValue + "\"";
-						}
+						currValue = getStringForResult(niter.next());
 
 						result.append(currValue);
 						result.append(", ");
@@ -304,7 +284,11 @@ public class Harvester implements Runnable {
 					}
 
 					json.append("\"");
-					json.append(prop.toString());
+					if(willNormalize && normalizationMap.containsKey(prop.toString())) {
+						json.append(normalizationMap.get(prop.toString()));
+					} else {
+						json.append(prop.toString());
+					}
 					json.append("\" : ");
 					json.append(result.toString());
 					json.append(",\n");
@@ -318,6 +302,48 @@ public class Harvester implements Runnable {
 
 		}
 	}
+
+	private String getStringForResult(RDFNode node) {
+		String result = "";
+		boolean quote = false;
+
+		if(node.isLiteral()) {
+			Object literalValue = node.asLiteral().getValue();
+			try {
+				Class literalJavaClass = node.asLiteral()
+					.getDatatype()
+					.getJavaClass();
+
+				if(literalJavaClass.equals(Boolean.class)
+						|| literalJavaClass.equals(Byte.class)
+						|| literalJavaClass.equals(Double.class)
+						|| literalJavaClass.equals(Float.class)
+						|| literalJavaClass.equals(Integer.class)
+						|| literalJavaClass.equals(Long.class)
+						|| literalJavaClass.equals(Short.class)) {
+
+					result += literalValue;
+				}	else {
+					result =	EEASettings.parseForJson(
+							node.asLiteral().getLexicalForm());
+					quote = true;
+				}
+			} catch (java.lang.NullPointerException npe) {
+				result = EEASettings.parseForJson(
+						node.asLiteral().getLexicalForm());
+				quote = true;
+			}
+
+		} else if(node.isResource()) {
+			result = node.asResource().getURI();
+			quote = true;
+		}
+		if(quote) {
+			result = "\"" + result + "\"";
+		}
+		return result;
+	}
+
 
 	@Deprecated
 	private void delay(String reason, String url) {
