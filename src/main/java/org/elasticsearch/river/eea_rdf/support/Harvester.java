@@ -29,8 +29,10 @@ import com.hp.hpl.jena.datatypes.RDFDatatype;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.NoSuchElementException;
 import java.lang.StringBuffer;
 import java.lang.Exception;
@@ -252,55 +254,54 @@ public class Harvester implements Runnable {
 		while(rsiter.hasNext()){
 
 			Resource rs = rsiter.nextResource();
-			StringBuffer json = new StringBuffer();
-			json.append("{");
+			Map<String, ArrayList<String>> jsonMap = new HashMap<String,
+				ArrayList<String>>();
 
 			for(Property prop: properties) {
-	/*			if(hasList && (
-						(rdfListType && !rdfPropList.contains(prop.toString())) ||
-						(!rdfListType && rdfPropList.contains(prop.toString())))) {
-				continue;
-			}
-*/
 				NodeIterator niter = model.listObjectsOfProperty(rs,prop);
 				if(niter.hasNext()) {
-					StringBuffer result = new StringBuffer();
-					result.append("[");
-
-					int count = 0;
+					ArrayList<String> results = new ArrayList<String>();
 					String currValue = "";
 
 					while(niter.hasNext()) {
-						count++;
 						currValue = getStringForResult(niter.next());
-
-						result.append(currValue);
-						result.append(", ");
+						results.add(currValue);
 					}
 
-					result.setCharAt(result.length()-2, ']');
-					if(count == 1) {
-						result = new StringBuffer(currValue);
-					}
+					String property, value;
 
-					json.append("\"");
 					if(willNormalize && normalizationMap.containsKey(prop.toString())) {
-						json.append(normalizationMap.get(prop.toString()));
+						property = normalizationMap.get(prop.toString());
+						if(jsonMap.containsKey(property)) {
+							results.addAll(jsonMap.get(property));
+							jsonMap.put(property, results);
+						} else {
+							jsonMap.put(property, results);
+						}
 					} else {
-						json.append(prop.toString());
+						property = prop.toString();
+						jsonMap.put(property,results);
 					}
-					json.append("\" : ");
-					json.append(result.toString());
-					json.append(",\n");
 				}
 			}
 
-			json.setCharAt(json.length() - 2, '}');
 			bulkRequest.add(client.prepareIndex(indexName, typeName, rs.toString())
-					.setSource(json.toString()));
+				.setSource(mapToString(jsonMap)));
 			BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-
 		}
+	}
+
+	private String mapToString(Map<String, ArrayList<String>> map) {
+		StringBuffer result = new StringBuffer("{");
+		for(Map.Entry<String, ArrayList<String>> entry : map.entrySet()) {
+			ArrayList<String> value = entry.getValue();
+			if(value.size() == 1)
+				result.append("\"" + entry.getKey() + "\" : " + value.get(0) + ",\n");
+			else
+				result.append("\"" + entry.getKey() + "\" : " + value.toString() + ",\n");
+		}
+		result.setCharAt(result.length() - 2, '}');
+		return result.toString();
 	}
 
 	private String getStringForResult(RDFNode node) {
