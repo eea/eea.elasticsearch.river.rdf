@@ -145,8 +145,8 @@ grouped in a list.
       "queryType" : "construct",
       "normMap" : {
             "http://purl.org/dc/elements/1.1/format" : "format", 
-            "http://cr.eionet.europa.eu/ontologies/contreg.rdf#sparqlQuery" : "query", 
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : "query"
+            "http://purl.org/dc/elements/1.1/creator" : "creator", 
+            "http://purl.org/dc/terms/creator" : "creator"
       }
    }
  }'
