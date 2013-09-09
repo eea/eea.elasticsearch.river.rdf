@@ -121,6 +121,26 @@ results.
    }
  }'
 
+From both URIs and SPARQL endpoint
+++++++++++++++++++++++++++++++++++
+
+All supported parameters are optional. Moreover, it is possible to index metadata
+from a SPARQL endpoint and several unrelated URIs.
+
+::
+
+ curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+   "type" : "eeaRDF",
+   "eeaRDF" : {
+      "urls" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
+                "http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf"],
+      "endpoint" : "http://semantic.eea.europa.eu/sparql",
+      "query" : "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?bookmark a cr:SparqlBookmark ; rdfs:label ?label}",
+      "queryType" : "construct"
+   }
+ }'
+
+
 
 Blacklists and whitelists
 =========================
@@ -168,13 +188,17 @@ grouped in a list.
       "queryType" : "construct",
       "normMap" : {
             "http://purl.org/dc/elements/1.1/format" : "format", 
-            "http://purl.org/dc/elements/1.1/creator" : "creator", 
-            "http://purl.org/dc/terms/creator" : "creator"
+            "http://purl.org/dc/elements/1.1/type" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", 
+            "http://example.org/pntology/typeOfData" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
       }
    }
  }'
  
-
+The data indexed with the previous river will lack the property 
+http://purl.org/dc/elements/1.1/format, because it will be replaced with "format".
+Moreover, all the values of the http://purl.org/dc/elements/1.1/type and 
+http://example.org/pntology/typeOfData properties of each resource will be grouped 
+under http://www.w3.org/1999/02/22-rdf-syntax-ns#type. 
  
 Source Code
 ===========
