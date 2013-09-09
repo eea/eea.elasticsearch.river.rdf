@@ -28,14 +28,14 @@ https://github.com/eea/eea.elasticsearch.river.rdf/blob/master/target/releases/e
 In order to install the plugin, you first need to have 
 `Elasticsearch <http://www.elasticsearch.org/download/>`_ installed. Just 
 download the latest release and extract it. Add the plugin's binaries to the 
-elasticsearch-X.Y.Z/plugins/name_of_plugin/ directory, where X.Y.Z is the current ElasticSearch 
-version.
+elasticsearch-X.Y.Z/plugins/name_of_plugin/ directory, where X.Y.Z is the current 
+ElasticSearch version.
 
 The same should be done when updating ElasticSearch to the latest version: 
 download the latest release and extract it. Copy the elasticsearch-x.y.z/plugins 
 directory to elasticsearch-X.Y.Z, where x.y.z is the previous ElasticSearch 
 version and X.Y.Z the current one. Replace the previous ElasticSearch directory 
-with the new one. 
+with the new one. Restart ElasticSearch. 
 
 
 Main features
@@ -52,8 +52,24 @@ Main features
 Indexing
 ========
 
-Each river can index into a specific index. The default index has the index name 
-'rdfdata' and the type 'resource'.
+Each river can index data into a specific index. The default index has the index name 
+'rdfdata' and the type name 'resource'. 
+
+Creating the RDF river can be done with:
+
+::
+
+ curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+   "type" : "eeaRDF",
+   "eeaRDF" : {
+   ...
+   }
+ }'
+
+"eeaRDF" is the name of the river and should not be changed. It gives ElasticSearch 
+the information about which river to use. Otherwise, the data provided will not be 
+indexed. "rdf_river" is the name of the rdf river type. Any name can be chosen for
+the type, as long as it is unique (it has not been used for a different river).
 
 A new index name and type can be set with:
 
