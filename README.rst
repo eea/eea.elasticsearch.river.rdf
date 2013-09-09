@@ -21,14 +21,22 @@ Prerequisites:
 
 * Java 7 Runtime Environment
 
-Binaries are available at: 
+Binaries for this plugin are available at: 
 
 https://github.com/eea/eea.elasticsearch.river.rdf/blob/master/target/releases/eea-rdf-river-plugin-1.0.zip
 
 In order to install the plugin, you first need to have 
 `Elasticsearch <http://www.elasticsearch.org/download/>`_ installed. Just 
-download the latest release and extract it. Add the plugin's binaries in the 
-plugins directory.
+download the latest release and extract it. Add the plugin's binaries to the 
+elasticsearch-X.Y.Z/plugins/name_of_plugin/ directory, where X.Y.Z is the current ElasticSearch 
+version.
+
+The same should be done when updating ElasticSearch to the latest version: 
+download the latest release and extract it. Copy the elasticsearch-x.y.z/plugins 
+directory to elasticsearch-X.Y.Z, where x.y.z is the previous ElasticSearch 
+version and X.Y.Z the current one. Replace the previous ElasticSearch directory 
+with the new one. 
+
 
 Main features
 =============
@@ -91,7 +99,6 @@ results.
  curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
-      "urls" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf"],
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
       "query" : "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> SELECT ?s ?p ?o WHERE { ?bookmark a cr:SparqlBookmark ; rdfs:label ?label}",
       "queryType" : "select"
@@ -150,6 +157,8 @@ grouped in a list.
       }
    }
  }'
+ 
+
  
 Source Code
 ===========
