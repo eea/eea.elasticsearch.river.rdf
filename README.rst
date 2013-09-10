@@ -116,7 +116,7 @@ results.
    "type" : "eeaRDF",
    "eeaRDF" : {
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
-      "query" : "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> SELECT ?s ?p ?o WHERE { ?bookmark a cr:SparqlBookmark ; rdfs:label ?label}",
+      "query" : "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> SELECT ?s ?p ?o WHERE { ?bookmark a cr:SparqlBookmark ; ?p ?o}",
       "queryType" : "select"
    }
  }'
@@ -135,7 +135,7 @@ from a SPARQL endpoint and several unrelated URIs.
       "urls" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
                 "http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf"],
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
-      "query" : "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?bookmark a cr:SparqlBookmark ; rdfs:label ?label}",
+      "query" : "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?bookmark a cr:SparqlBookmark ; ?p ?o}",
       "queryType" : "construct"
    }
  }'
