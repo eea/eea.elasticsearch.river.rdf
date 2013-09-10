@@ -18,6 +18,7 @@ import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
+import com.hp.hpl.jena.query.QueryParseException;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.graph.GraphMaker;
@@ -48,6 +49,7 @@ public class Harvester implements Runnable {
 	private String rdfEndpoint;
 	private String rdfQuery;
 	private int rdfQueryType;
+	private boolean indexFromEndpoint = true;
 	private List<String> rdfPropList;
 	private Boolean rdfListType = false;
 	private Boolean hasList = false;
@@ -74,6 +76,9 @@ public class Harvester implements Runnable {
 	}
 
 	public Harvester rdfQuery(String query) {
+		if(query.isEmpty()) {
+			indexFromEndpoint = false;
+		}
 		this.rdfQuery = query;
 		return this;
 	}
@@ -156,57 +161,66 @@ public class Harvester implements Runnable {
 			/**
 			 * Harvest from SPARQL endpoint
 			 */
-			Query query = QueryFactory.create(rdfQuery);
-			QueryExecution qexec = QueryExecutionFactory.sparqlService(
-					rdfEndpoint,
-					query);
-			if(rdfQueryType == 1) {
+			if(indexFromEndpoint) {
 				try {
-					ResultSet results = qexec.execSelect();
-					Model sparqlModel = ModelFactory.createDefaultModel();
-
-					Graph graph = sparqlModel.getGraph();
-
-					while(results.hasNext()) {
-						QuerySolution sol = results.nextSolution();
-						Iterator<String> iterS = sol.varNames();
-
-						/**
-						 * Each QuerySolution is a triple
-						 */
+					Query query = QueryFactory.create(rdfQuery);
+					QueryExecution qexec = QueryExecutionFactory.sparqlService(
+							rdfEndpoint,
+							query);
+					if(rdfQueryType == 1) {
 						try {
-							String subject = sol.getResource("s").toString();
-							String predicate = sol.getResource("p").toString();
-							String object = sol.get("o").toString();
+							ResultSet results = qexec.execSelect();
+							Model sparqlModel = ModelFactory.createDefaultModel();
 
-							graph.add(new Triple(
-										NodeFactory.createURI(subject),
-										NodeFactory.createURI(predicate),
-										NodeFactory.createLiteral(object)));
+							Graph graph = sparqlModel.getGraph();
 
-						} catch(NoSuchElementException nsee) {
-							logger.info("Could not index [{}] / {}: Query result was" +
-									"not a triple",	sol.toString(), nsee.toString());
-						}
+							while(results.hasNext()) {
+								QuerySolution sol = results.nextSolution();
+								Iterator<String> iterS = sol.varNames();
 
-						BulkRequestBuilder bulkRequest = client.prepareBulk();
-						addModelToES(sparqlModel, bulkRequest);
+								/**
+								 * Each QuerySolution is a triple
+								 */
+								try {
+									String subject = sol.getResource("s").toString();
+									String predicate = sol.getResource("p").toString();
+									String object = sol.get("o").toString();
+
+									graph.add(new Triple(
+												NodeFactory.createURI(subject),
+												NodeFactory.createURI(predicate),
+												NodeFactory.createLiteral(object)));
+
+								} catch(NoSuchElementException nsee) {
+									logger.info("Could not index [{}] / {}: Query result was" +
+											"not a triple",	sol.toString(), nsee.toString());
+								}
+
+								BulkRequestBuilder bulkRequest = client.prepareBulk();
+								addModelToES(sparqlModel, bulkRequest);
+							}
+						} catch(Exception e) {
+							logger.info("Encountered a [{}] when quering the endpoint", e.toString());
+						} finally { qexec.close();}
 					}
-				} catch(Exception e) {
-					logger.info("Exception on endpoint stuff [{}]", e.toString());
-				} finally { qexec.close();}
-			}
-			else{
-				try{
-					Model constructModel = ModelFactory.createDefaultModel();
-					qexec.execConstruct(constructModel);
+					else{
+						try{
+							Model constructModel = ModelFactory.createDefaultModel();
+							qexec.execConstruct(constructModel);
 
-					BulkRequestBuilder bulkRequest = client.prepareBulk();
-					addModelToES(constructModel, bulkRequest);
+							BulkRequestBuilder bulkRequest = client.prepareBulk();
+							addModelToES(constructModel, bulkRequest);
 
-				} catch (Exception e) {
-					logger.info("Could not index due to [{}]", e.toString());
-				} finally {qexec.close();}
+						} catch (Exception e) {
+							logger.info("Could not index due to [{}]", e.toString());
+						} finally {qexec.close();}
+					}
+				} catch (QueryParseException qpe) {
+					logger.info(
+							"Could not parse [{}]. Please provide a relevant query",
+							rdfQuery);
+				}
+
 			}
 
 			/**

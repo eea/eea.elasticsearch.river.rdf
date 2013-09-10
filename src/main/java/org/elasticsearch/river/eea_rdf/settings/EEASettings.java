@@ -6,7 +6,7 @@ public abstract class EEASettings {
 	public final static String DEFAULT_TYPE_NAME = "resource";
 	public final static int DEFAULT_BULK_SIZE = 100;
 	public final static int DEFAULT_BULK_REQ = 30;
-	public final static String DEFAULT_QUERY = "SELECT ?s ?p ?o WHERE {?s ?p ?o} LIMIT 10";
+	public final static String DEFAULT_QUERY = "";
 	public final static String DEFAULT_ENDPOINT =	"http://semantic.eea.europa.eu/sparql";
 	public final static String DEFAULT_QUERYTYPE = "select";
 	public final static String DEFAULT_PROPLIST = "[]";

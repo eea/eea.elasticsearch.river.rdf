@@ -52,8 +52,12 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 							EEASettings.DEFAULT_PROPLIST))
 				.rdfListType(XContentMapValues.nodeStringValue(
 							eeaSettings.get("listtype"),
-							EEASettings.DEFAULT_LIST_TYPE))
-				.rdfNormalizationMap((Map<String, String>)eeaSettings.get("normMap"));
+							EEASettings.DEFAULT_LIST_TYPE));
+			if(eeaSettings.containsKey("normMap")) {
+				harvester
+					.rdfNormalizationMap((
+								Map<String,String>)eeaSettings.get("normMap"));
+			}
 		}
 		else {
 			throw new	ElasticSearchIllegalArgumentException(
