@@ -254,6 +254,14 @@ index, as in the example below:
       }
  }'
 
+Security
+========
+ 
+Since ElasticSearch does not provide authentication or access control
+functionalities, dropping or modifying indexes can be done by anyone.
+To keep the indexed information safe, the 
+`Jetty HTTP transport plugin <https://github.com/sonian/elasticsearch-jetty>`_
+should be installed and configured.
 
 Source Code
 ===========
