@@ -28,6 +28,7 @@ import com.hp.hpl.jena.graph.NodeFactory;
 import com.hp.hpl.jena.datatypes.RDFDatatype;
 
 import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -49,12 +50,12 @@ public class Harvester implements Runnable {
 	private String rdfEndpoint;
 	private String rdfQuery;
 	private int rdfQueryType;
-	private boolean indexFromEndpoint = true;
 	private List<String> rdfPropList;
 	private Boolean rdfListType = false;
 	private Boolean hasList = false;
 	private Map<String, String> normalizationMap;
 	private Boolean willNormalize = false;
+	private Boolean addLanguage = false;
 
 	private Client client;
 	private String indexName;
@@ -76,9 +77,6 @@ public class Harvester implements Runnable {
 	}
 
 	public Harvester rdfQuery(String query) {
-		if(query.isEmpty()) {
-			indexFromEndpoint = false;
-		}
 		this.rdfQuery = query;
 		return this;
 	}
@@ -102,6 +100,11 @@ public class Harvester implements Runnable {
 	public Harvester rdfListType(String listType) {
 		if(listType.equals("white"))
 			this.rdfListType = true;
+		return this;
+	}
+
+	public Harvester rdfLanguage(Boolean rdfLanguage) {
+		addLanguage = rdfLanguage;
 		return this;
 	}
 
@@ -159,86 +162,93 @@ public class Harvester implements Runnable {
 			}
 
 			/**
-			 * Harvest from SPARQL endpoint
+			 * Harvest from a SPARQL endpoint
 			 */
-			if(indexFromEndpoint) {
-				try {
-					Query query = QueryFactory.create(rdfQuery);
-					QueryExecution qexec = QueryExecutionFactory.sparqlService(
-							rdfEndpoint,
-							query);
-					if(rdfQueryType == 1) {
-						try {
-							ResultSet results = qexec.execSelect();
-							Model sparqlModel = ModelFactory.createDefaultModel();
-
-							Graph graph = sparqlModel.getGraph();
-
-							while(results.hasNext()) {
-								QuerySolution sol = results.nextSolution();
-								Iterator<String> iterS = sol.varNames();
-
-								/**
-								 * Each QuerySolution is a triple
-								 */
-								try {
-									String subject = sol.getResource("s").toString();
-									String predicate = sol.getResource("p").toString();
-									String object = sol.get("o").toString();
-
-									graph.add(new Triple(
-												NodeFactory.createURI(subject),
-												NodeFactory.createURI(predicate),
-												NodeFactory.createLiteral(object)));
-
-								} catch(NoSuchElementException nsee) {
-									logger.info("Could not index [{}] / {}: Query result was" +
-											"not a triple",	sol.toString(), nsee.toString());
-								}
-
-								BulkRequestBuilder bulkRequest = client.prepareBulk();
-								addModelToES(sparqlModel, bulkRequest);
-							}
-						} catch(Exception e) {
-							logger.info("Encountered a [{}] when quering the endpoint", e.toString());
-						} finally { qexec.close();}
-					}
-					else{
-						try{
-							Model constructModel = ModelFactory.createDefaultModel();
-							qexec.execConstruct(constructModel);
-
-							BulkRequestBuilder bulkRequest = client.prepareBulk();
-							addModelToES(constructModel, bulkRequest);
-
-						} catch (Exception e) {
-							logger.info("Could not index due to [{}]", e.toString());
-						} finally {qexec.close();}
-					}
-				} catch (QueryParseException qpe) {
-					logger.info(
-							"Could not parse [{}]. Please provide a relevant query",
-							rdfQuery);
-				}
-
+			if(!rdfQuery.isEmpty()) {
+				harvestFromEndpoint();
 			}
 
 			/**
 			 * Harvest from RDF dumps
 			 */
-			for(String url:rdfUrls) {
-				if(url.isEmpty()) continue;
-
-				logger.info("Harvesting url [{}]", url);
-
-				Model model = ModelFactory.createDefaultModel();
-				RDFDataMgr.read(model, url.trim(), RDFLanguages.RDFXML);
-				BulkRequestBuilder bulkRequest = client.prepareBulk();
-
-				addModelToES(model, bulkRequest);
-			}
+			harvestFromDumps();
 
 			closed = true;
+		}
+	}
+
+	private void harvestFromEndpoint() {
+		try {
+			Query query = QueryFactory.create(rdfQuery);
+			QueryExecution qexec = QueryExecutionFactory.sparqlService(
+					rdfEndpoint,
+					query);
+			if(rdfQueryType == 1) {
+				try {
+					ResultSet results = qexec.execSelect();
+					Model sparqlModel = ModelFactory.createDefaultModel();
+
+					Graph graph = sparqlModel.getGraph();
+
+					while(results.hasNext()) {
+						QuerySolution sol = results.nextSolution();
+						Iterator<String> iterS = sol.varNames();
+
+						/**
+						 * Each QuerySolution is a triple
+						 */
+						try {
+							String subject = sol.getResource("s").toString();
+							String predicate = sol.getResource("p").toString();
+							String object = sol.get("o").toString();
+
+							graph.add(new Triple(
+										NodeFactory.createURI(subject),
+										NodeFactory.createURI(predicate),
+										NodeFactory.createLiteral(object)));
+
+						} catch(NoSuchElementException nsee) {
+							logger.info("Could not index [{}] / {}: Query result was" +
+									"not a triple",	sol.toString(), nsee.toString());
+						}
+
+						BulkRequestBuilder bulkRequest = client.prepareBulk();
+						addModelToES(sparqlModel, bulkRequest);
+					}
+				} catch(Exception e) {
+					logger.info("Encountered a [{}] when quering the endpoint", e.toString());
+				} finally { qexec.close();}
+			}
+			else{
+				try{
+					Model constructModel = ModelFactory.createDefaultModel();
+					qexec.execConstruct(constructModel);
+
+					BulkRequestBuilder bulkRequest = client.prepareBulk();
+					addModelToES(constructModel, bulkRequest);
+
+				} catch (Exception e) {
+					logger.info("Could not index due to [{}]", e.toString());
+				} finally {qexec.close();}
+			}
+		} catch (QueryParseException qpe) {
+			logger.info(
+					"Could not parse [{}]. Please provide a relevant query",
+					rdfQuery);
+		}
+	}
+
+	private void harvestFromDumps() {
+		for(String url:rdfUrls) {
+			if(url.isEmpty()) continue;
+
+			logger.info("Harvesting url [{}]", url);
+
+			Model model = ModelFactory.createDefaultModel();
+			RDFDataMgr.read(model, url.trim(), RDFLanguages.RDFXML);
+			BulkRequestBuilder bulkRequest = client.prepareBulk();
+
+			addModelToES(model, bulkRequest);
 		}
 	}
 
@@ -270,15 +280,26 @@ public class Harvester implements Runnable {
 			Resource rs = rsiter.nextResource();
 			Map<String, ArrayList<String>> jsonMap = new HashMap<String,
 				ArrayList<String>>();
+			Set<String> rdfLanguages = new HashSet<String>();
 
 			for(Property prop: properties) {
 				NodeIterator niter = model.listObjectsOfProperty(rs,prop);
 				if(niter.hasNext()) {
 					ArrayList<String> results = new ArrayList<String>();
+					String lang = "";
 					String currValue = "";
 
 					while(niter.hasNext()) {
-						currValue = getStringForResult(niter.next());
+						RDFNode node = niter.next();
+						currValue = getStringForResult(node);
+						if(addLanguage){
+							try {
+								lang = node.asLiteral().getLanguage();
+								if(!lang.isEmpty()) {
+									rdfLanguages.add("\"" + lang + "\"");
+								}
+							} catch (Exception e){}
+						}
 						results.add(currValue);
 					}
 
@@ -297,6 +318,9 @@ public class Harvester implements Runnable {
 						jsonMap.put(property,results);
 					}
 				}
+			}
+			if(addLanguage && rdfLanguages.size() > 0) {
+				jsonMap.put("language", new ArrayList<String>(rdfLanguages));
 			}
 
 			bulkRequest.add(client.prepareIndex(indexName, typeName, rs.toString())

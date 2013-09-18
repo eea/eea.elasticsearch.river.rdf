@@ -52,7 +52,10 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 							EEASettings.DEFAULT_PROPLIST))
 				.rdfListType(XContentMapValues.nodeStringValue(
 							eeaSettings.get("listtype"),
-							EEASettings.DEFAULT_LIST_TYPE));
+							EEASettings.DEFAULT_LIST_TYPE))
+				.rdfLanguage(XContentMapValues.nodeBooleanValue(
+							eeaSettings.get("language"),
+							EEASettings.DEFAULT_ADD_LANGUAGE));
 			if(eeaSettings.containsKey("normMap")) {
 				harvester
 					.rdfNormalizationMap((

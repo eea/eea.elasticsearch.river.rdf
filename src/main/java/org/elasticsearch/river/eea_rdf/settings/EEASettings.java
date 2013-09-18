@@ -11,6 +11,7 @@ public abstract class EEASettings {
 	public final static String DEFAULT_QUERYTYPE = "select";
 	public final static String DEFAULT_PROPLIST = "[]";
 	public final static String DEFAULT_LIST_TYPE = "white";
+	public final static Boolean DEFAULT_ADD_LANGUAGE = true;
 
 	public static String parseForJson(String text) {
 		return text.trim().replaceAll("[\n\r]", " ")
