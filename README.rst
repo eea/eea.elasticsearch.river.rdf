@@ -21,21 +21,21 @@ Prerequisites:
 
 * Java 7 Runtime Environment
 
-Binaries for this plugin are available at: 
+Binaries for this plugin are available at:
 
 https://github.com/eea/eea.elasticsearch.river.rdf/blob/master/target/releases/eea-rdf-river-plugin-1.0.zip
 
-In order to install the plugin, you first need to have 
-`Elasticsearch <http://www.elasticsearch.org/download/>`_ installed. Just 
-download the latest release and extract it. Add the plugin's binaries to the 
-elasticsearch-X.Y.Z/plugins/name_of_plugin/ directory, where X.Y.Z is the current 
+In order to install the plugin, you first need to have
+`Elasticsearch <http://www.elasticsearch.org/download/>`_ installed. Just
+download the latest release and extract it. Add the plugin's binaries to the
+elasticsearch-X.Y.Z/plugins/name_of_plugin/ directory, where X.Y.Z is the current
 ElasticSearch version.
 
-The same should be done when updating ElasticSearch to the latest version: 
-download the latest release and extract it. Copy the elasticsearch-x.y.z/plugins 
-directory to elasticsearch-X.Y.Z, where x.y.z is the previous ElasticSearch 
-version and X.Y.Z the current one. Replace the previous ElasticSearch directory 
-with the new one. Restart ElasticSearch. 
+The same should be done when updating ElasticSearch to the latest version:
+download the latest release and extract it. Copy the elasticsearch-x.y.z/plugins
+directory to elasticsearch-X.Y.Z, where x.y.z is the previous ElasticSearch
+version and X.Y.Z the current one. Replace the previous ElasticSearch directory
+with the new one. Restart ElasticSearch.
 
 
 Main features
@@ -52,8 +52,8 @@ Main features
 Indexing
 ========
 
-Each river can index data into a specific index. The default index has the index name 
-'rdfdata' and the type name 'resource'. 
+Each river can index data into a specific index. The default index has the index name
+'rdfdata' and the type name 'resource'.
 
 Creating the RDF river can be done with:
 
@@ -66,8 +66,8 @@ Creating the RDF river can be done with:
    }
  }'
 
-"eeaRDF" is the name of the river and should not be changed. It gives ElasticSearch 
-the information about which river to use. Otherwise, the data provided will not be 
+"eeaRDF" is the name of the river and should not be changed. It gives ElasticSearch
+the information about which river to use. Otherwise, the data provided will not be
 indexed. "rdf_river" is the name of the rdf river type. Any name can be chosen for
 the type, as long as it is unique (it has not been used for a different river).
 
@@ -79,11 +79,11 @@ A new index name and type can be set with:
         "index" : "newIndexName",
         "type" : "newTypeName"
     }
- 
+
 
 From URIs
 +++++++++
- 
+
 The river is given a list of URIs from which triples are indexed into ElasticSearch.
 'urls' may contain any list of URIs.
 
@@ -98,17 +98,17 @@ The river is given a list of URIs from which triples are indexed into ElasticSea
                 "http://dd.eionet.europa.eu/vocabulary/aq/measurementmethod/rdf"]
     }
  }'
- 
+
 
 From a SPARQL endpoint
 ++++++++++++++++++++++
 
 The river is given a SPARQL endpoint and a query. The query response is indexed into ElasticSearch.
-The SPARQL query can be a SELECT query or a CONSTRUCT query. 
+The SPARQL query can be a SELECT query or a CONSTRUCT query.
 
 The SELECT query should always require a triple (?s ?p ?o) where ?s is the subject,
-?p is the predicate and ?o is the object. The names and order are required for relevant 
-results. 
+?p is the predicate and ?o is the object. The names and order are required for relevant
+results.
 
 ::
 
@@ -145,11 +145,11 @@ from a SPARQL endpoint and several unrelated URIs.
 Blacklists and whitelists
 =========================
 
-Depending on the importance of the information, some properties can be skipped or kept. 
-A blacklist contains properties that should not be indexed with the data while a whitelist 
+Depending on the importance of the information, some properties can be skipped or kept.
+A blacklist contains properties that should not be indexed with the data while a whitelist
 contains all the properties that should be indexed with the data.
 
-A 'proplist' can therefore be of two types: 'white' or 'black'. If the type is not provided, 
+A 'proplist' can therefore be of two types: 'white' or 'black'. If the type is not provided,
 the list is considered to be white.
 
 The following query indexes only the rdf:type property of the resources.
@@ -159,10 +159,10 @@ The following query indexes only the rdf:type property of the resources.
  curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
-      "endpoint" : "http://semantic.eea.europa.eu/sparql", 
+      "endpoint" : "http://semantic.eea.europa.eu/sparql",
       "query" : "CONSTRUCT {?s ?p ?o} WHERE {?s  a <http://www.openlinksw.com/schemas/virtrdf#QuadMapFormat> ; ?p ?o}",
       "queryType" : "construct",
-      "proplist" : ["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"], 
+      "proplist" : ["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],
       "listtype" : "white"
    }
  }'
@@ -171,11 +171,11 @@ The following query indexes only the rdf:type property of the resources.
 Normalization
 =============
 
-This feature allows the users to rename properties or to state that two 
+This feature allows the users to rename properties or to state that two
 properties are the same, for different namespaces.
 
-'NormMap' contains pairs of property-replacement. The properties are replaced 
-with the given values and if one resource has both properties their values are 
+'NormMap' contains pairs of property-replacement. The properties are replaced
+with the given values and if one resource has both properties their values are
 grouped in a list.
 
 ::
@@ -183,23 +183,31 @@ grouped in a list.
  curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
-      "endpoint" : "http://semantic.eea.europa.eu/sparql", 
+      "endpoint" : "http://semantic.eea.europa.eu/sparql",
       "query" : "CONSTRUCT {?s ?p ?o} WHERE {?s  a <http://www.openlinksw.com/schemas/virtrdf#QuadMapFormat> ; ?p ?o}",
       "queryType" : "construct",
       "normMap" : {
-            "http://purl.org/dc/elements/1.1/format" : "format", 
-            "http://purl.org/dc/elements/1.1/type" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", 
+            "http://purl.org/dc/elements/1.1/format" : "format",
+            "http://purl.org/dc/elements/1.1/type" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
             "http://example.org/pntology/typeOfData" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
       }
    }
  }'
- 
-The data indexed with the previous river will lack the property 
+
+The data indexed with the previous river will lack the property
 http://purl.org/dc/elements/1.1/format, because it will be replaced with "format".
-Moreover, all the values of the http://purl.org/dc/elements/1.1/type and 
-http://example.org/pntology/typeOfData properties of each resource will be grouped 
-under http://www.w3.org/1999/02/22-rdf-syntax-ns#type. 
- 
+Moreover, all the values of the http://purl.org/dc/elements/1.1/type and
+http://example.org/pntology/typeOfData properties of each resource will be grouped
+under http://www.w3.org/1999/02/22-rdf-syntax-ns#type.
+
+Security
+========
+
+Since ElasticSearch does not provide authentication or access control
+functionalities, dropping or modifying indexes can be done without
+authentication.
+
+
 Source Code
 ===========
 
