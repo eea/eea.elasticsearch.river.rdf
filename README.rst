@@ -200,17 +200,6 @@ Moreover, all the values of the http://purl.org/dc/elements/1.1/type and
 http://example.org/pntology/typeOfData properties of each resource will be grouped
 under http://www.w3.org/1999/02/22-rdf-syntax-ns#type.
 
-Security
-========
-
-Since ElasticSearch does not provide authentication or access control
-functionalities, dropping or modifying indexes can be done without
-authentication.
-
-Moreover, all the values of the http://purl.org/dc/elements/1.1/type and
-http://example.org/pntology/typeOfData properties of each resource will be grouped
-under http://www.w3.org/1999/02/22-rdf-syntax-ns#type.
-
 
 Scheduling the harvest
 ======================
