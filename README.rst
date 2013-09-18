@@ -196,6 +196,7 @@ grouped in a list.
 
 The data indexed with the previous river will lack the property
 http://purl.org/dc/elements/1.1/format, because it will be replaced with "format".
+<<<<<<< HEAD
 Moreover, all the values of the http://purl.org/dc/elements/1.1/type and
 http://example.org/pntology/typeOfData properties of each resource will be grouped
 under http://www.w3.org/1999/02/22-rdf-syntax-ns#type.
@@ -207,6 +208,74 @@ Since ElasticSearch does not provide authentication or access control
 functionalities, dropping or modifying indexes can be done without
 authentication.
 
+=======
+Moreover, all the values of the http://purl.org/dc/elements/1.1/type and
+http://example.org/pntology/typeOfData properties of each resource will be grouped
+under http://www.w3.org/1999/02/22-rdf-syntax-ns#type.
+
+
+Scheduling the harvest
+======================
+
+To schedule the data harvest just create a crontab with the desired interval. Cron
+is a time-based job scheduler. It makes it possible to schedule commands or scripts
+run periodically at fixed times, dates and intervals, through crontabs (cron table).
+The basic format of a crontab consists of six fields, separated by spaces. These fields
+must always be in the following order (with no empty fields):
+
+::
+
+ Minute Hour Day_of_Month Month Day_of_Week Command
+
+The  accepted values for each field are:
+
+* Minute: 0-59
+
+* Hour: 0-23
+
+* Day_of_Month: 1-31
+
+* Month: 1-12 or Jan-Dec
+
+* Day_of_Week: 0-6 or Sun-Sat
+
+* Command: the command to run, including its parameters if any
+
+The wildcard character replaces any possible value for the field it represents. It also
+helps scheduling something to run every x times (minutes, hours, day, month, day of week)
+with the syntax: "*\x".
+
+In the example below, command is run every two months, on the 1st and 15th, at 20:00 (8:00 PM).
+
+::
+
+ # Minute   Hour   Day of Month       Month          Day of Week        Command
+ # (0-59)  (0-23)     (1-31)    (1-12 or Jan-Dec)  (0-6 or Sun-Sat)
+     0       20        1,15           */2               *           /{path}/command
+
+The command to run should remove both the old river index and the indexed data, and add a new
+index, as in the example below:
+
+::
+
+ curl -XDELETE 'localhost:9200/rdfdata'
+ curl -XDELETE 'localhost:9200/_river/name_of_river'
+ curl -XPUT 'localhost:9200/_river/name_of_river/_meta' -d '{
+     "type" : "eeaRDF",
+     "eeaRDF" : {
+           ...
+      }
+ }'
+
+Security
+========
+
+Since ElasticSearch does not provide authentication or access control
+functionalities, dropping or modifying indexes can be done by anyone.
+To keep the indexed information safe, the
+`Jetty HTTP transport plugin <https://github.com/sonian/elasticsearch-jetty>`_
+should be installed and configured.
+>>>>>>> e8486779b90c8af1a0ada535d1207ae6a3f287fa
 
 Source Code
 ===========
