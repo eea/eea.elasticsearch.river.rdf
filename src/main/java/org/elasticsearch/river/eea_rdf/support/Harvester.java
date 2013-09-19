@@ -56,6 +56,8 @@ public class Harvester implements Runnable {
 	private Map<String, String> normalizationMap;
 	private Boolean willNormalize = false;
 	private Boolean addLanguage = false;
+	private List<String> uriDescriptionList;
+	private Boolean toDescribeURIs = false;
 
 	private Client client;
 	private String indexName;
@@ -90,7 +92,7 @@ public class Harvester implements Runnable {
 	}
 
 	public Harvester rdfPropList(String list) {
-		list = list.substring(1, list.length() -1);
+		list = list.substring(1, list.length() - 1);
 		rdfPropList = Arrays.asList(list.split(","));
 		if(!list.isEmpty())
 			hasList = true;
@@ -113,6 +115,14 @@ public class Harvester implements Runnable {
 			willNormalize = true;
 			this.normalizationMap = normalizationMap;
 		}
+		return this;
+	}
+
+	public Harvester rdfURIDescription(String uriList) {
+		uriList = uriList.substring(1, uriList.length() - 1);
+		if(!uriList.isEmpty())
+			toDescribeURIs = true;
+		uriDescriptionList = Arrays.asList(uriList.split(","));
 		return this;
 	}
 
@@ -375,6 +385,12 @@ public class Harvester implements Runnable {
 
 		} else if(node.isResource()) {
 			result = node.asResource().getURI();
+			if(toDescribeURIs) {
+				String label = getLabelForUri(result);
+				if(!label.isEmpty()) {
+					result = label;
+				}
+			}
 			quote = true;
 		}
 		if(quote) {
@@ -383,6 +399,32 @@ public class Harvester implements Runnable {
 		return result;
 	}
 
+
+  private String getLabelForUri(String uri) {
+		String result = "";
+		for(String prop:uriDescriptionList) {
+			String innerQuery = "SELECT ?r WHERE {<" + result+"> <" +
+				prop + "> ?r } LIMIT 1";
+
+			Query query = QueryFactory.create(innerQuery);
+			QueryExecution qexec = QueryExecutionFactory.sparqlService(
+					rdfEndpoint,
+					query);
+			try {
+				ResultSet results = qexec.execSelect();
+				Model sparqlModel = ModelFactory.createDefaultModel();
+
+				if(results.hasNext()) {
+					QuerySolution sol = results.nextSolution();
+	        result = sol.getResource("r").toString();
+					if(!result.isEmpty())
+						return result;
+				}
+			} catch(Exception e){
+			}finally { qexec.close();}
+		}
+		return result;
+	}
 
 	@Deprecated
 	private void delay(String reason, String url) {

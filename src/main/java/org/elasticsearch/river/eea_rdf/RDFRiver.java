@@ -37,7 +37,7 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 
 			harvester
 				.rdfUrl(XContentMapValues.nodeStringValue(
-							eeaSettings.get("urls"), "[]"))
+							eeaSettings.get("uris"), "[]"))
 				.rdfEndpoint(XContentMapValues.nodeStringValue(
 							eeaSettings.get("endpoint"),
 							EEASettings.DEFAULT_ENDPOINT))
@@ -55,7 +55,11 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 							EEASettings.DEFAULT_LIST_TYPE))
 				.rdfLanguage(XContentMapValues.nodeBooleanValue(
 							eeaSettings.get("language"),
-							EEASettings.DEFAULT_ADD_LANGUAGE));
+							EEASettings.DEFAULT_ADD_LANGUAGE))
+				.rdfURIDescription(XContentMapValues.nodeStringValue(
+							eeaSettings.get("uriDescription"),
+							EEASettings.DEFAULT_URI_DESCRIPTION));
+
 			if(eeaSettings.containsKey("normMap")) {
 				harvester
 					.rdfNormalizationMap((
