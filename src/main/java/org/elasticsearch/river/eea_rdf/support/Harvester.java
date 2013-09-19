@@ -386,10 +386,7 @@ public class Harvester implements Runnable {
 		} else if(node.isResource()) {
 			result = node.asResource().getURI();
 			if(toDescribeURIs) {
-				String label = getLabelForUri(result);
-				if(!label.isEmpty()) {
-					result = label;
-				}
+				result = getLabelForUri(result);
 			}
 			quote = true;
 		}
@@ -424,7 +421,7 @@ public class Harvester implements Runnable {
 				}finally { qexec.close();}
 			} catch (QueryParseException qpe) {}
 		}
-		return result;
+		return uri;
 	}
 
 	@Deprecated
