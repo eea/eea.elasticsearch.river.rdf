@@ -13,8 +13,8 @@ public abstract class EEASettings {
 	public final static String DEFAULT_LIST_TYPE = "white";
 	public final static Boolean DEFAULT_ADD_LANGUAGE = true;
 	public final static String DEFAULT_URI_DESCRIPTION =
-		"[\"http://www.w3.org/2000/01/rdf-schema#label\", "
-		+ "http://purl.org/dc/terms/title\"]";
+		"[http://www.w3.org/2000/01/rdf-schema#label,"
+		+ "http://purl.org/dc/terms/title]";
 
 	public static String parseForJson(String text) {
 		return text.trim().replaceAll("[\n\r]", " ")

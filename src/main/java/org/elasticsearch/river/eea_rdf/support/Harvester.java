@@ -400,8 +400,9 @@ public class Harvester implements Runnable {
   private String getLabelForUri(String uri) {
 		String result = "";
 		for(String prop:uriDescriptionList) {
-			String innerQuery = "SELECT ?r WHERE {<" + result + "> <" +
+			String innerQuery = "SELECT ?r WHERE {<" + uri + "> <" +
 				prop + "> ?r } LIMIT 1";
+
 			try {
 				Query query = QueryFactory.create(innerQuery);
 				QueryExecution qexec = QueryExecutionFactory.sparqlService(
@@ -409,17 +410,17 @@ public class Harvester implements Runnable {
 						query);
 				try {
 					ResultSet results = qexec.execSelect();
-					Model sparqlModel = ModelFactory.createDefaultModel();
 
 					if(results.hasNext()) {
 						QuerySolution sol = results.nextSolution();
-						result = sol.getResource("r").toString();
+						result = sol.getLiteral("r").toString();
 						if(!result.isEmpty())
 							return result;
 					}
 				} catch(Exception e){
 				}finally { qexec.close();}
-			} catch (QueryParseException qpe) {}
+			} catch (QueryParseException qpe) {
+			}
 		}
 		return uri;
 	}
