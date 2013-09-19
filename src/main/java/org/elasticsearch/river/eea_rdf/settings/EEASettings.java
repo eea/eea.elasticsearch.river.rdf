@@ -21,6 +21,7 @@ public abstract class EEASettings {
 			.replace('\"', '\'')
 			.replace("\t", "    ")
 			.replace("\\'", "\'")
-			.replaceAll("\\\\x[a-fA-F0-9][a-fA-F0-9]", "_");
+			.replaceAll("\\\\x[a-fA-F0-9][a-fA-F0-9]", "_")
+			.replace("\\", "\\\\");
 	}
 }
