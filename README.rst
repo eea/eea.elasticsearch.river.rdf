@@ -196,19 +196,6 @@ grouped in a list.
 
 The data indexed with the previous river will lack the property
 http://purl.org/dc/elements/1.1/format, because it will be replaced with "format".
-<<<<<<< HEAD
-Moreover, all the values of the http://purl.org/dc/elements/1.1/type and
-http://example.org/pntology/typeOfData properties of each resource will be grouped
-under http://www.w3.org/1999/02/22-rdf-syntax-ns#type.
-
-Security
-========
-
-Since ElasticSearch does not provide authentication or access control
-functionalities, dropping or modifying indexes can be done without
-authentication.
-
-=======
 Moreover, all the values of the http://purl.org/dc/elements/1.1/type and
 http://example.org/pntology/typeOfData properties of each resource will be grouped
 under http://www.w3.org/1999/02/22-rdf-syntax-ns#type.
@@ -275,7 +262,6 @@ functionalities, dropping or modifying indexes can be done by anyone.
 To keep the indexed information safe, the
 `Jetty HTTP transport plugin <https://github.com/sonian/elasticsearch-jetty>`_
 should be installed and configured.
->>>>>>> e8486779b90c8af1a0ada535d1207ae6a3f287fa
 
 Source Code
 ===========
