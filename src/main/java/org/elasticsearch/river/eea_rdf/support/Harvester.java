@@ -413,7 +413,8 @@ public class Harvester implements Runnable {
 
 					if(results.hasNext()) {
 						QuerySolution sol = results.nextSolution();
-						result = sol.getLiteral("r").toString();
+						result = EEASettings.parseForJson(
+								sol.getLiteral("r").getLexicalForm());
 						if(!result.isEmpty())
 							return result;
 					}
