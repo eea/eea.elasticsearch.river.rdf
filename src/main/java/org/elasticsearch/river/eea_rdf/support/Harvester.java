@@ -290,12 +290,17 @@ public class Harvester implements Runnable {
 			Resource rs = rsiter.nextResource();
 			Map<String, ArrayList<String>> jsonMap = new HashMap<String,
 				ArrayList<String>>();
+			ArrayList<String> results = new ArrayList<String>();
+			results.add("\"" + rs.toString() + "\"");
+			jsonMap.put(
+					"http://www.w3.org/1999/02/22-rdf-syntax-ns#about",
+					results);
 			Set<String> rdfLanguages = new HashSet<String>();
 
 			for(Property prop: properties) {
 				NodeIterator niter = model.listObjectsOfProperty(rs,prop);
 				if(niter.hasNext()) {
-					ArrayList<String> results = new ArrayList<String>();
+					results = new ArrayList<String>();
 					String lang = "";
 					String currValue = "";
 
