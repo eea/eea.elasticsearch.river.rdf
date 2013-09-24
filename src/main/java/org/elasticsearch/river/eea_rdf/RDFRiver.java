@@ -53,9 +53,12 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 				.rdfListType(XContentMapValues.nodeStringValue(
 							eeaSettings.get("listtype"),
 							EEASettings.DEFAULT_LIST_TYPE))
-				.rdfLanguage(XContentMapValues.nodeBooleanValue(
-							eeaSettings.get("language"),
+				.rdfAddLanguage(XContentMapValues.nodeBooleanValue(
+							eeaSettings.get("addLanguage"),
 							EEASettings.DEFAULT_ADD_LANGUAGE))
+				.rdfLanguage(XContentMapValues.nodeStringValue(
+							eeaSettings.get("language"),
+							EEASettings.DEFAULT_LANGUAGE))
 				.rdfURIDescription(XContentMapValues.nodeStringValue(
 							eeaSettings.get("uriDescription"),
 							EEASettings.DEFAULT_URI_DESCRIPTION));

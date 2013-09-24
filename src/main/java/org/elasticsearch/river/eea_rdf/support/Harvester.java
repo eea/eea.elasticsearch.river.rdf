@@ -56,6 +56,7 @@ public class Harvester implements Runnable {
 	private Map<String, String> normalizationMap;
 	private Boolean willNormalize = false;
 	private Boolean addLanguage = false;
+	private String language;
 	private List<String> uriDescriptionList;
 	private Boolean toDescribeURIs = false;
 
@@ -105,8 +106,18 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
-	public Harvester rdfLanguage(Boolean rdfLanguage) {
-		addLanguage = rdfLanguage;
+	public Harvester rdfAddLanguage(Boolean rdfAddLanguage) {
+		this.addLanguage = rdfAddLanguage;
+		return this;
+	}
+
+	public Harvester rdfLanguage(String rdfLanguage) {
+		this.language = rdfLanguage;
+		if(!this.language.isEmpty()){
+			this.addLanguage = true;
+			if(!this.language.startsWith("\""))
+				this.language = "\"" +  this.language + "\"";
+		}
 		return this;
 	}
 
@@ -296,6 +307,8 @@ public class Harvester implements Runnable {
 					"http://www.w3.org/1999/02/22-rdf-syntax-ns#about",
 					results);
 			Set<String> rdfLanguages = new HashSet<String>();
+			if(!language.isEmpty())
+				rdfLanguages.add(language);
 
 			for(Property prop: properties) {
 				NodeIterator niter = model.listObjectsOfProperty(rs,prop);
@@ -313,7 +326,7 @@ public class Harvester implements Runnable {
 								if(!lang.isEmpty()) {
 									rdfLanguages.add("\"" + lang + "\"");
 								}
-							} catch (Exception e){}
+							} catch (Exception e} {}
 						}
 						results.add(currValue);
 					}
