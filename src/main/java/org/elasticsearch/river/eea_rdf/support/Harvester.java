@@ -59,6 +59,7 @@ public class Harvester implements Runnable {
 	private String language;
 	private List<String> uriDescriptionList;
 	private Boolean toDescribeURIs = false;
+	private Boolean addUriForResource;
 
 	private Client client;
 	private String indexName;
@@ -134,6 +135,11 @@ public class Harvester implements Runnable {
 		if(!uriList.isEmpty())
 			toDescribeURIs = true;
 		uriDescriptionList = Arrays.asList(uriList.split(","));
+		return this;
+	}
+
+	public Harvester rdfAddUriForResource(Boolean rdfAddUriForResource) {
+		this.addUriForResource = rdfAddUriForResource;
 		return this;
 	}
 
@@ -302,10 +308,13 @@ public class Harvester implements Runnable {
 			Map<String, ArrayList<String>> jsonMap = new HashMap<String,
 				ArrayList<String>>();
 			ArrayList<String> results = new ArrayList<String>();
-			results.add("\"" + rs.toString() + "\"");
-			jsonMap.put(
-					"http://www.w3.org/1999/02/22-rdf-syntax-ns#about",
-					results);
+			if(addUriForResource) {
+				results.add("\"" + rs.toString() + "\"");
+				jsonMap.put(
+						"http://www.w3.org/1999/02/22-rdf-syntax-ns#about",
+						results);
+			}
+
 			Set<String> rdfLanguages = new HashSet<String>();
 			if(!language.isEmpty())
 				rdfLanguages.add(language);
