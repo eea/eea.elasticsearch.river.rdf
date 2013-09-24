@@ -326,7 +326,7 @@ public class Harvester implements Runnable {
 								if(!lang.isEmpty()) {
 									rdfLanguages.add("\"" + lang + "\"");
 								}
-							} catch (Exception e} {}
+							} catch (Exception e) {}
 						}
 						results.add(currValue);
 					}
