@@ -316,8 +316,6 @@ public class Harvester implements Runnable {
 			}
 
 			Set<String> rdfLanguages = new HashSet<String>();
-			if(!language.isEmpty())
-				rdfLanguages.add(language);
 
 			for(Property prop: properties) {
 				NodeIterator niter = model.listObjectsOfProperty(rs,prop);
@@ -356,8 +354,11 @@ public class Harvester implements Runnable {
 					}
 				}
 			}
-			if(addLanguage && rdfLanguages.size() > 0) {
-				jsonMap.put("language", new ArrayList<String>(rdfLanguages));
+			if(addLanguage) {
+				if(rdfLanguages.isEmpty() && !language.isEmpty())
+					rdfLanguages.add(language);
+				if(!rdfLanguage.isEmpty())
+					jsonMap.put("language", new ArrayList<String>(rdfLanguages));
 			}
 
 			bulkRequest.add(client.prepareIndex(indexName, typeName, rs.toString())
