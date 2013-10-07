@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.elasticsearch.plugin.river.eea_rdf</groupId>
   <artifactId>eea-rdf-river-plugin</artifactId>
-  <version>1.0</version>
+  <version>1.1-SNAPSHOT</version>
 
   <packaging>jar</packaging>
 
@@ -72,6 +72,15 @@
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-scm-plugin</artifactId>
+        <version>1.8.1</version>
+        <configuration>
+          <connectionType>connection</connectionType>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
         <version>2.3</version>
         <configuration>
@@ -118,9 +127,21 @@
           <target>1.5</target>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-scm-plugin</artifactId>
+        <version>1.8.1</version>
+        <configuration>
+          <connectionType>developerConnection</connectionType>
+          <developerConnectionUrl>scm:git:git://github.com/eea/eea.elasticsearch.river.rdf</developerConnectionUrl>
+        </configuration>
+      </plugin>
 
     </plugins>
+
+
   </build>
+
 
   <dependencies>
     <dependency>

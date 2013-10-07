@@ -357,7 +357,7 @@ public class Harvester implements Runnable {
 			if(addLanguage) {
 				if(rdfLanguages.isEmpty() && !language.isEmpty())
 					rdfLanguages.add(language);
-				if(!rdfLanguage.isEmpty())
+				if(!rdfLanguages.isEmpty())
 					jsonMap.put("language", new ArrayList<String>(rdfLanguages));
 			}
 
