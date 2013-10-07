@@ -18,6 +18,9 @@
     <url>https://github.com/eaudeweb</url>
   </organization>
 
+  <scm>
+    <developerConnection>scm:git:git//github.com/eea/eea.elasticsearch.river.rdf</developerConnection>
+  </scm>
   <properties>
     <elasticsearch.version>0.90.3</elasticsearch.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
