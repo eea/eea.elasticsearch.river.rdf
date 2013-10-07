@@ -1,6 +1,10 @@
 Changelog
 =========
 
+v1.2 (Unreleased)
+-----------------
+*
+
 v1.1 (2013-10-07)
 -----------------
 * Duplicate release v1.0
