@@ -10,3 +10,4 @@ run
 /target/test-classes
 /src/test/
 pom.xml.versionsBackup
+pom.xml.releaseBackup
