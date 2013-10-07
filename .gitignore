@@ -9,3 +9,4 @@ run
 /target/maven-status
 /target/test-classes
 /src/test/
+pom.xml.versionsBackup
