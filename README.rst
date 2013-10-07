@@ -141,6 +141,85 @@ from a SPARQL endpoint and several unrelated URIs.
  }'
 
 
+Other options
+=============
+
+There are several other options available for the index operation. They can be added no matter of the other settings.
+
+includeResourceURI
+++++++++++++++++++
+
+Each resource is indexed into ElasticSearch with the _id property set to its URI. This is very convenient because it 
+is well known that URIs are unique. Some applications however cannot extract the URI from the _id field, so whenever
+"includeResourceUri" is set on "true", a new property is added to each resource: 
+"http://www.w3.org/1999/02/22-rdf-syntax-ns#about", having the value equal to the resource's URI.
+
+The default value for "includeResourceURI" is true.
+
+::
+
+ curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+   "type" : "eeaRDF",
+   "eeaRDF" : {
+      "urls" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
+                "http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf"],
+      "endpoint" : "http://semantic.eea.europa.eu/sparql",
+      "query" : "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?s a cr:SparqlBookmark ; ?p ?o}",
+      "queryType" : "construct",
+      "includeResourceURI" : false
+   }
+ }'
+
+language and addLanguage 
+++++++++++++++++++++++++
+
+When "addLanguage" is set on "true", all the languages of the String Literals will be included in the output of a 
+new property, "language". If "language" is a required property, one that has to describe all the objects, a default 
+language should be set for when there are no String Literals or they do not have languages defined. This can be done
+when indexing the data by setting "language" to be the default language. 
+
+The default value for "addLanguage" is true and for "language", "en".
+
+::
+
+ curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+   "type" : "eeaRDF",
+   "eeaRDF" : {
+      "urls" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
+                "http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf"],
+      "endpoint" : "http://semantic.eea.europa.eu/sparql",
+      "query" : "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?s a cr:SparqlBookmark ; ?p ?o}",
+      "queryType" : "construct",
+      "addLanguage" : true,
+      "language" : "it"
+   }
+ }'
+ 
+ 
+uriDescription
+++++++++++++++
+
+[TODO] - description might change for future versions
+The value of each predicate (the object) can only be a Literal or a Resource. When it is a Resource (URI) it is 
+very difficult to obtain information from it, if the information is not indexed in ElasticSearch. Whenever 
+"uriDescription" is set, the URIs are replaced by the resource's label. The label is the first of the properties 
+given as arguments for "uriDescription", for which the resource has an object. 
+
+::
+
+ curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+   "type" : "eeaRDF",
+   "eeaRDF" : {
+      "urls" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
+                "http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf"],
+      "endpoint" : "http://semantic.eea.europa.eu/sparql",
+      "query" : "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?s a cr:SparqlBookmark ; ?p ?o}",
+      "queryType" : "construct",
+      "addLanguage" : true,
+      "uriDescription" : ["http://www.w3.org/2000/01/rdf-schema#label", "http://purl.org/dc/terms/title"]
+   }
+ }'
+ 
 
 Blacklists and whitelists
 =========================
