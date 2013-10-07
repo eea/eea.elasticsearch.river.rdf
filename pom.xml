@@ -17,9 +17,6 @@
     <url>https://github.com/eaudeweb</url>
   </organization>
 
-  <scm>
-    <developerConnection>scm:git:git//github.com/eea/eea.elasticsearch.river.rdf</developerConnection>
-  </scm>
   <properties>
     <elasticsearch.version>0.90.3</elasticsearch.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -127,15 +124,6 @@
         <configuration>
           <source>1.5</source>
           <target>1.5</target>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-scm-plugin</artifactId>
-        <version>1.8.1</version>
-        <configuration>
-          <connectionType>developerConnection</connectionType>
-          <developerConnectionUrl>scm:git:git//github.com/eea/eea.elasticsearch.river.rdf</developerConnectionUrl>
         </configuration>
       </plugin>
 
