@@ -1,4 +1,5 @@
 run
+release
 /target/archive-tmp
 /target/classes
 /target/eea-rdf-river-plugin-1.0-sources.jar
