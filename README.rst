@@ -121,6 +121,8 @@ results.
    }
  }'
 
+**Tips**: `See how to optimize your queries / avoid endpoint timeout <http://taskman.eionet.europa.eu/projects/zope/wiki/HowToWriteOptimalSPARQLQueries>`_
+
 From both URIs and SPARQL endpoint
 ++++++++++++++++++++++++++++++++++
 
