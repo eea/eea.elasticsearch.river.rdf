@@ -66,12 +66,16 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 							eeaSettings.get("uriDescription"),
 							EEASettings.DEFAULT_URI_DESCRIPTION));
 
-			if(eeaSettings.containsKey("normMap")) {
+			if(eeaSettings.containsKey("normProp")) {
 				harvester
-					.rdfNormalizationMap((
-								Map<String,String>)eeaSettings.get("normMap"));
+					.rdfNormalizationProp((
+								Map<String,String>)eeaSettings.get("normProp"));
 			}
-
+			if(eeaSettings.containsKey("normObj")) {
+				harvester
+					.rdfNormalizationObj((
+								Map<String,String>)eeaSettings.get("normObj"));
+			}
 			if(eeaSettings.containsKey("blackMap")) {
 				harvester
 					.rdfBlackMap((

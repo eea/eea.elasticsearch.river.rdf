@@ -53,8 +53,10 @@ public class Harvester implements Runnable {
 	private List<String> rdfPropList;
 	private Boolean rdfListType = false;
 	private Boolean hasList = false;
-	private Map<String, String> normalizationMap;
-	private Boolean willNormalize = false;
+	private Map<String, String> normalizeProp;
+	private Map<String, String> normalizeObj;
+	private Boolean willNormalizeProp = false;
+	private Boolean willNormalizeObj = false;
 	private Boolean addLanguage = false;
 	private String language;
 	private List<String> uriDescriptionList;
@@ -124,10 +126,18 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
-	public Harvester rdfNormalizationMap(Map<String, String> normalizationMap) {
-		if(normalizationMap != null || !normalizationMap.isEmpty()) {
-			willNormalize = true;
-			this.normalizationMap = normalizationMap;
+	public Harvester rdfNormalizationProp(Map<String, String> normalizeProp) {
+		if(normalizeProp != null || !normalizeProp.isEmpty()) {
+			willNormalizeProp = true;
+			this.normalizeProp = normalizeProp;
+		}
+		return this;
+	}
+
+	public Harvester rdfNormalizationObj(Map<String, String> normalizeObj) {
+		if(normalizeObj != null || !normalizeObj.isEmpty()) {
+			willNormalizeObj = true;
+			this.normalizeObj = normalizeObj;
 		}
 		return this;
 	}
@@ -193,9 +203,8 @@ public class Harvester implements Runnable {
 
 		logger.info(
 				"Starting RDF harvester: endpoint [{}], query [{}]," +
-				"URLs [{}], index name [{}], typeName {}, blacklist {} {}",
-				rdfEndpoint, rdfQuery, rdfUrls, indexName, typeName, hasBlackMap,
-				blackMap);
+				"URLs [{}], index name [{}], typeName {}",
+				rdfEndpoint, rdfQuery, rdfUrls, indexName, typeName);
 
 		while (true) {
 			if(this.closed){
@@ -357,15 +366,21 @@ public class Harvester implements Runnable {
 										currValue.substring(1,currValue.length())))
 								continue;
 						} catch (NullPointerException npe) {
-							results.add(currValue);
+							String shortValue = currValue.substring(1,currValue.length() - 1);
+							if(willNormalizeObj &&
+									normalizeObj.containsKey(shortValue)) {
+								results.add("\"" + normalizeObj.get(shortValue) + "\"");
+							} else {
+								results.add(currValue);
+							}
 						}
 					}
 
 					String property, value;
 
 					if(!results.isEmpty()) {
-						if(willNormalize &&	normalizationMap.containsKey(prop.toString())) {
-							property = normalizationMap.get(prop.toString());
+						if(willNormalizeProp &&	normalizeProp.containsKey(prop.toString())) {
+							property = normalizeProp.get(prop.toString());
 							if(jsonMap.containsKey(property)) {
 								results.addAll(jsonMap.get(property));
 								jsonMap.put(property, results);
