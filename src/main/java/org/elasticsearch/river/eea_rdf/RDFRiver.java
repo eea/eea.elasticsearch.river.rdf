@@ -71,6 +71,12 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 					.rdfNormalizationMap((
 								Map<String,String>)eeaSettings.get("normMap"));
 			}
+
+			if(eeaSettings.containsKey("blackMap")) {
+				harvester
+					.rdfBlackMap((
+								Map<String,Object>)eeaSettings.get("blackMap"));
+			}
 		}
 		else {
 			throw new	ElasticSearchIllegalArgumentException(

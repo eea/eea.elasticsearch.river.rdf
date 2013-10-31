@@ -60,6 +60,8 @@ public class Harvester implements Runnable {
 	private List<String> uriDescriptionList;
 	private Boolean toDescribeURIs = false;
 	private Boolean addUriForResource;
+	private Boolean hasBlackMap = false;
+	private Map<String,List<String>> blackMap;
 
 	private Client client;
 	private String indexName;
@@ -130,6 +132,18 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
+	public Harvester rdfBlackMap(Map<String,Object> blackMap) {
+		if(blackMap != null || !blackMap.isEmpty()) {
+			hasBlackMap = true;
+			this.blackMap =  new HashMap<String,List<String>>();
+			for(Map.Entry<String,Object> entry : blackMap.entrySet()) {
+				this.blackMap.put(entry.getKey(), (List<String>)entry.getValue());
+			}
+		}
+
+		return this;
+	}
+
 	public Harvester rdfURIDescription(String uriList) {
 		uriList = uriList.substring(1, uriList.length() - 1);
 		if(!uriList.isEmpty())
@@ -175,10 +189,13 @@ public class Harvester implements Runnable {
 	@Override
 	public void run() {
 
+		logger.info("BL: {} {}", hasBlackMap, blackMap);
+
 		logger.info(
 				"Starting RDF harvester: endpoint [{}], query [{}]," +
-				"URLs [{}], index name [{}], typeName {}",
-				rdfEndpoint, rdfQuery, rdfUrls, indexName, typeName);
+				"URLs [{}], index name [{}], typeName {}, blacklist {} {}",
+				rdfEndpoint, rdfQuery, rdfUrls, indexName, typeName, hasBlackMap,
+				blackMap);
 
 		while (true) {
 			if(this.closed){
@@ -335,22 +352,26 @@ public class Harvester implements Runnable {
 								}
 							} catch (Exception e) {}
 						}
-						results.add(currValue);
+						if(!hasBlackMap || blackMap.get(prop.toString()) == null ||
+								!blackMap.get(prop.toString()).contains(currValue))
+							results.add(currValue);
 					}
 
 					String property, value;
 
-					if(willNormalize && normalizationMap.containsKey(prop.toString())) {
-						property = normalizationMap.get(prop.toString());
-						if(jsonMap.containsKey(property)) {
-							results.addAll(jsonMap.get(property));
-							jsonMap.put(property, results);
+					if(!results.isEmpty()) {
+						if(willNormalize &&	normalizationMap.containsKey(prop.toString())) {
+							property = normalizationMap.get(prop.toString());
+							if(jsonMap.containsKey(property)) {
+								results.addAll(jsonMap.get(property));
+								jsonMap.put(property, results);
+							} else {
+								jsonMap.put(property, results);
+							}
 						} else {
-							jsonMap.put(property, results);
+							property = prop.toString();
+							jsonMap.put(property,results);
 						}
-					} else {
-						property = prop.toString();
-						jsonMap.put(property,results);
 					}
 				}
 			}
