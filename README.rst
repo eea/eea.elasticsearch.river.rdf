@@ -248,14 +248,38 @@ The following query indexes only the rdf:type property of the resources.
    }
  }'
 
+BlackMap
+========
+
+Sometimes the user might not be interested to index some obvious or useless information. 
+A good example can be the situation in which all the classes have a single superclass. If all
+the objects belong to this superclass, then there is no point in adding this information.
+
+A blackMap contains all the pairs property - list of objects that are not meant to be indexed. 
+
+::
+
+ curl -XPUT 'localhost:9200/_river/asspart/_meta' -d '{
+   "type": "eeaRDF",
+   "eeaRDF" : {
+      "endpoint" : "http://semantic.eea.europa.eu/sparql",
+      "queryType" : "construct",
+      "query" : "CONSTRUCT {?s ?p ?o} WHERE { ?s a <http://www.eea.europa.eu/portal_types/AssessmentPart#AssessmentPart> . ?s ?p ?o}",
+      "blackMap" : {"http://www.w3.org/1999/02/22-rdf-syntax-ns#type":["Tracked File"]}
+   }
+ }'
+ curl 
 
 Normalization
 =============
 
-This feature allows the users to rename properties or to state that two
-properties are the same, for different namespaces.
+This feature allows the users to rename properties or objects or to state that two
+of these are the same, even if their namespaces are different.
 
-'NormMap' contains pairs of property-replacement. The properties are replaced
+Properties Normalization
+++++++++++++++++++++++++
+
+'NormProp' contains pairs of property-replacement. The properties are replaced
 with the given values and if one resource has both properties their values are
 grouped in a list.
 
@@ -267,7 +291,7 @@ grouped in a list.
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
       "query" : "CONSTRUCT {?s ?p ?o} WHERE {?s  a <http://www.openlinksw.com/schemas/virtrdf#QuadMapFormat> ; ?p ?o}",
       "queryType" : "construct",
-      "normMap" : {
+      "normProp" : {
             "http://purl.org/dc/elements/1.1/format" : "format",
             "http://purl.org/dc/elements/1.1/type" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
             "http://example.org/pntology/typeOfData" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
@@ -280,6 +304,11 @@ http://purl.org/dc/elements/1.1/format, because it will be replaced with "format
 Moreover, all the values of the http://purl.org/dc/elements/1.1/type and
 http://example.org/pntology/typeOfData properties of each resource will be grouped
 under http://www.w3.org/1999/02/22-rdf-syntax-ns#type.
+
+Objects Normalization
++++++++++++++++++++++
+
+'NormObj'
 
 
 Scheduling the harvest
