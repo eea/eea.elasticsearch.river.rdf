@@ -3,7 +3,8 @@ Changelog
 
 v1.2 (Unreleased)
 -----------------
-* added blackMap with values of objects to ignore
+* Feature : added blackMap with values of objects to ignore
+  [pasoviul - refs #17076]
 
 v1.1 (2013-10-07)
 -----------------
