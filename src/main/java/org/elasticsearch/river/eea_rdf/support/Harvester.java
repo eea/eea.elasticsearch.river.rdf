@@ -352,9 +352,13 @@ public class Harvester implements Runnable {
 								}
 							} catch (Exception e) {}
 						}
-						if(!hasBlackMap || blackMap.get(prop.toString()) == null ||
-								!blackMap.get(prop.toString()).contains(currValue))
+						try {
+							if(blackMap.get(prop.toString()).contains(
+										currValue.substring(1,currValue.length())))
+								continue;
+						} catch (NullPointerException npe) {
 							results.add(currValue);
+						}
 					}
 
 					String property, value;
