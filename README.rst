@@ -308,8 +308,23 @@ under http://www.w3.org/1999/02/22-rdf-syntax-ns#type.
 Objects Normalization
 +++++++++++++++++++++
 
-'NormObj'
+'NormObj', similar with 'NormProp', contains pairs of object-replacement. Objects are 
+replaced with given values no matter of the propperty whose value they represent.
 
+::
+
+ curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+   "type" : "eeaRDF",
+   "eeaRDF" : {
+      "endpoint" : "http://semantic.eea.europa.eu/sparql",
+      "query" : "CONSTRUCT {?s ?p ?o} WHERE {?s  a <http://www.openlinksw.com/schemas/virtrdf#QuadMapFormat> ; ?p ?o}",
+      "queryType" : "construct",
+      "normObj" : {
+            "Organisation" : "Organization",
+            "Quick Event" : "Event"
+      }
+   }
+ }'
 
 Scheduling the harvest
 ======================
