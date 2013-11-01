@@ -309,7 +309,7 @@ Objects Normalization
 +++++++++++++++++++++
 
 'NormObj', similar with 'NormProp', contains pairs of object-replacement. Objects are 
-replaced with given values no matter of the propperty whose value they represent.
+replaced with given values no matter of the property whose value they represent.
 
 ::
 
