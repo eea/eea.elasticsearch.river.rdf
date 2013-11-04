@@ -199,8 +199,6 @@ public class Harvester implements Runnable {
 	@Override
 	public void run() {
 
-		logger.info("BL: {} {}", hasBlackMap, blackMap);
-
 		logger.info(
 				"Starting RDF harvester: endpoint [{}], query [{}]," +
 				"URLs [{}], index name [{}], typeName {}",
@@ -361,17 +359,16 @@ public class Harvester implements Runnable {
 								}
 							} catch (Exception e) {}
 						}
-						try {
-							if(blackMap.get(prop.toString()).contains(
-										currValue.substring(1,currValue.length())))
+						String shortValue = currValue.substring(1,currValue.length() - 1);
+
+						if (hasBlackMap && blackMap.containsKey(prop.toString()) &&
+							blackMap.get(prop.toString()).contains(shortValue)) {
 								continue;
-						} catch (NullPointerException npe) {
-							String shortValue = currValue.substring(1,currValue.length() - 1);
-							if(willNormalizeObj &&
-									normalizeObj.containsKey(shortValue)) {
+						} else {
+							if(willNormalizeObj && normalizeObj.containsKey(shortValue)) {
 								results.add("\"" + normalizeObj.get(shortValue) + "\"");
 							} else {
-								results.add(currValue);
+									results.add(currValue);
 							}
 						}
 					}
@@ -476,18 +473,23 @@ public class Harvester implements Runnable {
 				QueryExecution qexec = QueryExecutionFactory.sparqlService(
 						rdfEndpoint,
 						query);
-				try {
-					ResultSet results = qexec.execSelect();
+				boolean keepTrying = true;
+				while(keepTrying) {
+					keepTrying = false;
+					try {
+						ResultSet results = qexec.execSelect();
 
-					if(results.hasNext()) {
-						QuerySolution sol = results.nextSolution();
-						result = EEASettings.parseForJson(
-								sol.getLiteral("r").getLexicalForm());
-						if(!result.isEmpty())
-							return result;
-					}
-				} catch(Exception e){
-				}finally { qexec.close();}
+						if(results.hasNext()) {
+							QuerySolution sol = results.nextSolution();
+							result = EEASettings.parseForJson(
+									sol.getLiteral("r").getLexicalForm());
+							if(!result.isEmpty())
+								return result;
+						}
+					} catch(Exception e){
+						keepTrying = true;
+					}finally { qexec.close();}
+				}
 			} catch (QueryParseException qpe) {
 			}
 		}
