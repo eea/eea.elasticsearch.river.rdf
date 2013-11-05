@@ -97,11 +97,11 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
-	public Harvester rdfPropList(String list) {
-		list = list.substring(1, list.length() - 1);
-		rdfPropList = Arrays.asList(list.split(","));
-		if(!list.isEmpty())
+	public Harvester rdfPropList(List<String> list) {
+		if(!list.isEmpty()) {
 			hasList = true;
+			rdfPropList = new ArrayList<String>(list);
+		}
 		return this;
 	}
 
@@ -319,10 +319,12 @@ public class Harvester implements Runnable {
 			Property prop = st.getPredicate();
 			if(!hasList
 					|| (rdfListType && rdfPropList.contains(prop.toString()))
-					|| (!rdfListType && !rdfPropList.contains(prop.toString()))) {
+					|| (!rdfListType && !rdfPropList.contains(prop.toString()))
+					|| (normalizeProp.containsKey(prop.toString()))) {
 				properties.add(prop);
 			}
 		}
+		logger.info("the props are {}", properties.toString());
 
 		ResIterator rsiter = model.listSubjects();
 

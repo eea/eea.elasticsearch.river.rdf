@@ -18,6 +18,7 @@ import org.elasticsearch.river.RiverName;
 import org.elasticsearch.river.RiverSettings;
 
 import java.util.Map;
+import java.util.List;
 
 public class RDFRiver extends AbstractRiverComponent implements River {
 	private volatile Harvester harvester;
@@ -47,9 +48,6 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 				.rdfQueryType(XContentMapValues.nodeStringValue(
 							eeaSettings.get("queryType"),
 							EEASettings.DEFAULT_QUERYTYPE))
-				.rdfPropList(XContentMapValues.nodeStringValue(
-							eeaSettings.get("proplist"),
-							EEASettings.DEFAULT_PROPLIST))
 				.rdfListType(XContentMapValues.nodeStringValue(
 							eeaSettings.get("listtype"),
 							EEASettings.DEFAULT_LIST_TYPE))
@@ -66,6 +64,10 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 							eeaSettings.get("uriDescription"),
 							EEASettings.DEFAULT_URI_DESCRIPTION));
 
+			if(eeaSettings.containsKey("proplist")) {
+				harvester.rdfPropList((
+							List<String>)eeaSettings.get("proplist"));
+			}
 			if(eeaSettings.containsKey("normProp")) {
 				harvester
 					.rdfNormalizationProp((
