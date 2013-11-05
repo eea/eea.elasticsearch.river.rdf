@@ -3,17 +3,19 @@ Changelog
 
 v1.2 (Unreleased)
 -----------------
-* Bugfix : whitelist only added the first element 
+* Bugfix: whitelist only added the first element 
   [pasoviul - #16693]
-* Feature : separated normalization into prop & obj; Added object normalization
+* Feature: separated normalization into prop & obj; Added object normalization
   [pasoviul - #17076]
-* Feature : added blackMap with values of objects to ignore
+* Feature: added blackMap with values of objects to ignore
   [pasoviul - #17076]
 
 v1.1 (2013-10-07)
 -----------------
-* Duplicate release v1.0
+* Change: duplicate release v1.0
+  [pasoviul]
 
 v1.0 (2013-10-07)
 -----------------
-* Initial release
+* Feature: initial release
+  [pasoviul]
