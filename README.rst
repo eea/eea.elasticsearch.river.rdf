@@ -268,7 +268,25 @@ A blackMap contains all the pairs property - list of objects that are not meant 
       "blackMap" : {"http://www.w3.org/1999/02/22-rdf-syntax-ns#type":["Tracked File"]}
    }
  }'
- curl 
+ 
+WhiteMap
+========
+
+Sometimes the user might only be interested to index some information. A whiteMap contains 
+all the pairs property - list of objects that are meant to be indexed. 
+
+::
+
+ curl -XPUT 'localhost:9200/_river/asspart/_meta' -d '{
+   "type": "eeaRDF",
+   "eeaRDF" : {
+      "endpoint" : "http://semantic.eea.europa.eu/sparql",
+      "queryType" : "construct",
+      "query" : "CONSTRUCT {?s ?p ?o} WHERE { ?s a <http://www.eea.europa.eu/portal_types/AssessmentPart#AssessmentPart> . ?s ?p ?o}",
+      "whiteMap" : {"http://www.w3.org/1999/02/22-rdf-syntax-ns#type":["Assessment Part"]}
+   }
+ }'
+ 
 
 Normalization
 =============
