@@ -63,7 +63,9 @@ public class Harvester implements Runnable {
 	private Boolean toDescribeURIs = false;
 	private Boolean addUriForResource;
 	private Boolean hasBlackMap = false;
+	private Boolean hasWhiteMap = false;
 	private Map<String,List<String>> blackMap;
+	private Map<String,List<String>> whiteMap;
 
 	private Client client;
 	private String indexName;
@@ -150,7 +152,17 @@ public class Harvester implements Runnable {
 				this.blackMap.put(entry.getKey(), (List<String>)entry.getValue());
 			}
 		}
+		return this;
+	}
 
+	public Harvester rdfWhiteMap(Map<String,Object> whiteMap) {
+		if(whiteMap != null || !whiteMap.isEmpty()) {
+			hasWhiteMap = true;
+			this.whiteMap =  new HashMap<String,List<String>>();
+			for(Map.Entry<String,Object> entry : whiteMap.entrySet()) {
+				this.whiteMap.put(entry.getKey(), (List<String>)entry.getValue());
+			}
+		}
 		return this;
 	}
 
@@ -363,8 +375,10 @@ public class Harvester implements Runnable {
 						}
 						String shortValue = currValue.substring(1,currValue.length() - 1);
 
-						if (hasBlackMap && blackMap.containsKey(prop.toString()) &&
-							blackMap.get(prop.toString()).contains(shortValue)) {
+						if((hasWhiteMap && whiteMap.containsKey(prop.toString()) &&
+								!whiteMap.get(prop.toString()).contains(shortValue)) ||
+							 (hasBlackMap && blackMap.containsKey(prop.toString()) &&
+								blackMap.get(prop.toString()).contains(shortValue))) {
 								continue;
 						} else {
 							if(willNormalizeObj && normalizeObj.containsKey(shortValue)) {
