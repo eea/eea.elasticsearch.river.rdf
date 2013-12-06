@@ -8,8 +8,15 @@ public abstract class EEASettings {
 	public final static int DEFAULT_BULK_REQ = 30;
 	public final static String DEFAULT_QUERY = "";
 	public final static String DEFAULT_ENDPOINT =	"http://semantic.eea.europa.eu/sparql";
-	public final static String DEFAULT_QUERYTYPE = "select";
-	public final static String DEFAULT_PROPLIST = "[]";
+	public final static String DEFAULT_QUERYTYPE = "construct";
+	public final static String DEFAULT_PROPLIST = "[" +
+		"\"http://purl.org/dc/terms/spatial\", " +
+		"\"http://purl.org/dc/terms/creator\", " +
+		"\"http://www.w3.org/1999/02/22-rdf-syntax-ns#type\", " +
+		"\"http://purl.org/dc/terms/issued\", " +
+		"\"http://purl.org/dc/terms/title\", " +
+		"\"http://www.w3.org/1999/02/22-rdf-syntax-ns#about\", " +
+		"\"language\", \"topic\"]";
 	public final static String DEFAULT_LIST_TYPE = "white";
 	public final static Boolean DEFAULT_ADD_LANGUAGE = true;
 	public final static String DEFAULT_LANGUAGE = "\"en\"";

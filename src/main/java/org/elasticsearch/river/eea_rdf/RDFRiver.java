@@ -19,6 +19,7 @@ import org.elasticsearch.river.RiverSettings;
 
 import java.util.Map;
 import java.util.List;
+import java.lang.System;
 
 public class RDFRiver extends AbstractRiverComponent implements River {
 	private volatile Harvester harvester;
@@ -37,6 +38,11 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 													settings().get("eeaRDF");
 
 			harvester
+				.rdfIndexType(XContentMapValues.nodeStringValue(
+							eeaSettings.get("indexType"), "full"))
+				.rdfStartTime(XContentMapValues.nodeStringValue(
+							eeaSettings.get("startTime"),
+							String.valueOf(System.currentTimeMillis())))
 				.rdfUrl(XContentMapValues.nodeStringValue(
 							eeaSettings.get("uris"), "[]"))
 				.rdfEndpoint(XContentMapValues.nodeStringValue(

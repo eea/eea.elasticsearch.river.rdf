@@ -36,16 +36,21 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.NoSuchElementException;
+import java.util.Date;
 import java.lang.StringBuffer;
 import java.lang.Exception;
 import java.lang.Integer;
 import java.lang.Byte;
 import java.lang.ClassCastException;
+import java.text.SimpleDateFormat;
+
 
 public class Harvester implements Runnable {
 
 	private final ESLogger logger = Loggers.getLogger(Harvester.class);
 
+	private Boolean indexAll = true;
+	private String startTime;
 	private List<String> rdfUrls;
 	private String rdfEndpoint;
 	private String rdfQuery;
@@ -194,13 +199,14 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
-	public Harvester maxBulkActions(int maxBulkActions) {
-		this.maxBulkActions = maxBulkActions;
+	public Harvester rdfIndexType(String indexType) {
+		if (indexType.equals("sync"))
+			this.indexAll = false;
 		return this;
 	}
 
-	public Harvester maxConcurrentRequests(int maxConcurrentRequests) {
-		this.maxConcurrentRequests = maxConcurrentRequests;
+	public Harvester rdfStartTime(String startTime) {
+		this.startTime = startTime;
 		return this;
 	}
 
@@ -210,6 +216,119 @@ public class Harvester implements Runnable {
 
 	@Override
 	public void run() {
+		if(indexAll)
+			runIndexAll();
+		else
+			runSync();
+		return ;
+	}
+
+	public void runSync() {
+		logger.info(
+				"Starting RDF synchronizer: from [{}], endpoint [{}], " +
+				"index name [{}], type name [{}]",
+				startTime, rdfEndpoint,	indexName, typeName);
+
+		long currentTime = System.currentTimeMillis();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+		Date now = new Date(currentTime);
+		Date lastUpdate = now;
+		try {
+			lastUpdate = sdf.parse(startTime);
+		} catch (Exception e){}
+
+		logger.info("Current time is {}, could go for {}",
+				new TimeValue(currentTime),
+				now);
+
+		if(now.after(lastUpdate)) {
+			sync();
+		}
+		if(this.closed){
+			logger.info("Ended synchronization from [{}], for endpoint [{}]," +
+					"at index name {}, type name {}",
+					lastUpdate, rdfEndpoint, indexName, typeName);
+			return;
+		}
+	}
+
+	public void sync() {
+		rdfQuery = "PREFIX xsd:<http://www.w3.org/2001/XMLSchema#> " +
+			"SELECT ?resource WHERE { " +
+			"?resource <http://cr.eionet.europa.eu/ontologies/contreg.rdf#lastRefreshed> ?time ." +
+			" FILTER (?time > xsd:dateTime(\"" + startTime + "\")) . " +
+			"FILTER (strStarts(str(?resource),'http://www.eea.europa.eu'))}";
+
+		try {
+			Query query = QueryFactory.create(rdfQuery);
+			QueryExecution qexec = QueryExecutionFactory.sparqlService(
+					rdfEndpoint, query);
+			try {
+				ResultSet results = qexec.execSelect();
+				Model sparqlModel = ModelFactory.createDefaultModel();
+				Graph graph = sparqlModel.getGraph();
+				rdfUrls = new ArrayList<String>();
+
+				while(results.hasNext()) {
+					QuerySolution sol = results.nextSolution();
+					Iterator<String> iterS = sol.varNames();
+					try {
+						String value = sol.getResource("resource").toString();
+						rdfUrls.add(value.substring(0, value.length() - 6));
+					} catch (NoSuchElementException nsee) {}
+				}
+			} catch (Exception e) {
+				logger.info(
+						"Encountered a [{}] while querying the endpoint for sync", e);
+			} finally {
+				qexec.close();
+			}
+		} catch (QueryParseException qpe) {
+			logger.info(
+					"Could not parse [{}]. Please provide a relevant quey	{}",
+					rdfQuery, qpe);
+		}
+		for (String uri : rdfUrls) {
+			//make query for each/all entries
+			switch(rdfQueryType) {
+				case 0: rdfQuery = "CONSTRUCT {<" + uri + "> ?p ?o WHERE { <" + uri +
+								"> ?p ?o}";
+								break;
+				case 1: rdfQuery = "SELECT <" + uri + "> as ?s ?p ?o WHERE { <" + uri +
+								"> ?p ?o}";
+								break;
+				case 2: rdfQuery = "DESCRIBE <" + uri + ">";
+								break;
+				default: rdfQuery = "";
+								 break;
+			}
+			rdfQuery = "DESCRIBE <" + uri + ">";
+			//execute it
+			//TODO: You are here
+			try {
+				Query query = QueryFactory.create(rdfQuery);
+				QueryExecution qexec = QueryExecutionFactory.sparqlService(
+						rdfEndpoint, query);
+				try {
+					Model constructModel = ModelFactory.createDefaultModel();
+
+					qexec.execConstruct(constructModel);
+					BulkRequestBuilder bulkRequest = client.prepareBulk();
+					addModelToES(constructModel, bulkRequest);
+				} catch (Exception e) {
+					logger.info(
+							"Encountered a [{}] while querying the endpoint	for sync", e);
+				} finally {	qexec.close(); }
+			} catch (QueryParseException  qpe) {
+				logger.info(
+						"Could not parse [{}]. Please provide a relevant quey	{}",
+						rdfQuery, qpe);
+			}
+
+		}
+	}
+
+	public void runIndexAll() {
 
 		logger.info(
 				"Starting RDF harvester: endpoint [{}], query [{}]," +
@@ -240,64 +359,75 @@ public class Harvester implements Runnable {
 		}
 	}
 
+
+	private void harvestWithSelect(QueryExecution qexec) {
+		Model sparqlModel = ModelFactory.createDefaultModel();
+		Graph	graph = sparqlModel.getGraph();
+
+		try {
+			ResultSet results = qexec.execSelect();
+
+			while(results.hasNext()) {
+				QuerySolution sol = results.nextSolution();
+				Iterator<String> iterS = sol.varNames();
+				/**
+				 * Each QuerySolution is a triple
+				 */
+				try {
+					String subject = sol.getResource("s").toString();
+					String predicate = sol.getResource("p").toString();
+					String object = sol.get("o").toString();
+
+					graph.add(new Triple(
+								NodeFactory.createURI(subject),
+								NodeFactory.createURI(predicate),
+								NodeFactory.createLiteral(object)));
+
+				} catch(NoSuchElementException nsee) {
+					logger.info("Could not index [{}] / {}: Query result was" +
+							"not a triple",	sol.toString(), nsee.toString());
+				}
+			}
+		} catch(Exception e) {
+			logger.info("Encountered a [{}] when quering the endpoint", e.toString());
+		} finally { qexec.close(); }
+
+		BulkRequestBuilder bulkRequest = client.prepareBulk();
+		addModelToES(sparqlModel, bulkRequest);
+	}
+
+	private void harvestWithConstruct(QueryExecution qexec) {
+		Model sparqlModel = ModelFactory.createDefaultModel();
+		try {
+			qexec.execConstruct(sparqlModel);
+		} catch (Exception e) {
+			logger.info("Encountered a [{}] when quering the endpoint", e.toString());
+		} finally { qexec.close(); }
+
+		BulkRequestBuilder bulkRequest = client.prepareBulk();
+		addModelToES(sparqlModel, bulkRequest);
+	}
+
 	private void harvestFromEndpoint() {
 		try {
 			Query query = QueryFactory.create(rdfQuery);
 			QueryExecution qexec = QueryExecutionFactory.sparqlService(
 					rdfEndpoint,
 					query);
-			if(rdfQueryType == 1) {
-				try {
-					ResultSet results = qexec.execSelect();
-					Model sparqlModel = ModelFactory.createDefaultModel();
-
-					Graph graph = sparqlModel.getGraph();
-
-					while(results.hasNext()) {
-						QuerySolution sol = results.nextSolution();
-						Iterator<String> iterS = sol.varNames();
-
-						/**
-						 * Each QuerySolution is a triple
-						 */
-						try {
-							String subject = sol.getResource("s").toString();
-							String predicate = sol.getResource("p").toString();
-							String object = sol.get("o").toString();
-
-							graph.add(new Triple(
-										NodeFactory.createURI(subject),
-										NodeFactory.createURI(predicate),
-										NodeFactory.createLiteral(object)));
-
-						} catch(NoSuchElementException nsee) {
-							logger.info("Could not index [{}] / {}: Query result was" +
-									"not a triple",	sol.toString(), nsee.toString());
-						}
-
-						BulkRequestBuilder bulkRequest = client.prepareBulk();
-						addModelToES(sparqlModel, bulkRequest);
-					}
-				} catch(Exception e) {
-					logger.info("Encountered a [{}] when quering the endpoint", e.toString());
-				} finally { qexec.close();}
+			switch(rdfQueryType) {
+				case 0: harvestWithConstruct(qexec);
+								break;
+				case 1: harvestWithSelect(qexec);
+								break;
+				case 2: //TODO implement harvestWithDescribe
+								break;
+				default: break;
 			}
-			else{
-				try{
-					Model constructModel = ModelFactory.createDefaultModel();
-					qexec.execConstruct(constructModel);
 
-					BulkRequestBuilder bulkRequest = client.prepareBulk();
-					addModelToES(constructModel, bulkRequest);
-
-				} catch (Exception e) {
-					logger.info("Could not index due to [{}]", e.toString());
-				} finally {qexec.close();}
-			}
 		} catch (QueryParseException qpe) {
 			logger.info(
-					"Could not parse [{}]. Please provide a relevant query",
-					rdfQuery);
+					"Could not parse [{}]. Please provide a relevant query {}",
+					rdfQuery, qpe);
 		}
 	}
 
@@ -336,7 +466,6 @@ public class Harvester implements Runnable {
 				properties.add(prop);
 			}
 		}
-		logger.info("the props are {}", properties.toString());
 
 		ResIterator rsiter = model.listSubjects();
 
