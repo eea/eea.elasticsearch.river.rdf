@@ -23,7 +23,7 @@ Prerequisites:
 
 Binaries for this plugin are available at:
 
-https://github.com/eea/eea.elasticsearch.river.rdf/blob/master/target/releases/eea-rdf-river-plugin-1.0.zip
+https://github.com/eea/eea.elasticsearch.river.rdf/blob/master/target/releases/
 
 In order to install the plugin, you first need to have
 `Elasticsearch <http://www.elasticsearch.org/download/>`_ installed. Just
