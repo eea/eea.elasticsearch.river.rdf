@@ -41,8 +41,7 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 				.rdfIndexType(XContentMapValues.nodeStringValue(
 							eeaSettings.get("indexType"), "full"))
 				.rdfStartTime(XContentMapValues.nodeStringValue(
-							eeaSettings.get("startTime"),
-							String.valueOf(System.currentTimeMillis())))
+							eeaSettings.get("startTime"),""))
 				.rdfUrl(XContentMapValues.nodeStringValue(
 							eeaSettings.get("uris"), "[]"))
 				.rdfEndpoint(XContentMapValues.nodeStringValue(

@@ -8,6 +8,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.*;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.river.eea_rdf.settings.EEASettings;
 
 import org.apache.jena.riot.RDFDataMgr ;
@@ -43,7 +44,7 @@ import java.lang.Integer;
 import java.lang.Byte;
 import java.lang.ClassCastException;
 import java.text.SimpleDateFormat;
-
+import java.io.IOException;
 
 public class Harvester implements Runnable {
 
@@ -216,10 +217,23 @@ public class Harvester implements Runnable {
 
 	@Override
 	public void run() {
+		long currentTime = System.currentTimeMillis();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+		Date now = new Date(currentTime);
+
 		if(indexAll)
 			runIndexAll();
 		else
 			runSync();
+		BulkRequestBuilder bulkRequest = client.prepareBulk();
+		try {
+			bulkRequest.add(client.prepareIndex(indexName, "stats", "1")
+					.setSource(jsonBuilder()
+						.startObject()
+						.field("last_update", sdf.format(now))
+					.endObject()));
+		} catch (IOException ioe) {}
+		BulkResponse bulkResponse = bulkRequest.execute().actionGet();
 		return ;
 	}
 
@@ -229,21 +243,23 @@ public class Harvester implements Runnable {
 				"index name [{}], type name [{}]",
 				startTime, rdfEndpoint,	indexName, typeName);
 
-		long currentTime = System.currentTimeMillis();
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-		Date now = new Date(currentTime);
-		Date lastUpdate = now;
+		Date lastUpdate = new Date(System.currentTimeMillis());
+
+		if(startTime.isEmpty()) {
+			GetResponse response = client.prepareGet(indexName, "stats", "1")
+				.setFields("last_update")
+				.execute()
+				.actionGet();
+			startTime = (String)response.getField("last_update").getValue();
+		}
+
 		try {
 			lastUpdate = sdf.parse(startTime);
 		} catch (Exception e){}
 
-		logger.info("Current time is {}, could go for {}",
-				new TimeValue(currentTime),
-				now);
+		sync();
 
-		if(now.after(lastUpdate)) {
-			sync();
-		}
 		if(this.closed){
 			logger.info("Ended synchronization from [{}], for endpoint [{}]," +
 					"at index name {}, type name {}",
@@ -303,8 +319,6 @@ public class Harvester implements Runnable {
 								 break;
 			}
 			rdfQuery = "DESCRIBE <" + uri + ">";
-			//execute it
-			//TODO: You are here
 			try {
 				Query query = QueryFactory.create(rdfQuery);
 				QueryExecution qexec = QueryExecutionFactory.sparqlService(
@@ -340,6 +354,7 @@ public class Harvester implements Runnable {
 				logger.info("Ended harvest for endpoint [{}], query [{}]," +
 						"URLs [{}], index name {}, type name {}",
 						rdfEndpoint, rdfQuery, rdfUrls, indexName, typeName);
+
 				return;
 			}
 
