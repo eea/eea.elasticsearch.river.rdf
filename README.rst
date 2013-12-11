@@ -23,7 +23,7 @@ Prerequisites:
 
 Binaries for this plugin are available at:
 
-https://github.com/eea/eea.elasticsearch.river.rdf/blob/master/target/releases/eea-rdf-river-plugin-1.0.zip
+https://github.com/eea/eea.elasticsearch.river.rdf/blob/master/target/releases/
 
 In order to install the plugin, you first need to have
 `Elasticsearch <http://www.elasticsearch.org/download/>`_ installed. Just
@@ -341,6 +341,26 @@ replaced with given values no matter of the property whose value they represent.
             "Organisation" : "Organization",
             "Quick Event" : "Event"
       }
+   }
+ }'
+ 
+ 
+Synchronization with an endpoint
+================================
+
+It is possible to query an endpoint for the latest changes and only index these instead of 
+all the resources. This can be specified by setting the value of 'indexType' to 'sync' instead
+of 'full', which is the default one. A value for 'startTime' should be provided because the plugin 
+queries the endpoint for updates that occured after that moment in time.
+
+::
+
+ curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+   "type" : "eeaRDF",
+   "eeaRDF" : {
+      "indexType" : "sync",
+      "endpoint" : "http://semantic.eea.europa.eu/sparql",
+      "startTime" : "20131206T15:00:00"
    }
  }'
 
