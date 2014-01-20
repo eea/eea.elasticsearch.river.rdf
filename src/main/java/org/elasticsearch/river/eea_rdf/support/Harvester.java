@@ -1,11 +1,9 @@
 package org.elasticsearch.river.eea_rdf.support;
 
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.client.Client;
 import static org.elasticsearch.common.xcontent.XContentFactory.*;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
@@ -22,11 +20,9 @@ import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QueryParseException;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.graph.GraphMaker;
 import com.hp.hpl.jena.graph.Graph;
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.graph.NodeFactory;
-import com.hp.hpl.jena.datatypes.RDFDatatype;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -42,7 +38,6 @@ import java.lang.StringBuffer;
 import java.lang.Exception;
 import java.lang.Integer;
 import java.lang.Byte;
-import java.lang.ClassCastException;
 import java.text.SimpleDateFormat;
 import java.io.IOException;
 
@@ -76,8 +71,6 @@ public class Harvester implements Runnable {
 	private Client client;
 	private String indexName;
 	private String typeName;
-	private int maxBulkActions;
-	private int maxConcurrentRequests;
 
 	private Boolean closed = false;
 
@@ -564,6 +557,12 @@ public class Harvester implements Runnable {
 		}
 	}
 
+	/**
+	 * Converts a map of results to a String JSON representation for it
+	 * @param map a map that matches properties with an ArrayList of 
+	 * values
+	 * @return the JSON representation for the map, as a String
+	 */
 	private String mapToString(Map<String, ArrayList<String>> map) {
 		StringBuffer result = new StringBuffer("{");
 		for(Map.Entry<String, ArrayList<String>> entry : map.entrySet()) {
@@ -577,6 +576,19 @@ public class Harvester implements Runnable {
 		return result.toString();
 	}
 
+	/**
+	 * Builds a String result for Elastic Search from an RDFNode 
+	 * @param node An RDFNode representing the value of a property for a given 
+	 * resource
+	 * @return If the RDFNode has a Literal value, among Boolean, Byte, Double, 
+	 * Float, Integer Long, Short, this value is returned, converted to String
+	 * <p>If the RDFNode has a String Literal value, this value will be returned, 
+	 * surrounded by double quotes </p> 
+	 * <p>If the RDFNode has a Resource value (URI) and toDescribeURIs is set to 
+	 * true, the value of @getLabelForUri for the resource is returned, 
+	 * surrounded by double quotes.</p> 
+	 * Otherwise, the URI will be returned
+	 */
 	private String getStringForResult(RDFNode node) {
 		String result = "";
 		boolean quote = false;
@@ -584,7 +596,7 @@ public class Harvester implements Runnable {
 		if(node.isLiteral()) {
 			Object literalValue = node.asLiteral().getValue();
 			try {
-				Class literalJavaClass = node.asLiteral()
+				Class<?> literalJavaClass = node.asLiteral()
 					.getDatatype()
 					.getJavaClass();
 
@@ -622,7 +634,21 @@ public class Harvester implements Runnable {
 	}
 
 
-  private String getLabelForUri(String uri) {
+	/**
+	 * Returns the string value of the first of the properties in the uriDescriptionList
+	 * for the given resource (as an URI). In case the resource does not have any of the 
+	 * properties mentioned, its URI is returned. The value is obtained by querying the
+	 * endpoint and the endpoint is queried repeatedly until it gives a response (value or
+	 * the lack of it)
+	 * 
+	 * It is highly recommended that the list contains properties like labels or titles, with
+	 * test values.
+	 * 
+	 * @param uri - the URI for which a label is required
+	 * @return a String value, either a label for the parameter or its value if no label is 
+	 * obtained from the endpoint
+	 */
+	private String getLabelForUri(String uri) {
 		String result = "";
 		for(String prop:uriDescriptionList) {
 			String innerQuery = "SELECT ?r WHERE {<" + uri + "> <" +

@@ -9,6 +9,8 @@ release
 /target/maven-archiver
 /target/maven-status
 /target/test-classes
-/src/test/
+/src/test/java/org/elasticsearch/plugin/
 pom.xml.versionsBackup
 pom.xml.releaseBackup
+.classpath
+.project

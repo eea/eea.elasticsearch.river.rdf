@@ -4,7 +4,6 @@ import org.elasticsearch.client.Client;
 
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 
 import org.elasticsearch.ElasticSearchIllegalArgumentException;
@@ -19,7 +18,6 @@ import org.elasticsearch.river.RiverSettings;
 
 import java.util.Map;
 import java.util.List;
-import java.lang.System;
 
 public class RDFRiver extends AbstractRiverComponent implements River {
 	private volatile Harvester harvester;

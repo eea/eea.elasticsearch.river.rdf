@@ -1,4 +1,4 @@
-package org.elasticsearch.plugin.river.eea_rdf.eea_rdf_river_plugin;
+package org.elasticsearch.plugin.river.eea_rdf;
 
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.plugins.AbstractPlugin;
