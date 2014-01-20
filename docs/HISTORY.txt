@@ -3,6 +3,8 @@ Changelog
 
 v1.2 (Unreleased)
 -----------------
+* Feature: added synchronization option for the endpoint
+  [pasoviul - #17426]
 * Feature: added whiteMap with values of objects to keep
   [pasoviul - #17459]
 * Bugfix: whitelist only added the first element 
