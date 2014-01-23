@@ -1,9 +1,7 @@
 package org.elasticsearch.river.eea_rdf.support;
 
-
 import junit.framework.TestCase;
 
-import org.elasticsearch.common.logging.Loggers;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -46,7 +44,6 @@ public class HarvesterTest extends TestCase {
 		values.add("onevalue");
 		testMap.put("one_val_prop", values);
 		result = "{\"one_val_prop\" : onevalue}\n";
-		System.out.println(testMap.toString());
 		assertEquals(result, method.invoke(harvester, testMap));
 		//More Values
 		testMap.clear();

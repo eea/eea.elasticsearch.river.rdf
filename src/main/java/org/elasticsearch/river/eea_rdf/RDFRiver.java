@@ -19,6 +19,11 @@ import org.elasticsearch.river.RiverSettings;
 import java.util.Map;
 import java.util.List;
 
+/**
+ * 
+ * @author iulia
+ *
+ */
 public class RDFRiver extends AbstractRiverComponent implements River {
 	private volatile Harvester harvester;
 	private volatile Thread harvesterThread;

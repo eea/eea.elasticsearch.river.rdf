@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.NoSuchElementException;
@@ -41,6 +40,11 @@ import java.lang.Byte;
 import java.text.SimpleDateFormat;
 import java.io.IOException;
 
+/**
+ * 
+ * @author iulia
+ *
+ */
 public class Harvester implements Runnable {
 
 	private final ESLogger logger = Loggers.getLogger(Harvester.class);
@@ -274,13 +278,10 @@ public class Harvester implements Runnable {
 					rdfEndpoint, query);
 			try {
 				ResultSet results = qexec.execSelect();
-				Model sparqlModel = ModelFactory.createDefaultModel();
-				Graph graph = sparqlModel.getGraph();
 				rdfUrls = new ArrayList<String>();
 
 				while(results.hasNext()) {
 					QuerySolution sol = results.nextSolution();
-					Iterator<String> iterS = sol.varNames();
 					try {
 						String value = sol.getResource("resource").toString();
 						rdfUrls.add(value.substring(0, value.length() - 6));
@@ -377,7 +378,6 @@ public class Harvester implements Runnable {
 
 			while(results.hasNext()) {
 				QuerySolution sol = results.nextSolution();
-				Iterator<String> iterS = sol.varNames();
 				/**
 				 * Each QuerySolution is a triple
 				 */
@@ -526,7 +526,7 @@ public class Harvester implements Runnable {
 						}
 					}
 
-					String property, value;
+					String property;
 
 					if(!results.isEmpty()) {
 						if(willNormalizeProp &&	normalizeProp.containsKey(prop.toString())) {
@@ -680,21 +680,5 @@ public class Harvester implements Runnable {
 			}
 		}
 		return uri;
-	}
-
-	@Deprecated
-	private void delay(String reason, String url) {
-		int time = 1000;
-		if(!url.isEmpty()) {
-			logger.info("Info: {}, waiting for url [{}] ", reason, url);
-		}
-		else {
-			logger.info("Info: {}", reason);
-			time = 2000;
-		}
-
-		try {
-			Thread.sleep(time);
-		} catch (InterruptedException e) {}
 	}
 }

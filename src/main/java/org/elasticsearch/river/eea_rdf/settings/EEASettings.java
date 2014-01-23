@@ -1,5 +1,10 @@
 package org.elasticsearch.river.eea_rdf.settings;
 
+/**
+ * 
+ * @author iulia
+ *
+ */
 public abstract class EEASettings {
 
 	public final static String DEFAULT_INDEX_NAME = "rdfdata";

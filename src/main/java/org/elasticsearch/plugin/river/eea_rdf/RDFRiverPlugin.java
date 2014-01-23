@@ -1,14 +1,19 @@
-package org.elasticsearch.plugin.river.eea_rdf;
+package org.elasticsearch.plugin.river.eea_rdf.eea_rdf_river_plugin;
 
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.plugins.AbstractPlugin;
 import org.elasticsearch.river.RiversModule;
 import org.elasticsearch.river.eea_rdf.RDFRiverModule;
 
+/**
+ *
+ * @author iulia
+ *
+ */
 public class RDFRiverPlugin extends AbstractPlugin {
 
 	@Inject
-  public RDFRiverPlugin(){
+	public RDFRiverPlugin(){
 	}
 
 	@Override
@@ -17,7 +22,7 @@ public class RDFRiverPlugin extends AbstractPlugin {
 	}
 
 	@Override
-  public String description() {
+	public String description() {
 		return "Turtle RDF River Plugin";
 	}
 
