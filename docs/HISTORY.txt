@@ -1,7 +1,10 @@
 Changelog
 =========
+v1.3 (2014-06-27)
+* Feature: added delete option for when the endpoint does not contain modified resources
+  [pasoviul - #18928]
 
-v1.2 (Unreleased)
+v1.2 (23-01-2014)
 -----------------
 * Feature: added synchronization option for the endpoint
   [pasoviul - #17426]

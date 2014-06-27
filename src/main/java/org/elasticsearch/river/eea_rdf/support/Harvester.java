@@ -7,6 +7,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.*;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.river.eea_rdf.settings.EEASettings;
 
 import org.apache.jena.riot.RDFDataMgr ;
@@ -41,7 +42,7 @@ import java.text.SimpleDateFormat;
 import java.io.IOException;
 
 /**
- * 
+ *
  * @author iulia
  *
  */
@@ -51,7 +52,7 @@ public class Harvester implements Runnable {
 
 	private Boolean indexAll = true;
 	private String startTime;
-	private List<String> rdfUrls;
+	private Set<String> rdfUrls;
 	private String rdfEndpoint;
 	private String rdfQuery;
 	private int rdfQueryType;
@@ -80,7 +81,7 @@ public class Harvester implements Runnable {
 
 	public Harvester rdfUrl(String url) {
 		url = url.substring(1, url.length() - 1);
-		rdfUrls = Arrays.asList(url.split(","));
+		rdfUrls = new HashSet<String>(Arrays.asList(url.split(",")));
 		return this;
 	}
 
@@ -152,7 +153,8 @@ public class Harvester implements Runnable {
 			hasBlackMap = true;
 			this.blackMap =  new HashMap<String,List<String>>();
 			for(Map.Entry<String,Object> entry : blackMap.entrySet()) {
-				this.blackMap.put(entry.getKey(), (List<String>)entry.getValue());
+				this.blackMap.put(
+					entry.getKey(), (List<String>)entry.getValue());
 			}
 		}
 		return this;
@@ -163,7 +165,8 @@ public class Harvester implements Runnable {
 			hasWhiteMap = true;
 			this.whiteMap =  new HashMap<String,List<String>>();
 			for(Map.Entry<String,Object> entry : whiteMap.entrySet()) {
-				this.whiteMap.put(entry.getKey(), (List<String>)entry.getValue());
+				this.whiteMap.put(
+					entry.getKey(), (List<String>)entry.getValue());
 			}
 		}
 		return this;
@@ -278,14 +281,23 @@ public class Harvester implements Runnable {
 					rdfEndpoint, query);
 			try {
 				ResultSet results = qexec.execSelect();
-				rdfUrls = new ArrayList<String>();
+				rdfUrls = new HashSet<String>();
 
 				while(results.hasNext()) {
 					QuerySolution sol = results.nextSolution();
 					try {
 						String value = sol.getResource("resource").toString();
-						rdfUrls.add(value.substring(0, value.length() - 6));
-					} catch (NoSuchElementException nsee) {}
+						if (value.contains("login_form")) {
+							continue;
+						}
+						if (value.endsWith("/@@rdf")) {
+							value = value.substring(0, value.length() - 6);
+						}
+						rdfUrls.add(value);
+					} catch (NoSuchElementException nsee) {
+						logger.info(
+							"Encountered a NoSuchElementException: " + nsee);
+					}
 				}
 			} catch (Exception e) {
 				logger.info(
@@ -298,14 +310,15 @@ public class Harvester implements Runnable {
 					"Could not parse [{}]. Please provide a relevant quey	{}",
 					rdfQuery, qpe);
 		}
+
 		for (String uri : rdfUrls) {
 			//make query for each/all entries
 			switch(rdfQueryType) {
-				case 0: rdfQuery = "CONSTRUCT {<" + uri + "> ?p ?o WHERE { <" + uri +
-								"> ?p ?o}";
+				case 0: rdfQuery = "CONSTRUCT {<" + uri + "> ?p ?o WHERE { <" +
+								uri + "> ?p ?o}";
 								break;
-				case 1: rdfQuery = "SELECT <" + uri + "> as ?s ?p ?o WHERE { <" + uri +
-								"> ?p ?o}";
+				case 1: rdfQuery = "SELECT <" + uri + "> as ?s ?p ?o WHERE { <" +
+								uri + "> ?p ?o}";
 								break;
 				case 2: rdfQuery = "DESCRIBE <" + uri + ">";
 								break;
@@ -321,6 +334,19 @@ public class Harvester implements Runnable {
 					Model constructModel = ModelFactory.createDefaultModel();
 
 					qexec.execConstruct(constructModel);
+
+					if (constructModel.isEmpty() && !indexAll) {
+						//delete the resource
+						logger.info("Deleting [{}] ", uri);
+
+						DeleteResponse response = client.prepareDelete(
+							indexName,
+							typeName,
+							uri)
+        						.execute()
+        						.actionGet();
+					}
+
 					BulkRequestBuilder bulkRequest = client.prepareBulk();
 					addModelToES(constructModel, bulkRequest);
 				} catch (Exception e) {
@@ -371,7 +397,7 @@ public class Harvester implements Runnable {
 
 	private void harvestWithSelect(QueryExecution qexec) {
 		Model sparqlModel = ModelFactory.createDefaultModel();
-		Graph	graph = sparqlModel.getGraph();
+		Graph graph = sparqlModel.getGraph();
 
 		try {
 			ResultSet results = qexec.execSelect();
@@ -397,7 +423,8 @@ public class Harvester implements Runnable {
 				}
 			}
 		} catch(Exception e) {
-			logger.info("Encountered a [{}] when quering the endpoint", e.toString());
+			logger.info(
+				"Encountered a [{}] when quering the endpoint", e.toString());
 		} finally { qexec.close(); }
 
 		BulkRequestBuilder bulkRequest = client.prepareBulk();
@@ -409,7 +436,8 @@ public class Harvester implements Runnable {
 		try {
 			qexec.execConstruct(sparqlModel);
 		} catch (Exception e) {
-			logger.info("Encountered a [{}] when quering the endpoint", e.toString());
+			logger.info(
+				"Encountered a [{}] when quering the endpoint", e.toString());
 		} finally { qexec.close(); }
 
 		BulkRequestBuilder bulkRequest = client.prepareBulk();
@@ -510,7 +538,9 @@ public class Harvester implements Runnable {
 								}
 							} catch (Exception e) {}
 						}
-						String shortValue = currValue.substring(1,currValue.length() - 1);
+						String shortValue = currValue.substring(
+												1,
+												currValue.length() - 1);
 
 						if((hasWhiteMap && whiteMap.containsKey(prop.toString()) &&
 								!whiteMap.get(prop.toString()).contains(shortValue)) ||
@@ -518,8 +548,10 @@ public class Harvester implements Runnable {
 								blackMap.get(prop.toString()).contains(shortValue))) {
 								continue;
 						} else {
-							if(willNormalizeObj && normalizeObj.containsKey(shortValue)) {
-								results.add("\"" + normalizeObj.get(shortValue) + "\"");
+							if(willNormalizeObj &&
+								normalizeObj.containsKey(shortValue)) {
+								results.add("\"" +
+									normalizeObj.get(shortValue) + "\"");
 							} else {
 									results.add(currValue);
 							}
@@ -529,7 +561,8 @@ public class Harvester implements Runnable {
 					String property;
 
 					if(!results.isEmpty()) {
-						if(willNormalizeProp &&	normalizeProp.containsKey(prop.toString())) {
+						if(willNormalizeProp &&
+							normalizeProp.containsKey(prop.toString())) {
 							property = normalizeProp.get(prop.toString());
 							if(jsonMap.containsKey(property)) {
 								results.addAll(jsonMap.get(property));
@@ -548,10 +581,12 @@ public class Harvester implements Runnable {
 				if(rdfLanguages.isEmpty() && !language.isEmpty())
 					rdfLanguages.add(language);
 				if(!rdfLanguages.isEmpty())
-					jsonMap.put("language", new ArrayList<String>(rdfLanguages));
+					jsonMap.put(
+						"language", new ArrayList<String>(rdfLanguages));
 			}
 
-			bulkRequest.add(client.prepareIndex(indexName, typeName, rs.toString())
+			bulkRequest.add(client.prepareIndex(indexName, typeName,
+							rs.toString())
 				.setSource(mapToString(jsonMap)));
 			BulkResponse bulkResponse = bulkRequest.execute().actionGet();
 		}
@@ -559,7 +594,7 @@ public class Harvester implements Runnable {
 
 	/**
 	 * Converts a map of results to a String JSON representation for it
-	 * @param map a map that matches properties with an ArrayList of 
+	 * @param map a map that matches properties with an ArrayList of
 	 * values
 	 * @return the JSON representation for the map, as a String
 	 */
@@ -568,25 +603,27 @@ public class Harvester implements Runnable {
 		for(Map.Entry<String, ArrayList<String>> entry : map.entrySet()) {
 			ArrayList<String> value = entry.getValue();
 			if(value.size() == 1)
-				result.append("\"" + entry.getKey() + "\" : " + value.get(0) + ",\n");
+				result.append("\"" + entry.getKey() + "\" : " +
+					value.get(0) + ",\n");
 			else
-				result.append("\"" + entry.getKey() + "\" : " + value.toString() + ",\n");
+				result.append("\"" + entry.getKey() + "\" : " +
+					value.toString() + ",\n");
 		}
 		result.setCharAt(result.length() - 2, '}');
 		return result.toString();
 	}
 
 	/**
-	 * Builds a String result for Elastic Search from an RDFNode 
-	 * @param node An RDFNode representing the value of a property for a given 
+	 * Builds a String result for Elastic Search from an RDFNode
+	 * @param node An RDFNode representing the value of a property for a given
 	 * resource
-	 * @return If the RDFNode has a Literal value, among Boolean, Byte, Double, 
+	 * @return If the RDFNode has a Literal value, among Boolean, Byte, Double,
 	 * Float, Integer Long, Short, this value is returned, converted to String
-	 * <p>If the RDFNode has a String Literal value, this value will be returned, 
-	 * surrounded by double quotes </p> 
-	 * <p>If the RDFNode has a Resource value (URI) and toDescribeURIs is set to 
-	 * true, the value of @getLabelForUri for the resource is returned, 
-	 * surrounded by double quotes.</p> 
+	 * <p>If the RDFNode has a String Literal value, this value will be
+	 * returned, surrounded by double quotes </p>
+	 * <p>If the RDFNode has a Resource value (URI) and toDescribeURIs is set
+	 * to true, the value of @getLabelForUri for the resource is returned,
+	 * surrounded by double quotes.</p>
 	 * Otherwise, the URI will be returned
 	 */
 	private String getStringForResult(RDFNode node) {
@@ -635,18 +672,19 @@ public class Harvester implements Runnable {
 
 
 	/**
-	 * Returns the string value of the first of the properties in the uriDescriptionList
-	 * for the given resource (as an URI). In case the resource does not have any of the 
-	 * properties mentioned, its URI is returned. The value is obtained by querying the
-	 * endpoint and the endpoint is queried repeatedly until it gives a response (value or
-	 * the lack of it)
-	 * 
-	 * It is highly recommended that the list contains properties like labels or titles, with
-	 * test values.
-	 * 
+	 * Returns the string value of the first of the properties in the
+	 * uriDescriptionList for the given resource (as an URI). In case the
+	 * resource does not have any of the properties mentioned, its URI is
+	 * returned. The value is obtained by querying the endpoint and the
+	 * endpoint is queried repeatedly until it gives a response (value or the
+	 * lack of it)
+	 *
+	 * It is highly recommended that the list contains properties like labels
+	 * or titles, with test values.
+	 *
 	 * @param uri - the URI for which a label is required
-	 * @return a String value, either a label for the parameter or its value if no label is 
-	 * obtained from the endpoint
+	 * @return a String value, either a label for the parameter or its value
+	 * if no label is obtained from the endpoint
 	 */
 	private String getLabelForUri(String uri) {
 		String result = "";
