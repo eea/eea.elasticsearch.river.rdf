@@ -10,6 +10,7 @@ release
 /target/maven-status
 /target/test-classes
 /src/test/java/org/elasticsearch/plugin/
+/src/main/java/org/elasticsearch/river/eea_rdf/settings/EEASettings.class
 pom.xml.versionsBackup
 pom.xml.releaseBackup
 .classpath
