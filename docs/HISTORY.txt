@@ -1,5 +1,9 @@
 Changelog
 =========
+v1.4 (Unreleased)
+* Feature: added support for multiple queries
+  [pasoviul - #18419]
+
 v1.3 (2014-06-27)
 * Feature: added delete option for when the endpoint does not contain modified resources
   [pasoviul - #18928]

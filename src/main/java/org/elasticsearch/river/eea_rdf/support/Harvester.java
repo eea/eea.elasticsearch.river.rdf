@@ -57,6 +57,7 @@ public class Harvester implements Runnable {
 	private String startTime;
 	private Set<String> rdfUrls;
 	private String rdfEndpoint;
+	private List<String> rdfQueries;
 	private String rdfQuery;
 	private int rdfQueryType;
 	private List<String> rdfPropList;
@@ -106,12 +107,14 @@ public class Harvester implements Runnable {
 
 	/**
 	 * Sets the {@link #Harvester}'s {@link #rdfQuery} parameter
-	 * @param query - new query
+	 * @param query - new list of queries
 	 * @return the same {@link #Harvester} with the {@link #rdfQuery} parameter
 	 * set
 	 */
-	public Harvester rdfQuery(String query) {
-		this.rdfQuery = query;
+	public Harvester rdfQuery(List<String> query) {
+		if(!query.isEmpty()) {
+			this.rdfQueries = new ArrayList<String>(query);
+		}
 		return this;
 	}
 
@@ -499,15 +502,15 @@ public class Harvester implements Runnable {
 	public void runIndexAll() {
 
 		logger.info(
-				"Starting RDF harvester: endpoint [{}], query [{}]," +
+				"Starting RDF harvester: endpoint [{}], queries [{}]," +
 				"URLs [{}], index name [{}], typeName [{}]",
- 				rdfEndpoint, rdfQuery, rdfUrls, indexName, typeName);
+ 				rdfEndpoint, rdfQueries, rdfUrls, indexName, typeName);
 
 		while (true) {
 			if(this.closed){
-				logger.info("Ended harvest for endpoint [{}], query [{}]," +
+				logger.info("Ended harvest for endpoint [{}], queries [{}]," +
 						"URLs [{}], index name {}, type name {}",
-						rdfEndpoint, rdfQuery, rdfUrls, indexName, typeName);
+						rdfEndpoint, rdfQueries, rdfUrls, indexName, typeName);
 
 				return;
 			}
@@ -515,7 +518,7 @@ public class Harvester implements Runnable {
 			/**
 			 * Harvest from a SPARQL endpoint
 			 */
-			if(!rdfQuery.isEmpty()) {
+			if(!rdfQueries.isEmpty()) {
 				harvestFromEndpoint();
 			}
 
@@ -596,25 +599,28 @@ public class Harvester implements Runnable {
 	 * supported
 	 */
 	private void harvestFromEndpoint() {
-		try {
-			Query query = QueryFactory.create(rdfQuery);
-			QueryExecution qexec = QueryExecutionFactory.sparqlService(
-					rdfEndpoint,
-					query);
-			switch(rdfQueryType) {
-				case 0: harvestWithConstruct(qexec);
-								break;
-				case 1: harvestWithSelect(qexec);
-								break;
-				case 2: //TODO implement harvestWithDescribe
-								break;
-				default: break;
-			}
 
-		} catch (QueryParseException qpe) {
-			logger.info(
-					"Could not parse [{}]. Please provide a relevant query {}",
-					rdfQuery, qpe);
+		for (String rdfQuery:rdfQueries) {
+			try {
+				Query query = QueryFactory.create(rdfQuery);
+				QueryExecution qexec = QueryExecutionFactory.sparqlService(
+						rdfEndpoint,
+						query);
+				switch(rdfQueryType) {
+					case 0: harvestWithConstruct(qexec);
+								break;
+					case 1: harvestWithSelect(qexec);
+								break;
+					case 2: //TODO implement harvestWithDescribe
+								break;
+					default: break;
+				}
+
+			} catch (QueryParseException qpe) {
+				logger.info(
+						"Could not parse [{}]. Please provide a relevant query {}",
+						rdfQuery, qpe);
+			}
 		}
 	}
 

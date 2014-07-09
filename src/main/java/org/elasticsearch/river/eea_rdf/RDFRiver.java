@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.List;
 
 /**
- * 
+ *
  * @author iulia
  *
  */
@@ -50,9 +50,9 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 				.rdfEndpoint(XContentMapValues.nodeStringValue(
 							eeaSettings.get("endpoint"),
 							EEASettings.DEFAULT_ENDPOINT))
-				.rdfQuery(XContentMapValues.nodeStringValue(
-							eeaSettings.get("query"),
-							EEASettings.DEFAULT_QUERY))
+				//.rdfQuery(XContentMapValues.nodeStringValue(
+				//			eeaSettings.get("query"),
+				//			EEASettings.DEFAULT_QUERY))
 				.rdfQueryType(XContentMapValues.nodeStringValue(
 							eeaSettings.get("queryType"),
 							EEASettings.DEFAULT_QUERYTYPE))
@@ -75,6 +75,12 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 			if(eeaSettings.containsKey("proplist")) {
 				harvester.rdfPropList((
 							List<String>)eeaSettings.get("proplist"));
+			}
+			if(eeaSettings.containsKey("query")) {
+				harvester.rdfQuery((
+							List<String>)eeaSettings.get("query"));
+			} else {
+				harvester.rdfQuery(EEASettings.DEFAULT_QUERIES);
 			}
 			if(eeaSettings.containsKey("normProp")) {
 				harvester
