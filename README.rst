@@ -103,8 +103,8 @@ The river is given a list of URIs from which triples are indexed into ElasticSea
 From a SPARQL endpoint
 ++++++++++++++++++++++
 
-The river is given a SPARQL endpoint and a query. The query response is indexed into ElasticSearch.
-The SPARQL query can be a SELECT query or a CONSTRUCT query.
+The river is given a SPARQL endpoint and a list of queries. Each query response is indexed into ElasticSearch.
+The SPARQL query can be a SELECT query or a CONSTRUCT query. All the queries are of the same type. 
 
 The SELECT query should always require a triple (?s ?p ?o) where ?s is the subject,
 ?p is the predicate and ?o is the object. The names and order are required for relevant
@@ -116,11 +116,28 @@ results.
    "type" : "eeaRDF",
    "eeaRDF" : {
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
-      "query" : "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> SELECT ?s ?p ?o WHERE { ?s a cr:SparqlBookmark ; ?p ?o}",
+      "query" : ["PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> SELECT ?s ?p ?o WHERE { ?s a cr:SparqlBookmark ; ?p ?o}"],
       "queryType" : "select"
    }
  }'
 
+CONSTRUCT queries are more simple.
+
+::
+
+curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+   "type" : "eeaRDF",
+   "eeaRDF" : {
+      "endpoint" : "http://semantic.eea.europa.eu/sparql",
+      "query" : [
+          "CONSTRUCT {?s ?p ?o} WHERE {?s  a <http://www.openlinksw.com/schemas/virtrdf#QuadMapFormat> ; ?p ?o}",
+          "CONSTRUCT {?s ?p ?o} WHERE { ?s a <http://www.eea.europa.eu/portal_types/AssessmentPart#AssessmentPart> ; ?p ?o}"
+      ],
+      "queryType" : "construct"
+   }
+ }'
+ 
+ 
 **Tips**: `See how to optimize your queries / avoid endpoint timeout <http://taskman.eionet.europa.eu/projects/zope/wiki/HowToWriteOptimalSPARQLQueries>`_
 
 From both URIs and SPARQL endpoint
@@ -137,7 +154,7 @@ from a SPARQL endpoint and several unrelated URIs.
       "urls" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
                 "http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf"],
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
-      "query" : "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?s a cr:SparqlBookmark ; ?p ?o}",
+      "query" : ["PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?s a cr:SparqlBookmark ; ?p ?o}"],
       "queryType" : "construct"
    }
  }'
@@ -166,7 +183,7 @@ The default value for "includeResourceURI" is true.
       "urls" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
                 "http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf"],
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
-      "query" : "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?s a cr:SparqlBookmark ; ?p ?o}",
+      "query" : ["PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?s a cr:SparqlBookmark ; ?p ?o}"],
       "queryType" : "construct",
       "includeResourceURI" : false
    }
@@ -190,7 +207,7 @@ The default value for "addLanguage" is true and for "language", "en".
       "urls" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
                 "http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf"],
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
-      "query" : "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?s a cr:SparqlBookmark ; ?p ?o}",
+      "query" : ["PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?s a cr:SparqlBookmark ; ?p ?o}"],
       "queryType" : "construct",
       "addLanguage" : true,
       "language" : "it"
@@ -215,7 +232,7 @@ given as arguments for "uriDescription", for which the resource has an object.
       "urls" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
                 "http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf"],
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
-      "query" : "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?s a cr:SparqlBookmark ; ?p ?o}",
+      "query" : ["PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?s a cr:SparqlBookmark ; ?p ?o}"],
       "queryType" : "construct",
       "addLanguage" : true,
       "uriDescription" : ["http://www.w3.org/2000/01/rdf-schema#label", "http://purl.org/dc/terms/title"]
@@ -241,7 +258,7 @@ The following query indexes only the rdf:type property of the resources.
    "type" : "eeaRDF",
    "eeaRDF" : {
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
-      "query" : "CONSTRUCT {?s ?p ?o} WHERE {?s  a <http://www.openlinksw.com/schemas/virtrdf#QuadMapFormat> ; ?p ?o}",
+      "query" : ["CONSTRUCT {?s ?p ?o} WHERE {?s  a <http://www.openlinksw.com/schemas/virtrdf#QuadMapFormat> ; ?p ?o}"],
       "queryType" : "construct",
       "proplist" : ["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],
       "listtype" : "white"
@@ -264,7 +281,7 @@ A blackMap contains all the pairs property - list of objects that are not meant 
    "eeaRDF" : {
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
       "queryType" : "construct",
-      "query" : "CONSTRUCT {?s ?p ?o} WHERE { ?s a <http://www.eea.europa.eu/portal_types/AssessmentPart#AssessmentPart> . ?s ?p ?o}",
+      "query" : ["CONSTRUCT {?s ?p ?o} WHERE { ?s a <http://www.eea.europa.eu/portal_types/AssessmentPart#AssessmentPart> . ?s ?p ?o}"],
       "blackMap" : {"http://www.w3.org/1999/02/22-rdf-syntax-ns#type":["Tracked File"]}
    }
  }'
@@ -282,7 +299,7 @@ all the pairs property - list of objects that are meant to be indexed.
    "eeaRDF" : {
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
       "queryType" : "construct",
-      "query" : "CONSTRUCT {?s ?p ?o} WHERE { ?s a <http://www.eea.europa.eu/portal_types/AssessmentPart#AssessmentPart> . ?s ?p ?o}",
+      "query" : ["CONSTRUCT {?s ?p ?o} WHERE { ?s a <http://www.eea.europa.eu/portal_types/AssessmentPart#AssessmentPart> . ?s ?p ?o}"],
       "whiteMap" : {"http://www.w3.org/1999/02/22-rdf-syntax-ns#type":["Assessment Part"]}
    }
  }'
@@ -307,7 +324,7 @@ grouped in a list.
    "type" : "eeaRDF",
    "eeaRDF" : {
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
-      "query" : "CONSTRUCT {?s ?p ?o} WHERE {?s  a <http://www.openlinksw.com/schemas/virtrdf#QuadMapFormat> ; ?p ?o}",
+      "query" : ["CONSTRUCT {?s ?p ?o} WHERE {?s  a <http://www.openlinksw.com/schemas/virtrdf#QuadMapFormat> ; ?p ?o}"],
       "queryType" : "construct",
       "normProp" : {
             "http://purl.org/dc/elements/1.1/format" : "format",
@@ -335,7 +352,7 @@ replaced with given values no matter of the property whose value they represent.
    "type" : "eeaRDF",
    "eeaRDF" : {
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
-      "query" : "CONSTRUCT {?s ?p ?o} WHERE {?s  a <http://www.openlinksw.com/schemas/virtrdf#QuadMapFormat> ; ?p ?o}",
+      "query" : ["CONSTRUCT {?s ?p ?o} WHERE {?s  a <http://www.openlinksw.com/schemas/virtrdf#QuadMapFormat> ; ?p ?o}"],
       "queryType" : "construct",
       "normObj" : {
             "Organisation" : "Organization",
