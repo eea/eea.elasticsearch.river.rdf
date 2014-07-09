@@ -43,6 +43,7 @@ import java.text.SimpleDateFormat;
 import java.io.IOException;
 
 import javax.xml.ws.Endpoint;
+import javax.xml.ws.http.HTTPException;
 
 /**
  *
@@ -540,34 +541,46 @@ public class Harvester implements Runnable {
 	private void harvestWithSelect(QueryExecution qexec) {
 		Model sparqlModel = ModelFactory.createDefaultModel();
 		Graph graph = sparqlModel.getGraph();
+		boolean got500 = true;
 
-		try {
-			ResultSet results = qexec.execSelect();
+		while(got500) {
+			try {
+				ResultSet results = qexec.execSelect();
 
-			while(results.hasNext()) {
-				QuerySolution sol = results.nextSolution();
-				/**
-				 * Each QuerySolution is a triple
-				 */
-				try {
-					String subject = sol.getResource("s").toString();
-					String predicate = sol.getResource("p").toString();
-					String object = sol.get("o").toString();
+				while(results.hasNext()) {
+					QuerySolution sol = results.nextSolution();
+					/**
+				 	* Each QuerySolution is a triple
+				 	*/
+					try {
+						String subject = sol.getResource("s").toString();
+						String predicate = sol.getResource("p").toString();
+						String object = sol.get("o").toString();
 
-					graph.add(new Triple(
-								NodeFactory.createURI(subject),
-								NodeFactory.createURI(predicate),
-								NodeFactory.createLiteral(object)));
+						graph.add(new Triple(
+									NodeFactory.createURI(subject),
+									NodeFactory.createURI(predicate),
+									NodeFactory.createLiteral(object)));
 
-				} catch(NoSuchElementException nsee) {
-					logger.info("Could not index [{}] / {}: Query result was" +
-							"not a triple",	sol.toString(), nsee.toString());
+					} catch(NoSuchElementException nsee) {
+						logger.info("Could not index [{}] / {}: Query result was" +
+								"not a triple",	sol.toString(), nsee.toString());
+					}
 				}
-			}
-		} catch(Exception e) {
-			logger.info(
-				"Encountered a [{}] when quering the endpoint", e.toString());
-		} finally { qexec.close(); }
+				got500 = false;
+			} catch(Exception e) {
+				if(e instanceof HTTPException) {
+					got500 = true;
+					logger.info(
+						"The endpoint replied with an internal error. Retrying");
+				} else {
+					got500 = false;
+					logger.info(
+						"Encountered a [{}] when quering the endpoint",
+						e.toString());
+				}
+			} finally { qexec.close(); }
+		}
 
 		BulkRequestBuilder bulkRequest = client.prepareBulk();
 		addModelToES(sparqlModel, bulkRequest);
@@ -580,15 +593,28 @@ public class Harvester implements Runnable {
 	 */
 	private void harvestWithConstruct(QueryExecution qexec) {
 		Model sparqlModel = ModelFactory.createDefaultModel();
-		try {
-			qexec.execConstruct(sparqlModel);
-		} catch (Exception e) {
-			logger.info(
-				"Encountered a [{}] when quering the endpoint", e.toString());
-		} finally { qexec.close(); }
+		boolean got500 = true;
 
-		BulkRequestBuilder bulkRequest = client.prepareBulk();
-		addModelToES(sparqlModel, bulkRequest);
+		while(got500) {
+			try {
+				qexec.execConstruct(sparqlModel);
+				got500 = false;
+			} catch (Exception e) {
+				if(e instanceof HTTPException) {
+					got500 = true;
+					logger.info(
+						"The endpoint replied with an internal error. Retrying");
+				} else {
+					got500 = false;
+					logger.info(
+						"Encountered a [{}] when quering the endpoint",
+						e.toString());
+				}
+			} finally { qexec.close(); }
+
+			BulkRequestBuilder bulkRequest = client.prepareBulk();
+			addModelToES(sparqlModel, bulkRequest);
+		}
 	}
 
 	/**
