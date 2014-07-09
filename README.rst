@@ -125,7 +125,7 @@ CONSTRUCT queries are more simple.
 
 ::
 
-curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
