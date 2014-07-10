@@ -50,9 +50,6 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 				.rdfEndpoint(XContentMapValues.nodeStringValue(
 							eeaSettings.get("endpoint"),
 							EEASettings.DEFAULT_ENDPOINT))
-				//.rdfQuery(XContentMapValues.nodeStringValue(
-				//			eeaSettings.get("query"),
-				//			EEASettings.DEFAULT_QUERY))
 				.rdfQueryType(XContentMapValues.nodeStringValue(
 							eeaSettings.get("queryType"),
 							EEASettings.DEFAULT_QUERYTYPE))
@@ -128,7 +125,7 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 
 	@Override
 	public void start() {
-		harvesterThread =	EsExecutors.daemonThreadFactory(
+		harvesterThread = EsExecutors.daemonThreadFactory(
 				settings.globalSettings(),
 				"eea_rdf_river(" + riverName().name() +	")")
 			.newThread(harvester);
@@ -137,7 +134,7 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 
 	@Override
 	public void close() {
-		logger.info("closing EEA RDF river {}", riverName.name());
+		harvester.log("Closing EEA RDF river {}" + riverName.name());
 		harvester.setClose(true);
 		harvesterThread.interrupt();
 	}

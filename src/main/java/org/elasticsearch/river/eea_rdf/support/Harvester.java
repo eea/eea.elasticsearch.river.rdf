@@ -342,6 +342,10 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
+	public void log(String message) {
+		logger.info(message);
+	}
+
 	public void setClose(Boolean value) {
 		this.closed = value;
 	}
@@ -374,29 +378,41 @@ public class Harvester implements Runnable {
 				"index name [{}], type name [{}]",
 				startTime, rdfEndpoint,	indexName, typeName);
 
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-		Date lastUpdate = new Date(System.currentTimeMillis());
+		while(true) {
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+			Date lastUpdate = new Date(System.currentTimeMillis());
 
-		if(startTime.isEmpty()) {
-			GetResponse response = client.prepareGet(indexName, "stats", "1")
-				.setFields("last_update")
-				.execute()
-				.actionGet();
-			startTime = (String)response.getField("last_update").getValue();
+			if(this.closed){
+				logger.info(
+						"Ended synchronization from [{}], for endpoint [{}]," +
+						"at index name {}, type name {}",
+						lastUpdate, rdfEndpoint, indexName, typeName);
+				return;
+			}
+			/**
+			 * Synchronize with the endpoint
+			 */
+
+
+			if(startTime.isEmpty()) {
+				GetResponse response = client
+					.prepareGet(indexName, "stats", "1")
+					.setFields("last_update")
+					.execute()
+					.actionGet();
+				startTime = (String)response.getField("last_update").getValue();
+			}
+
+			try {
+				lastUpdate = sdf.parse(startTime);
+			} catch (Exception e){
+				logger.info("Could not parse time. [{}]", e.toString());
+			}
+
+			sync();
+			closed = true;
 		}
 
-		try {
-			lastUpdate = sdf.parse(startTime);
-		} catch (Exception e){}
-
-		sync();
-
-		if(this.closed){
-			logger.info("Ended synchronization from [{}], for endpoint [{}]," +
-					"at index name {}, type name {}",
-					lastUpdate, rdfEndpoint, indexName, typeName);
-			return;
-		}
 	}
 
 	/**

@@ -1,14 +1,18 @@
 Changelog
 =========
 v1.4 (Unreleased)
+-----------------
+* Bugfix: ending message for the sync river
+  [pasoviul - #18419]
 * Feature: added support for multiple queries
   [pasoviul - #18419]
 
 v1.3 (2014-06-27)
+-----------------
 * Feature: added delete option for when the endpoint does not contain modified resources
   [pasoviul - #18928]
 
-v1.2 (23-01-2014)
+v1.2 (2014-01-23)
 -----------------
 * Feature: added synchronization option for the endpoint
   [pasoviul - #17426]
