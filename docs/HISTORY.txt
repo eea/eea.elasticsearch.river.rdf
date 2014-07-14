@@ -2,6 +2,8 @@ Changelog
 =========
 v1.4 (Unreleased)
 -----------------
+* Feature: customizable sync query
+  [pasoviul - #18419]
 * Bugfix: ending message for the sync river
   [pasoviul - #18419]
 * Feature: added support for multiple queries

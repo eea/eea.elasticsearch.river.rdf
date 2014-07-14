@@ -67,7 +67,13 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 							EEASettings.DEFAULT_ADD_URI))
 				.rdfURIDescription(XContentMapValues.nodeStringValue(
 							eeaSettings.get("uriDescription"),
-							EEASettings.DEFAULT_URI_DESCRIPTION));
+							EEASettings.DEFAULT_URI_DESCRIPTION))
+				.rdfSyncConditions(XContentMapValues.nodeStringValue(
+							eeaSettings.get("syncConditions"),
+							EEASettings.DEFAULT_SYNC_COND))
+				.rdfSyncTimeProp(XContentMapValues.nodeStringValue(
+							eeaSettings.get("syncTimeProp"),
+							EEASettings.DEFAULT_SYNC_TIME_PROP));
 
 			if(eeaSettings.containsKey("proplist")) {
 				harvester.rdfPropList((

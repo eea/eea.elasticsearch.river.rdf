@@ -77,6 +77,8 @@ public class Harvester implements Runnable {
 	private Boolean hasWhiteMap = false;
 	private Map<String,List<String>> blackMap;
 	private Map<String,List<String>> whiteMap;
+	private String syncConditions;
+	private String syncTimeProp;
 
 	private Client client;
 	private String indexName;
@@ -316,6 +318,34 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
+	/**
+	 * Sets the {@link #Harvester}'s {@link #syncConditions} parameter. It
+	 * represents the sync query's additional conditions for indexing. These
+	 * conditions are added to the time filter.
+	 * @param syncCond - a new value for the parameter
+	 * @return the same {@link #Harvester} with the {@link #syncConditions}
+	 * parameter set
+	 */
+	public Harvester rdfSyncConditions(String syncCond) {
+		this.syncConditions = syncCond;
+		if(!syncCond.isEmpty())
+			this.syncConditions += " . ";
+		return this;
+	}
+
+	/**
+	 * Sets the {@link #Harvester}'s {@link #syncTimeProp} parameter. It
+	 * represents the sync query's time parameter used when filtering the
+	 * endpoint's last updates.
+	 * @param syncTimeProp - a new value for the parameter
+	 * @return the same {@link #Harvester} with the {@link #syncTimeProp}
+	 * parameter set
+	 */
+	public Harvester rdfSyncTimeProp(String syncTimeProp) {
+		this.syncTimeProp = syncTimeProp;
+		return this;
+	}
+
 	public Harvester client(Client client) {
 		this.client = client;
 		return this;
@@ -422,9 +452,9 @@ public class Harvester implements Runnable {
 	public void sync() {
 		rdfQuery = "PREFIX xsd:<http://www.w3.org/2001/XMLSchema#> " +
 			"SELECT ?resource WHERE { " +
-			"?resource <http://cr.eionet.europa.eu/ontologies/contreg.rdf#lastRefreshed> ?time ." +
-			" FILTER (?time > xsd:dateTime(\"" + startTime + "\")) . " +
-			"FILTER (strStarts(str(?resource),'http://www.eea.europa.eu'))}";
+			"?resource <" + this.syncTimeProp + "> ?time ." +
+			this.syncConditions +
+			" FILTER (?time > xsd:dateTime(\"" + startTime + "\")) }";
 
 		try {
 			Query query = QueryFactory.create(rdfQuery);
@@ -452,7 +482,8 @@ public class Harvester implements Runnable {
 				}
 			} catch (Exception e) {
 				logger.info(
-						"Encountered a [{}] while querying the endpoint for sync", e);
+						"Encountered a [{}] while querying the endpoint for sync",
+						e.toString());
 			} finally {
 				qexec.close();
 			}
