@@ -34,6 +34,8 @@ public abstract class EEASettings {
 	public final static String DEFAULT_SYNC_COND = "";
 	public final static String DEFAULT_SYNC_TIME_PROP =
 		"http://cr.eionet.europa.eu/ontologies/contreg.rdf#lastRefreshed";
+	public final static String DEFAULT_SYNC_PREFIX =
+		"PREFIX xsd:<http://www.w3.org/2001/XMLSchema#> ";
 
 	public static String parseForJson(String text) {
 		return text.trim().replaceAll("[\n\r]", " ")
