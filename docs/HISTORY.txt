@@ -1,6 +1,9 @@
 Changelog
 =========
-v1.4 (Unreleased)
+v1.5 (Unreleased)
+-----------------
+
+v1.4 (2014-07-15)
 -----------------
 * Feature: customizable sync query
   [pasoviul - #18419]
