@@ -368,7 +368,8 @@ Synchronization with an endpoint
 It is possible to query an endpoint for the latest changes and only index these instead of 
 all the resources. This can be specified by setting the value of 'indexType' to 'sync' instead
 of 'full', which is the default one. A value for 'startTime' should be provided because the plugin 
-queries the endpoint for updates that occured after that moment in time.
+queries the endpoint for updates that occured after that moment in time. In case no value is provided, 
+the time of the last index operation will be considered. 
 
 ::
 
@@ -378,6 +379,47 @@ queries the endpoint for updates that occured after that moment in time.
       "indexType" : "sync",
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
       "startTime" : "20131206T15:00:00"
+   }
+ }'
+ 
+There are two possible settings for the sync river:
+ * syncConditions
+ * syncTimeProp
+ 
+SyncConditions
+++++++++++++++
+
+This property allows the user to add extra filters when synchronizing with the endpoint. 
+Therefore, the river will only index some information, updated after a point in time, instead
+of all the triples. This property is very useful when only some triples should be indexed. 
+The resource being indexed is always "?resource". 
+
+::
+
+ curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+   "type" : "eeaRDF",
+   "eeaRDF" : {
+      "indexType" : "sync",
+      "endpoint" : "http://semantic.eea.europa.eu/sparql",
+      "syncConditions": "{?resource a <http://www.eea.europa.eu/portal_types/DataFile#DataFile>} UNION {?resource a <http://www.eea.europa.eu/portal_types/Image#Image>}"
+   }
+ }'
+ 
+SyncTimeProp
+++++++++++++
+
+Different endpoints may have different properties to present the time when some triple is harvested. 
+SyncTimeProp sets this property to some known URI so the sync river will only index those triples that
+have a higher value for this property than the startTime value. 
+
+::
+
+ curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+   "type" : "eeaRDF",
+   "eeaRDF" : {
+      "indexType" : "sync",
+      "endpoint" : "http://semantic.eea.europa.eu/sparql",
+      "syncTimeProp": "http://cr.eionet.europa.eu/ontologies/contreg.rdf#lastRefreshed"
    }
  }'
 
