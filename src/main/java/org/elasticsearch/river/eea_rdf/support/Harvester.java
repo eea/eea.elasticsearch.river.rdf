@@ -673,10 +673,16 @@ public class Harvester implements Runnable {
 	 */
 	private void harvestFromEndpoint() {
 
+		Query query = null;
+		QueryExecution qexec = null;
+
 		for (String rdfQuery:rdfQueries) {
+			logger.info(
+				"Harvesting with query: [{}] on index [{}] and type [{}]",
+ 				rdfQuery, indexName, typeName);
 			try {
-				Query query = QueryFactory.create(rdfQuery);
-				QueryExecution qexec = QueryExecutionFactory.sparqlService(
+				query = QueryFactory.create(rdfQuery);
+				qexec = QueryExecutionFactory.sparqlService(
 						rdfEndpoint,
 						query);
 				switch(rdfQueryType) {
@@ -778,9 +784,13 @@ public class Harvester implements Runnable {
 								}
 							} catch (Exception e) {}
 						}
-						String shortValue = currValue.substring(
+
+						String shortValue = currValue;
+						int currlen = currValue.length();
+						if(currlen > 1)
+							shortValue = currValue.substring(
 												1,
-												currValue.length() - 1);
+												currlen - 1);
 
 						if((hasWhiteMap && whiteMap.containsKey(property) &&
 								!whiteMap.get(property).contains(shortValue)) ||
