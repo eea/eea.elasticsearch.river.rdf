@@ -740,10 +740,11 @@ public class Harvester implements Runnable {
 			Statement st = iter.nextStatement();
 			Property prop = st.getPredicate();
 			String property = prop.toString();
+
 			if(!hasList
-					|| (rdfListType && rdfPropList.contains(property))
-					|| (!rdfListType && !rdfPropList.contains(property))
-					|| (normalizeProp.containsKey(property))) {
+				|| (rdfListType && rdfPropList.contains(property))
+				|| (!rdfListType && !rdfPropList.contains(property))
+				|| (willNormalizeProp && normalizeProp.containsKey(property))) {
 				properties.add(prop);
 			}
 		}
