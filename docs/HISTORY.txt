@@ -5,6 +5,8 @@ v1.5 (unreleased)
 
 v1.4 (2014-07-15)
 -----------------
+* Feature: Configured error behaviour: always retry on interal server errors
+  [pasoviul]
 * Feature: customizable sync query
   [pasoviul - #18419]
 * Bugfix: ending message for the sync river
