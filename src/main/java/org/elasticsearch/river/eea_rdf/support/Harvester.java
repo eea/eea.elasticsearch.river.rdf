@@ -117,6 +117,8 @@ public class Harvester implements Runnable {
 	public Harvester rdfQuery(List<String> query) {
 		if(!query.isEmpty()) {
 			this.rdfQueries = new ArrayList<String>(query);
+		} else {
+			rdfQueries = new ArrayList<String>(query);
 		}
 		return this;
 	}
