@@ -25,6 +25,7 @@ import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.graph.Graph;
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.graph.NodeFactory;
+import com.hp.hpl.jena.sparql.engine.http.QueryExceptionHTTP;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -618,7 +619,9 @@ public class Harvester implements Runnable {
 				}
 				got500 = false;
 			} catch(Exception e) {
-				if(e instanceof HTTPException) {
+				String errorText = e.toString();
+				if(e instanceof QueryExceptionHTTP &&
+					errorText.contains("Internal Server Error")) {
 					got500 = true;
 					logger.info(
 						"The endpoint replied with an internal error. Retrying");
@@ -626,7 +629,7 @@ public class Harvester implements Runnable {
 					got500 = false;
 					logger.info(
 						"Encountered a [{}] when quering the endpoint",
-						e.toString());
+						errorText);
 				}
 			} finally { qexec.close(); }
 		}
@@ -649,7 +652,9 @@ public class Harvester implements Runnable {
 				qexec.execConstruct(sparqlModel);
 				got500 = false;
 			} catch (Exception e) {
-				if(e instanceof HTTPException) {
+				String errorText = e.toString();
+				if(e instanceof QueryExceptionHTTP &&
+					errorText.contains("Internal Server Error")) {
 					got500 = true;
 					logger.info(
 						"The endpoint replied with an internal error. Retrying");
@@ -657,13 +662,14 @@ public class Harvester implements Runnable {
 					got500 = false;
 					logger.info(
 						"Encountered a [{}] when quering the endpoint",
-						e.toString());
+						errorText);
 				}
-			} finally { qexec.close(); }
+			}
 
 			BulkRequestBuilder bulkRequest = client.prepareBulk();
 			addModelToES(sparqlModel, bulkRequest);
 		}
+		qexec.close();
 	}
 
 	/**
