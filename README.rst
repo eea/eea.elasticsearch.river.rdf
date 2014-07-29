@@ -85,7 +85,7 @@ From URIs
 +++++++++
 
 The river is given a list of URIs from which triples are indexed into ElasticSearch.
-'urls' may contain any list of URIs.
+'uris' may contain any list of URIs.
 
 ::
 
