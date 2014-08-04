@@ -92,9 +92,7 @@ The river is given a list of URIs from which triples are indexed into ElasticSea
  curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
-      "uris" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
-                "http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf",
-                "http://dd.eionet.europa.eu/vocabulary/aq/naturalsourcetype/rdf",
+      "uris" : ["http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf",
                 "http://dd.eionet.europa.eu/vocabulary/aq/measurementmethod/rdf"]
     }
  }'
@@ -151,8 +149,8 @@ from a SPARQL endpoint and several unrelated URIs.
  curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
-      "uris" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
-                "http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf"],
+      "uris" : ["http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf",
+                "http://dd.eionet.europa.eu/vocabulary/aq/measurementmethod/rdf"],
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
       "query" : ["PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?s a cr:SparqlBookmark ; ?p ?o}"],
       "queryType" : "construct"
