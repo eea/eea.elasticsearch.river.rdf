@@ -1,23 +1,19 @@
 package org.elasticsearch.river.eea_rdf;
 
-import org.elasticsearch.client.Client;
+import java.util.List;
+import java.util.Map;
 
+import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
-
-import org.elasticsearch.ElasticSearchIllegalArgumentException;
-
 import org.elasticsearch.river.AbstractRiverComponent;
-import org.elasticsearch.river.eea_rdf.support.Harvester;
-import org.elasticsearch.river.eea_rdf.settings.EEASettings;
 import org.elasticsearch.river.River;
 import org.elasticsearch.river.RiverIndexName;
 import org.elasticsearch.river.RiverName;
 import org.elasticsearch.river.RiverSettings;
-
-import java.util.Map;
-import java.util.List;
+import org.elasticsearch.river.eea_rdf.settings.EEASettings;
+import org.elasticsearch.river.eea_rdf.support.Harvester;
 
 /**
  *
@@ -107,8 +103,8 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 			}
 		}
 		else {
-			throw new	ElasticSearchIllegalArgumentException(
-					"There are no eeaRDF settings in the	river settings");
+			throw new IllegalArgumentException(
+					"There are no eeaRDF settings in the river settings");
 		}
 
 		if(settings.settings().containsKey("index")){
