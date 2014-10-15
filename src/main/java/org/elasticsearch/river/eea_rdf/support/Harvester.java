@@ -80,6 +80,7 @@ public class Harvester implements Runnable {
 	private Map<String,List<String>> whiteMap;
 	private String syncConditions;
 	private String syncTimeProp;
+	private Boolean syncOldData;
 
 	private Client client;
 	private String indexName;
@@ -349,6 +350,20 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
+    /**
+     * Sets the {@link #Harvester}'s {@link #syncOldData} parameter. When this
+     * parameter is set to true, the endpoint will be queried again without the
+     * {@link #syncConditions} to update existing resources that were changed.
+     * THe default value is true
+     * @param syncOldData - a new value for the parameter
+     * return the same {@link #Harvester} with the {@link #syncOldData}
+     * parameter set
+     */
+	public Harvester rdfSyncOldData(Boolean syncOldData) {
+		this.syncOldData = syncOldData;
+		return this;
+	}
+
 	public Harvester client(Client client) {
 		this.client = client;
 		return this;
@@ -426,7 +441,6 @@ public class Harvester implements Runnable {
 			 * Synchronize with the endpoint
 			 */
 
-
 			if(startTime.isEmpty()) {
 				GetResponse response = client
 					.prepareGet(indexName, "stats", "1")
@@ -459,13 +473,14 @@ public class Harvester implements Runnable {
 			this.syncConditions +
 			" FILTER (?time > xsd:dateTime(\"" + startTime + "\")) }";
 
+		rdfUrls = new HashSet<String>();
+
 		try {
 			Query query = QueryFactory.create(rdfQuery);
 			QueryExecution qexec = QueryExecutionFactory.sparqlService(
 					rdfEndpoint, query);
 			try {
 				ResultSet results = qexec.execSelect();
-				rdfUrls = new HashSet<String>();
 
 				while(results.hasNext()) {
 					QuerySolution sol = results.nextSolution();
@@ -494,6 +509,67 @@ public class Harvester implements Runnable {
 			logger.info(
 					"Could not parse [{}]. Please provide a relevant quey	{}",
 					rdfQuery, qpe);
+		}
+
+		/**
+		 * If desired, query for old data that has the sync conditions modified
+		 *
+		 * This option is useful in the case in which the application indexes
+		 * resources that match some conditions. In this case, if they are
+		 * modified and no longer match the initial conditions, they will not
+		 * be synchronized. When syncOldData is True, the modified resources
+		 * that no longer match the conditions are deleted.
+		 *
+		 *
+		 */
+		if (this.syncOldData) {
+			rdfQuery = "PREFIX xsd:<http://www.w3.org/2001/XMLSchema#> " +
+			"SELECT ?resource WHERE { " +
+			"?resource <" + this.syncTimeProp + "> ?time ." +
+			" FILTER (?time > xsd:dateTime(\"" + startTime + "\")) }";
+			try {
+				Query query = QueryFactory.create(rdfQuery);
+				QueryExecution qexec = QueryExecutionFactory.sparqlService(
+						rdfEndpoint, query);
+				try {
+					ResultSet results = qexec.execSelect();
+					while(results.hasNext()) {
+						QuerySolution sol = results.nextSolution();
+						String value = sol.getResource("resource").toString();
+						if (value.contains("login_form")) {
+							continue;
+						}
+						if (value.endsWith("/@@rdf")) {
+							value = value.substring(0, value.length() - 6);
+						}
+						if (!rdfUrls.contains(value)) {
+							//delete the resource if it exists
+							logger.info("Deleting old resource: [{}] ", value);
+
+							DeleteResponse response = client.prepareDelete(
+															indexName,
+															typeName,
+															value)
+        												.execute()
+        												.actionGet();
+
+						}
+					}
+				} catch (NoSuchElementException nsee) {
+					logger.info("Encountered a NoSuchElementException: " + nsee);
+				} catch (Exception e) {
+					logger.info(
+							"Encountered a [{}] while querying the endpoint for sync",
+							e.toString());
+				} finally {
+					qexec.close();
+				}
+			} catch (QueryParseException qpe) {
+				logger.info(
+					"Could not parse [{}]. Please provide a relevant quey {}",
+					rdfQuery, qpe);
+			}
+
 		}
 
 		for (String uri : rdfUrls) {

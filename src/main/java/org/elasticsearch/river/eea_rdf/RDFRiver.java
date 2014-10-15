@@ -73,7 +73,10 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 							EEASettings.DEFAULT_SYNC_COND))
 				.rdfSyncTimeProp(XContentMapValues.nodeStringValue(
 							eeaSettings.get("syncTimeProp"),
-							EEASettings.DEFAULT_SYNC_TIME_PROP));
+							EEASettings.DEFAULT_SYNC_TIME_PROP))
+				.rdfSyncOldData(XContentMapValues.nodeBooleanValue(
+							eeaSettings.get("syncOldData"),
+							EEASettings.DEFAULT_SYNC_OLD_DATA));
 
 			if(eeaSettings.containsKey("proplist")) {
 				harvester.rdfPropList((

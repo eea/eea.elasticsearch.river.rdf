@@ -2,6 +2,8 @@ Changelog
 =========
 v1.5 (unreleased)
 -----------------
+* Feature: Added a new option, syncAllData that, when set to true, deletes the resources that were synced in the endpoint but no longer respect the syncConditions
+  [pasoviul]
 
 v1.4 (2014-07-15)
 -----------------
