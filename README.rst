@@ -85,16 +85,14 @@ From URIs
 +++++++++
 
 The river is given a list of URIs from which triples are indexed into ElasticSearch.
-'urls' may contain any list of URIs.
+'uris' may contain any list of URIs.
 
 ::
 
  curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
-      "urls" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
-                "http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf",
-                "http://dd.eionet.europa.eu/vocabulary/aq/naturalsourcetype/rdf",
+      "uris" : ["http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf",
                 "http://dd.eionet.europa.eu/vocabulary/aq/measurementmethod/rdf"]
     }
  }'
@@ -151,8 +149,8 @@ from a SPARQL endpoint and several unrelated URIs.
  curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
-      "urls" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
-                "http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf"],
+      "uris" : ["http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf",
+                "http://dd.eionet.europa.eu/vocabulary/aq/measurementmethod/rdf"],
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
       "query" : ["PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?s a cr:SparqlBookmark ; ?p ?o}"],
       "queryType" : "construct"
@@ -180,7 +178,7 @@ The default value for "includeResourceURI" is true.
  curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
-      "urls" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
+      "uris" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
                 "http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf"],
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
       "query" : ["PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?s a cr:SparqlBookmark ; ?p ?o}"],
@@ -204,7 +202,7 @@ The default value for "addLanguage" is true and for "language", "en".
  curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
-      "urls" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
+      "uris" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
                 "http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf"],
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
       "query" : ["PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?s a cr:SparqlBookmark ; ?p ?o}"],
@@ -229,7 +227,7 @@ given as arguments for "uriDescription", for which the resource has an object.
  curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
-      "urls" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
+      "uris" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
                 "http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf"],
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
       "query" : ["PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX cr: <http://cr.eionet.europa.eu/ontologies/contreg.rdf#> CONSTRUCT {?s ?p ?o} WHERE { ?s a cr:SparqlBookmark ; ?p ?o}"],
