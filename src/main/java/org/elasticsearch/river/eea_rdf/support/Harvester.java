@@ -510,6 +510,7 @@ public class Harvester implements Runnable {
 					"Could not parse [{}]. Please provide a relevant quey	{}",
 					rdfQuery, qpe);
 		}
+		int count = rdfUrls.size();
 
 		/**
 		 * If desired, query for old data that has the sync conditions modified
@@ -552,7 +553,7 @@ public class Harvester implements Runnable {
 															value)
         												.execute()
         												.actionGet();
-
+        					count++;
 						}
 					}
 				} catch (NoSuchElementException nsee) {
@@ -621,6 +622,7 @@ public class Harvester implements Runnable {
 			}
 
 		}
+		logger.info("Finished synchronisation for {} resources ", count);
 	}
 
 	/**
