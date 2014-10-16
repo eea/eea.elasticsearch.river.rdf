@@ -399,7 +399,7 @@ The resource being indexed is always "?resource".
    "eeaRDF" : {
       "indexType" : "sync",
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
-      "syncConditions": "{?resource a <http://www.eea.europa.eu/portal_types/DataFile#DataFile>} UNION {?resource a <http://www.eea.europa.eu/portal_types/Image#Image>}"
+      "syncConditions": "{{?resource a <http://www.eea.europa.eu/portal_types/DataFile#DataFile>} UNION {?resource a <http://www.eea.europa.eu/portal_types/Image#Image>}}"
    }
  }'
  
@@ -418,6 +418,26 @@ have a higher value for this property than the startTime value.
       "indexType" : "sync",
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
       "syncTimeProp": "http://cr.eionet.europa.eu/ontologies/contreg.rdf#lastRefreshed"
+   }
+ }'
+ 
+SyncOldData
++++++++++++
+
+Sometimes some information is harvested and later on it is modified but it no longer fit into the 
+first selection criteria. The initial resource wil no longer be needed into the dataset. However, 
+due to the SyncConditions only resources that fit the initial (or new) conditions are synchronized,
+so the old data should be deleted as well. When this property is set to True, the modified resources
+that no longer match the conditions are deleted.
+
+::
+
+ curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+   "type" : "eeaRDF",
+   "eeaRDF" : {
+      "indexType" : "sync",
+      "endpoint" : "http://semantic.eea.europa.eu/sparql",
+      "syncOldData": true
    }
  }'
 
