@@ -408,6 +408,7 @@ public class Harvester implements Runnable {
 			runIndexAll();
 		else
 			runSync();
+
 		BulkRequestBuilder bulkRequest = client.prepareBulk();
 		try {
 			bulkRequest.add(client.prepareIndex(indexName, "stats", "1")
@@ -415,7 +416,10 @@ public class Harvester implements Runnable {
 						.startObject()
 						.field("last_update", sdf.format(now))
 					.endObject()));
-		} catch (IOException ioe) {}
+		} catch (IOException ioe) {
+			logger.error("Could not add the stats to ES. {}",
+						 ioe.getLocalizedMessage());
+		}
 		BulkResponse bulkResponse = bulkRequest.execute().actionGet();
 		return ;
 	}
@@ -453,7 +457,7 @@ public class Harvester implements Runnable {
 			try {
 				lastUpdate = sdf.parse(startTime);
 			} catch (Exception e){
-				logger.info("Could not parse time. [{}]", e.toString());
+				logger.error("Could not parse time. [{}]", e.getLocalizedMessage());
 			}
 
 			sync();
@@ -494,21 +498,22 @@ public class Harvester implements Runnable {
 						}
 						rdfUrls.add(value);
 					} catch (NoSuchElementException nsee) {
-						logger.info(
-							"Encountered a NoSuchElementException: " + nsee);
+						logger.error(
+							"Encountered a NoSuchElementException: " +
+							nsee.getLocalizedMessage());
 					}
 				}
 			} catch (Exception e) {
-				logger.info(
+				logger.error(
 						"Encountered a [{}] while querying the endpoint for sync",
-						e.toString());
+						e.getLocalizedMessage());
 			} finally {
 				qexec.close();
 			}
 		} catch (QueryParseException qpe) {
-			logger.info(
-					"Could not parse [{}]. Please provide a relevant quey	{}",
-					rdfQuery, qpe);
+			logger.warn(
+					"Could not parse [{}]. Please provide a relevant quey. {}",
+					rdfQuery, qpe.getLocalizedMessage());
 		}
 		int count = rdfUrls.size();
 
@@ -557,18 +562,19 @@ public class Harvester implements Runnable {
 						}
 					}
 				} catch (NoSuchElementException nsee) {
-					logger.info("Encountered a NoSuchElementException: " + nsee);
+					logger.error("Error when querying without conditions. {} ",
+								 nsee.getLocalizedMessage());
 				} catch (Exception e) {
-					logger.info(
-							"Encountered a [{}] while querying the endpoint for sync",
-							e.toString());
+					logger.error(
+						"Error while querying for sync, without conditions. {}",
+						e.getLocalizedMessage());
 				} finally {
 					qexec.close();
 				}
 			} catch (QueryParseException qpe) {
-				logger.info(
+				logger.warn(
 					"Could not parse [{}]. Please provide a relevant quey {}",
-					rdfQuery, qpe);
+					rdfQuery, qpe.getLocalizedMessage());
 			}
 
 		}
@@ -605,20 +611,21 @@ public class Harvester implements Runnable {
 							indexName,
 							typeName,
 							uri)
-        						.execute()
-        						.actionGet();
+        												.execute()
+        												.actionGet();
 					}
 
 					BulkRequestBuilder bulkRequest = client.prepareBulk();
 					addModelToES(constructModel, bulkRequest);
 				} catch (Exception e) {
-					logger.info(
-							"Encountered a [{}] while querying the endpoint	for sync", e);
+					logger.error(
+						"Error while querying for modified content. {}",
+						e.getLocalizedMessage());
 				} finally {	qexec.close(); }
 			} catch (QueryParseException  qpe) {
-				logger.info(
-						"Could not parse [{}]. Please provide a relevant quey	{}",
-						rdfQuery, qpe);
+				logger.warn(
+					"Could not parse [{}]. Please provide a relevant query. {}",
+					rdfQuery, qpe.getLocalizedMessage());
 			}
 
 		}
@@ -691,8 +698,9 @@ public class Harvester implements Runnable {
 									NodeFactory.createLiteral(object)));
 
 					} catch(NoSuchElementException nsee) {
-						logger.info("Could not index [{}] / {}: Query result was" +
-								"not a triple",	sol.toString(), nsee.toString());
+						logger.error("Could not index [{}]: Query result was" +
+								"not a triple. {}",	sol.toString(),
+								nsee.getLocalizedMessage());
 					}
 				}
 				got500 = false;
@@ -701,11 +709,11 @@ public class Harvester implements Runnable {
 				if(e instanceof QueryExceptionHTTP &&
 					errorText.contains("Internal Server Error")) {
 					got500 = true;
-					logger.info(
+					logger.warn(
 						"The endpoint replied with an internal error. Retrying");
 				} else {
 					got500 = false;
-					logger.info(
+					logger.error(
 						"Encountered a [{}] when quering the endpoint",
 						errorText);
 				}
@@ -734,11 +742,11 @@ public class Harvester implements Runnable {
 				if(e instanceof QueryExceptionHTTP &&
 					errorText.contains("Internal Server Error")) {
 					got500 = true;
-					logger.info(
+					logger.warn(
 						"The endpoint replied with an internal error. Retrying");
 				} else {
 					got500 = false;
-					logger.info(
+					logger.error(
 						"Encountered a [{}] when quering the endpoint",
 						errorText);
 				}
@@ -782,8 +790,8 @@ public class Harvester implements Runnable {
 				}
 
 			} catch (QueryParseException qpe) {
-				logger.info(
-						"Could not parse [{}]. Please provide a relevant query {}",
+				logger.error(
+						"Could not parse [{}]. Please provide a relevant query. {}",
 						rdfQuery, qpe);
 			}
 		}
@@ -806,7 +814,11 @@ public class Harvester implements Runnable {
 				addModelToES(model, bulkRequest);
 			}
 			catch (RiotException re) {
-				logger.info("Illegal xml character [{}]", re.toString());
+				logger.error("Illegal xml character [{}]", re.getLocalizedMessage());
+			}
+			catch (Exception e) {
+				logger.error("Exception when harvesting url: {}. Details: {}",
+					url, e.getLocalizedMessage());
 			}
 		}
 	}
@@ -1046,9 +1058,13 @@ public class Harvester implements Runnable {
 						}
 					} catch(Exception e){
 						keepTrying = true;
+						logger.warn("Could not get label for uri {}. Retrying.",
+									uri);
 					}finally { qexec.close();}
 				}
 			} catch (QueryParseException qpe) {
+				logger.error("Exception for query {}. The label cannot be obtained",
+							 innerQuery);
 			}
 		}
 		return uri;
