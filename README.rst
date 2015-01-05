@@ -48,6 +48,7 @@ Main features
 5. Blacklist of unnecessary properties
 6. Whitelist of required properties
 7. Normalization of properties from different namespaces
+8. Normalization of missing properties
 
 Indexing
 ========
@@ -358,6 +359,29 @@ replaced with given values no matter of the property whose value they represent.
       }
    }
  }'
+
+Missing Property Normalization
+++++++++++++++++++++++++++++++
+
+'NormMissing' contains pairs of property-default. If the property is missing
+in a certain document, it will be indexed with the default value provided in
+this dict.
+
+::
+
+ curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+   "type" : "eeaRDF",
+   "eeaRDF" : {
+      "endpoint" : "http://semantic.eea.europa.eu/sparql",
+      "query" : ["CONSTRUCT {?s ?p ?o} WHERE {?s  a <http://www.openlinksw.com/schemas/virtrdf#QuadMapFormat> ; ?p ?o}"],
+      "queryType" : "construct",
+      "normMissing" : {
+            "http://purl.org/dc/elements/1.1/spatial" : "Other",
+      }
+   }
+ }'
+
+
  
  
 Synchronization with an endpoint

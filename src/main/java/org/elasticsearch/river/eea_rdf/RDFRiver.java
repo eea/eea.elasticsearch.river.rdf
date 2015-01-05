@@ -93,6 +93,11 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 					.rdfNormalizationProp((
 								Map<String,String>)eeaSettings.get("normProp"));
 			}
+			if(eeaSettings.containsKey("normMissing")) {
+				harvester
+						.rdfNormalizationMissing((
+								Map<String,String>)eeaSettings.get("normMissing"));
+			}
 			if(eeaSettings.containsKey("normObj")) {
 				harvester
 					.rdfNormalizationObj((

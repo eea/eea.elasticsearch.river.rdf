@@ -67,6 +67,7 @@ public class Harvester implements Runnable {
 	private Boolean hasList = false;
 	private Map<String, String> normalizeProp;
 	private Map<String, String> normalizeObj;
+	private Map<String, String> normalizeMissing;
 	private Boolean willNormalizeProp = false;
 	private Boolean willNormalizeObj = false;
 	private Boolean addLanguage = false;
@@ -76,6 +77,7 @@ public class Harvester implements Runnable {
 	private Boolean addUriForResource;
 	private Boolean hasBlackMap = false;
 	private Boolean hasWhiteMap = false;
+	private Boolean willNormalizeMissing = false;
 	private Map<String,List<String>> blackMap;
 	private Map<String,List<String>> whiteMap;
 	private String syncConditions;
@@ -244,6 +246,25 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
+	/**
+	 * Sets the {@link #Harvester}'s {@link #normalizeMissing} parameter.
+	 * {@link #normalizeMissing} contains pairs of property-value. Missing
+	 * properties are indexed with the given value.
+	 *
+	 * @param normalizeMissing - new value for the parameter
+	 * @return the same {@link #Harvester} with the {@link #normalizeMissing}
+	 * parameter set
+	 * @Observation In case there is at least one object to be normalized, the
+	 * {@link #willNormalizeMissing} parameter is set to true
+	 */
+	public Harvester rdfNormalizationMissing(Map<String, String> normalizeMissing) {
+		if(normalizeMissing != null || !normalizeMissing.isEmpty()) {
+			willNormalizeMissing = true;
+			this.normalizeMissing = normalizeMissing;
+		}
+		return this;
+	}
+	
 	/**
 	 * Sets the {@link #Harvester}'s {@link #blackMap} parameter. A blackMap
 	 * contains all the pairs property - list of objects that are not meant to
@@ -867,59 +888,61 @@ public class Harvester implements Runnable {
 			for(Property prop: properties) {
 				NodeIterator niter = model.listObjectsOfProperty(rs,prop);
 				String property = prop.toString();
+				results = new ArrayList<String>();
 				if(niter.hasNext()) {
-					results = new ArrayList<String>();
 					String lang = "";
 					String currValue = "";
 
 					while(niter.hasNext()) {
 						RDFNode node = niter.next();
 						currValue = getStringForResult(node);
-						if(addLanguage){
+						if (addLanguage) {
 							try {
 								lang = node.asLiteral().getLanguage();
-								if(!lang.isEmpty()) {
+								if (!lang.isEmpty()) {
 									rdfLanguages.add("\"" + lang + "\"");
 								}
-							} catch (Exception e) {}
+							} catch (Exception e) {
+							}
 						}
 
 						String shortValue = currValue;
 						int currlen = currValue.length();
-						if(currlen > 1)
+						if (currlen > 1)
 							shortValue = currValue.substring(
-												1,
-												currlen - 1);
+									1,
+									currlen - 1);
 
-						if((hasWhiteMap && whiteMap.containsKey(property) &&
+						if ((hasWhiteMap && whiteMap.containsKey(property) &&
 								!whiteMap.get(property).contains(shortValue)) ||
-							 (hasBlackMap && blackMap.containsKey(property) &&
-								blackMap.get(property).contains(shortValue))) {
-								continue;
+								(hasBlackMap && blackMap.containsKey(property) &&
+										blackMap.get(property).contains(shortValue))) {
+							continue;
 						} else {
-							if(willNormalizeObj &&
-								normalizeObj.containsKey(shortValue)) {
+							if (willNormalizeObj &&
+									normalizeObj.containsKey(shortValue)) {
 								results.add("\"" +
-									normalizeObj.get(shortValue) + "\"");
+										normalizeObj.get(shortValue) + "\"");
 							} else {
-									results.add(currValue);
+								results.add(currValue);
 							}
 						}
 					}
+				} else if (willNormalizeMissing && normalizeMissing.containsKey(property)) {
+					results.add("\"" + normalizeMissing.get(property) + "\"");
+				}
 
-					if(!results.isEmpty()) {
-						if(willNormalizeProp &&
-							normalizeProp.containsKey(property)) {
-							property = normalizeProp.get(property);
-							if(jsonMap.containsKey(property)) {
-								results.addAll(jsonMap.get(property));
-								jsonMap.put(property, results);
-							} else {
-								jsonMap.put(property, results);
-							}
+				if(!results.isEmpty()) {
+					if (willNormalizeProp && normalizeProp.containsKey(property)) {
+						property = normalizeProp.get(property);
+						if (jsonMap.containsKey(property)) {
+							results.addAll(jsonMap.get(property));
+							jsonMap.put(property, results);
 						} else {
-							jsonMap.put(property,results);
+							jsonMap.put(property, results);
 						}
+					} else {
+						jsonMap.put(property, results);
 					}
 				}
 			}
