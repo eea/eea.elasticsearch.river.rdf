@@ -928,7 +928,9 @@ public class Harvester implements Runnable {
 							}
 						}
 					}
-				} else if (willNormalizeMissing && normalizeMissing.containsKey(property)) {
+				}
+
+				if (results.isEmpty() && willNormalizeMissing && normalizeMissing.containsKey(property)) {
 					results.add("\"" + normalizeMissing.get(property) + "\"");
 				}
 
