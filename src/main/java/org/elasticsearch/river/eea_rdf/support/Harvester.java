@@ -893,7 +893,7 @@ public class Harvester implements Runnable {
 					String lang = "";
 					String currValue = "";
 
-					while(niter.hasNext()) {
+					while (niter.hasNext()) {
 						RDFNode node = niter.next();
 						currValue = getStringForResult(node);
 						if (addLanguage) {
@@ -929,11 +929,7 @@ public class Harvester implements Runnable {
 						}
 					}
 				}
-
-				if (results.isEmpty() && willNormalizeMissing && normalizeMissing.containsKey(property)) {
-					results.add("\"" + normalizeMissing.get(property) + "\"");
-				}
-
+				
 				if(!results.isEmpty()) {
 					if (willNormalizeProp && normalizeProp.containsKey(property)) {
 						property = normalizeProp.get(property);
@@ -954,6 +950,16 @@ public class Harvester implements Runnable {
 				if(!rdfLanguages.isEmpty())
 					jsonMap.put(
 						"language", new ArrayList<String>(rdfLanguages));
+			}
+
+			if (willNormalizeMissing) {
+				for (Map.Entry<String, String> it : normalizeMissing.entrySet()) {
+					if (!jsonMap.containsKey(it.getKey())) {
+						ArrayList<String> res = new ArrayList<String>();
+						res.add("\"" + it.getValue() + "\"");
+						jsonMap.put(it.getKey(), res);
+					}
+				}
 			}
 
 			bulkRequest.add(client.prepareIndex(indexName, typeName,
