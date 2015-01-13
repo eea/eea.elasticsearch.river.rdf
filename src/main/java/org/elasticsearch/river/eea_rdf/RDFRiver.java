@@ -6,8 +6,6 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 
-import org.elasticsearch.ElasticSearchIllegalArgumentException;
-
 import org.elasticsearch.river.AbstractRiverComponent;
 import org.elasticsearch.river.eea_rdf.support.Harvester;
 import org.elasticsearch.river.eea_rdf.settings.EEASettings;
@@ -115,7 +113,7 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 			}
 		}
 		else {
-			throw new	ElasticSearchIllegalArgumentException(
+			throw new	IllegalArgumentException(
 					"There are no eeaRDF settings in the	river settings");
 		}
 
