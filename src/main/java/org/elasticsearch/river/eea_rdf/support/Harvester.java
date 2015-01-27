@@ -36,15 +36,9 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.NoSuchElementException;
 import java.util.Date;
-import java.lang.StringBuffer;
-import java.lang.Exception;
-import java.lang.Integer;
-import java.lang.Byte;
 import java.text.SimpleDateFormat;
 import java.io.IOException;
-
-import javax.xml.ws.Endpoint;
-import javax.xml.ws.http.HTTPException;
+import org.elasticsearch.action.bulk.BulkItemResponse;
 
 /**
  *
@@ -697,6 +691,8 @@ public class Harvester implements Runnable {
 	private void harvestWithSelect(QueryExecution qexec) {
 		Model sparqlModel = ModelFactory.createDefaultModel();
 		Graph graph = sparqlModel.getGraph();
+                long startTime =  System.currentTimeMillis();
+                        
 		boolean got500 = true;
 
 		while(got500) {
@@ -850,9 +846,12 @@ public class Harvester implements Runnable {
 	 * @param model the model to index
 	 * @param bulkRequest a BulkRequestBuilder
 	 */
-	private void addModelToES(Model model, BulkRequestBuilder bulkRequest) {
+	private void addModelToES(Model model, BulkRequestBuilder bulkRequest) {       
+                long startTime = System.currentTimeMillis();
+                long bulkLength = 0;
 		HashSet<Property> properties = new HashSet<Property>();
 
+            
 		StmtIterator iter = model.listStatements();
 
 		while(iter.hasNext()) {
@@ -870,7 +869,8 @@ public class Harvester implements Runnable {
 
 		ResIterator rsiter = model.listSubjects();
 
-		while(rsiter.hasNext()){
+		while(rsiter.hasNext())
+                {
 
 			Resource rs = rsiter.nextResource();
 			Map<String, ArrayList<String>> jsonMap = new HashMap<String,
@@ -965,9 +965,72 @@ public class Harvester implements Runnable {
 			bulkRequest.add(client.prepareIndex(indexName, typeName,
 							rs.toString())
 				.setSource(mapToString(jsonMap)));
-			BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-		}
-	}
+                         bulkLength++;  
+                         
+                        
+                        //We want to execute the bulk for every  DEFAULT_BULK_SIZE requests
+                        if(bulkLength % EEASettings.DEFAULT_BULK_SIZE == 0) 
+                        {
+                           BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+
+                           //After executing, flush the BulkRequestBuilder.
+                           //This ensures that you do not index the same data again and again
+                           bulkRequest = client.prepareBulk();
+
+                           if(bulkResponse.hasFailures())
+                           {
+                             processFailure(bulkResponse);
+                           }
+                        }
+                    
+		  }
+                   
+                     //If number of requests is less than DEFAULT_BULK_SIZE, 
+                     //then simply execute all of those requests.
+                     if(bulkRequest.numberOfActions() > 0)
+                     {
+                        BulkResponse response = bulkRequest.execute().actionGet();
+                        
+                        //Handle failure by iterating through each bulk response item
+                        if(response.hasFailures())
+                        {
+                           processFailure(response);
+                        }
+                     
+                     }
+                     
+                    //Show time taken to index the documents 
+                   logger.info("\n==========================================="
+                              +"\n\tTotal documents indexed: " + bulkLength
+                              + "\n\tIndex: " + indexName
+                              + "\n\tType: " + typeName
+                              + "\n\tTime taken to index: " + (System.currentTimeMillis() - startTime)/1000.0 
+                              +" seconds"
+                              +"\n===========================================");
+    
+              }
+        
+        
+              /**
+               *  This method processes failures by iterating through each bulk response item
+               *  @param response, a BulkResponse
+               **/
+              private void processFailure(BulkResponse response)
+              {
+                     logger.warn("There was failures when executing bulk : " + response.buildFailureMessage());
+                      if(logger.isDebugEnabled())
+                       {
+                         for(BulkItemResponse item: response.getItems())
+                         {
+                           if(item.isFailed())
+                           {
+                             logger.debug("Error {} occured on index {}, type {}, id {} for {} operation " 
+                                     , item.getFailureMessage(), item.getIndex(), item.getType(), item.getId()
+                                     , item.getOpType());
+                           } 
+                         }
+                      }
+                }
 
 	/**
 	 * Converts a map of results to a String JSON representation for it
@@ -976,7 +1039,7 @@ public class Harvester implements Runnable {
 	 * @return the JSON representation for the map, as a String
 	 */
 	private String mapToString(Map<String, ArrayList<String>> map) {
-		StringBuffer result = new StringBuffer("{");
+		StringBuilder result = new StringBuilder("{");
 		for(Map.Entry<String, ArrayList<String>> entry : map.entrySet()) {
 			ArrayList<String> value = entry.getValue();
 			if(value.size() == 1)
