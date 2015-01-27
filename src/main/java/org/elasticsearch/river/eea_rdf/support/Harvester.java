@@ -691,8 +691,6 @@ public class Harvester implements Runnable {
 	private void harvestWithSelect(QueryExecution qexec) {
 		Model sparqlModel = ModelFactory.createDefaultModel();
 		Graph graph = sparqlModel.getGraph();
-                long startTime =  System.currentTimeMillis();
-                        
 		boolean got500 = true;
 
 		while(got500) {
