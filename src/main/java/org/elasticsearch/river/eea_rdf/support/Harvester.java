@@ -37,6 +37,10 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.NoSuchElementException;
 import java.util.Date;
+import java.lang.StringBuffer;
+import java.lang.Exception;
+import java.lang.Integer;
+import java.lang.Byte;
 import java.text.SimpleDateFormat;
 import java.io.IOException;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -964,7 +968,6 @@ public class Harvester implements Runnable {
 		long startTime = System.currentTimeMillis();
 		long bulkLength = 0;
 		HashSet<Property> properties = new HashSet<Property>();
-
             
 		StmtIterator iter = model.listStatements();
 		while(iter.hasNext()) {
@@ -979,7 +982,6 @@ public class Harvester implements Runnable {
 				properties.add(prop);
 			}
 		}
-
 
 		ResIterator rsiter = model.listSubjects();
 
