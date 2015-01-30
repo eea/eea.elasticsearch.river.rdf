@@ -11,7 +11,7 @@ public abstract class EEASettings {
 
 	public final static String DEFAULT_INDEX_NAME = "rdfdata";
 	public final static String DEFAULT_TYPE_NAME = "resource";
-	public final static int DEFAULT_BULK_SIZE = 100;
+	public final static int DEFAULT_BULK_SIZE = 30;
 	public final static int DEFAULT_BULK_REQ = 30;
 	public final static List<String> DEFAULT_QUERIES = new ArrayList<String>();
 	public final static String DEFAULT_ENDPOINT =	"http://semantic.eea.europa.eu/sparql";

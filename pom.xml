@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.elasticsearch.plugin.river.eea_rdf</groupId>
   <artifactId>eea-rdf-river-plugin</artifactId>
-  <version>1.5.0</version>
+  <version>1.5.1-SNAPSHOT</version>
 
   <packaging>jar</packaging>
 

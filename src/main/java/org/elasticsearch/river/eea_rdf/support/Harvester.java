@@ -72,8 +72,8 @@ public class Harvester implements Runnable {
 	private Boolean hasBlackMap = false;
 	private Boolean hasWhiteMap = false;
 	private Boolean willNormalizeMissing = false;
-	private Map<String,List<String>> blackMap;
-	private Map<String,List<String>> whiteMap;
+	private Map<String,Set<String>> blackMap;
+	private Map<String,Set<String>> whiteMap;
 	private String syncConditions;
 	private String syncTimeProp;
 	private Boolean syncOldData;
@@ -271,10 +271,10 @@ public class Harvester implements Runnable {
 	public Harvester rdfBlackMap(Map<String,Object> blackMap) {
 		if(blackMap != null || !blackMap.isEmpty()) {
 			hasBlackMap = true;
-			this.blackMap =  new HashMap<String,List<String>>();
+			this.blackMap =  new HashMap<String,Set<String>>();
 			for(Map.Entry<String,Object> entry : blackMap.entrySet()) {
 				this.blackMap.put(
-					entry.getKey(), (List<String>)entry.getValue());
+					entry.getKey(), new HashSet((List<String>)entry.getValue()));
 			}
 		}
 		return this;
@@ -292,10 +292,10 @@ public class Harvester implements Runnable {
 	public Harvester rdfWhiteMap(Map<String,Object> whiteMap) {
 		if(whiteMap != null || !whiteMap.isEmpty()) {
 			hasWhiteMap = true;
-			this.whiteMap =  new HashMap<String,List<String>>();
+			this.whiteMap =  new HashMap<String,Set<String>>();
 			for(Map.Entry<String,Object> entry : whiteMap.entrySet()) {
 				this.whiteMap.put(
-					entry.getKey(), (List<String>)entry.getValue());
+					entry.getKey(), new HashSet((List<String>)entry.getValue()));
 			}
 		}
 		return this;
@@ -839,19 +839,125 @@ public class Harvester implements Runnable {
 	}
 
 	/**
+	 * Get JSON map for a given resource applying the river settings
+	 * @param rs resource being processed
+	 * @param properties properties to be indexed
+	 * @param model model returned by the indexing query
+	 * @return map of properties to be indexed for res
+	 */
+	private Map<String, ArrayList<String>> getJsonMap(Resource rs, Set<Property> properties, Model model) {
+		Map<String, ArrayList<String>> jsonMap = new HashMap<String, ArrayList<String>>();
+		ArrayList<String> results = new ArrayList<String>();
+
+		if(addUriForResource) {
+			results.add("\"" + rs.toString() + "\"");
+			jsonMap.put(
+					"http://www.w3.org/1999/02/22-rdf-syntax-ns#about",
+					results);
+		}
+
+		Set<String> rdfLanguages = new HashSet<String>();
+
+		for(Property prop: properties) {
+			long t = System.currentTimeMillis();
+			NodeIterator niter = model.listObjectsOfProperty(rs,prop);
+			String property = prop.toString();
+			results = new ArrayList<String>();
+
+
+			String lang = "";
+			String currValue = "";
+
+			while (niter.hasNext()) {
+				RDFNode node = niter.next();
+				currValue = getStringForResult(node);
+				if (addLanguage) {
+					try {
+						lang = node.asLiteral().getLanguage();
+						if (!lang.isEmpty()) {
+							rdfLanguages.add("\"" + lang + "\"");
+						}
+					} catch (Exception e) {
+					}
+				}
+
+				String shortValue = currValue;
+
+				int currlen = currValue.length();
+				// Unquote string
+				if (currlen > 1)
+					shortValue = currValue.substring(1, currlen - 1);
+
+				// If either whiteMap does contains shortValue
+				// or blackMap contains the value
+				// skip adding it to the index
+				boolean whiteMapCond = hasWhiteMap
+						&& whiteMap.containsKey(property)
+						&& !whiteMap.get(property).contains(shortValue);
+
+				boolean blackMapCond = hasBlackMap
+						&& blackMap.containsKey(property)
+						&& blackMap.get(property).contains(shortValue);
+				if (whiteMapCond || blackMapCond) {
+					continue;
+				} else {
+					if (willNormalizeObj && normalizeObj.containsKey(shortValue)) {
+						results.add("\"" + normalizeObj.get(shortValue) + "\"");
+					} else {
+						results.add(currValue);
+					}
+				}
+			}
+
+			// Do not index empty properties
+			if (results.isEmpty()) continue;
+
+			if (willNormalizeProp && normalizeProp.containsKey(property)) {
+				property = normalizeProp.get(property);
+				if (jsonMap.containsKey(property)) {
+					jsonMap.get(property).addAll(results);
+				} else {
+					jsonMap.put(property, results);
+				}
+			} else {
+				jsonMap.put(property, results);
+			}
+		}
+
+		if(addLanguage) {
+			if(rdfLanguages.isEmpty() && !language.isEmpty())
+				rdfLanguages.add(language);
+			if(!rdfLanguages.isEmpty())
+				jsonMap.put(
+						"language", new ArrayList<String>(rdfLanguages));
+		}
+
+		if (willNormalizeMissing) {
+			for (Map.Entry<String, String> it : normalizeMissing.entrySet()) {
+				if (!jsonMap.containsKey(it.getKey())) {
+					ArrayList<String> res = new ArrayList<String>();
+					res.add("\"" + it.getValue() + "\"");
+					jsonMap.put(it.getKey(), res);
+				}
+			}
+		}
+
+		return jsonMap;
+	}
+
+	/**
 	 * Index all the resources in a Jena Model to ES
 	 *
 	 * @param model the model to index
 	 * @param bulkRequest a BulkRequestBuilder
 	 */
 	private void addModelToES(Model model, BulkRequestBuilder bulkRequest) {       
-                long startTime = System.currentTimeMillis();
-                long bulkLength = 0;
+		long startTime = System.currentTimeMillis();
+		long bulkLength = 0;
 		HashSet<Property> properties = new HashSet<Property>();
 
             
 		StmtIterator iter = model.listStatements();
-
 		while(iter.hasNext()) {
 			Statement st = iter.nextStatement();
 			Property prop = st.getPredicate();
@@ -865,170 +971,63 @@ public class Harvester implements Runnable {
 			}
 		}
 
+
 		ResIterator rsiter = model.listSubjects();
 
-		while(rsiter.hasNext())
-                {
-
+		while(rsiter.hasNext()) {
 			Resource rs = rsiter.nextResource();
-			Map<String, ArrayList<String>> jsonMap = new HashMap<String,
-				ArrayList<String>>();
-			ArrayList<String> results = new ArrayList<String>();
-			if(addUriForResource) {
-				results.add("\"" + rs.toString() + "\"");
-				jsonMap.put(
-						"http://www.w3.org/1999/02/22-rdf-syntax-ns#about",
-						results);
-			}
+			Map<String, ArrayList<String>> jsonMap = getJsonMap(rs, properties, model);
 
-			Set<String> rdfLanguages = new HashSet<String>();
+			bulkRequest.add(client.prepareIndex(indexName, typeName, rs.toString())
+					.setSource(mapToString(jsonMap)));
+			bulkLength++;
 
-			for(Property prop: properties) {
-				NodeIterator niter = model.listObjectsOfProperty(rs,prop);
-				String property = prop.toString();
-				results = new ArrayList<String>();
-				if(niter.hasNext()) {
-					String lang = "";
-					String currValue = "";
+			// We want to execute the bulk for every  DEFAULT_BULK_SIZE requests
+			if(bulkLength % EEASettings.DEFAULT_BULK_SIZE == 0) {
+				BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+				// After executing, flush the BulkRequestBuilder.
+				bulkRequest = client.prepareBulk();
 
-					while (niter.hasNext()) {
-						RDFNode node = niter.next();
-						currValue = getStringForResult(node);
-						if (addLanguage) {
-							try {
-								lang = node.asLiteral().getLanguage();
-								if (!lang.isEmpty()) {
-									rdfLanguages.add("\"" + lang + "\"");
-								}
-							} catch (Exception e) {
-							}
-						}
-
-						String shortValue = currValue;
-						int currlen = currValue.length();
-						if (currlen > 1)
-							shortValue = currValue.substring(
-									1,
-									currlen - 1);
-
-						if ((hasWhiteMap && whiteMap.containsKey(property) &&
-								!whiteMap.get(property).contains(shortValue)) ||
-								(hasBlackMap && blackMap.containsKey(property) &&
-										blackMap.get(property).contains(shortValue))) {
-							continue;
-						} else {
-							if (willNormalizeObj &&
-									normalizeObj.containsKey(shortValue)) {
-								results.add("\"" +
-										normalizeObj.get(shortValue) + "\"");
-							} else {
-								results.add(currValue);
-							}
-						}
-					}
-				}
-				
-				if(!results.isEmpty()) {
-					if (willNormalizeProp && normalizeProp.containsKey(property)) {
-						property = normalizeProp.get(property);
-						if (jsonMap.containsKey(property)) {
-							results.addAll(jsonMap.get(property));
-							jsonMap.put(property, results);
-						} else {
-							jsonMap.put(property, results);
-						}
-					} else {
-						jsonMap.put(property, results);
-					}
+				if (bulkResponse.hasFailures()) {
+					processBulkResponseFailure(bulkResponse);
 				}
 			}
-			if(addLanguage) {
-				if(rdfLanguages.isEmpty() && !language.isEmpty())
-					rdfLanguages.add(language);
-				if(!rdfLanguages.isEmpty())
-					jsonMap.put(
-						"language", new ArrayList<String>(rdfLanguages));
+		}
+
+		// Execute remaining requests
+		if(bulkRequest.numberOfActions() > 0) {
+			BulkResponse response = bulkRequest.execute().actionGet();
+			// Handle failure by iterating through each bulk response item
+			if(response.hasFailures()) {
+				processBulkResponseFailure(response);
 			}
-
-			if (willNormalizeMissing) {
-				for (Map.Entry<String, String> it : normalizeMissing.entrySet()) {
-					if (!jsonMap.containsKey(it.getKey())) {
-						ArrayList<String> res = new ArrayList<String>();
-						res.add("\"" + it.getValue() + "\"");
-						jsonMap.put(it.getKey(), res);
-					}
-				}
-			}
-
-			bulkRequest.add(client.prepareIndex(indexName, typeName,
-							rs.toString())
-				.setSource(mapToString(jsonMap)));
-                         bulkLength++;  
-                         
-                        
-                        //We want to execute the bulk for every  DEFAULT_BULK_SIZE requests
-                        if(bulkLength % EEASettings.DEFAULT_BULK_SIZE == 0) 
-                        {
-                           BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-
-                           //After executing, flush the BulkRequestBuilder.
-                           //This ensures that you do not index the same data again and again
-                           bulkRequest = client.prepareBulk();
-
-                           if(bulkResponse.hasFailures())
-                           {
-                             processFailure(bulkResponse);
-                           }
-                        }
-                    
-		  }
-                   
-                     //If number of requests is less than DEFAULT_BULK_SIZE, 
-                     //then simply execute all of those requests.
-                     if(bulkRequest.numberOfActions() > 0)
-                     {
-                        BulkResponse response = bulkRequest.execute().actionGet();
-                        
-                        //Handle failure by iterating through each bulk response item
-                        if(response.hasFailures())
-                        {
-                           processFailure(response);
-                        }
                      
-                     }
-                     
-                    //Show time taken to index the documents 
-                   logger.info("\n==========================================="
-                              +"\n\tTotal documents indexed: " + bulkLength
-                              + "\n\tIndex: " + indexName
-                              + "\n\tType: " + typeName
-                              + "\n\tTime taken to index: " + (System.currentTimeMillis() - startTime)/1000.0 
-                              +" seconds"
-                              +"\n===========================================");
-    
-              }
+		}
+
+        // Show time taken to index the documents
+		logger.info("Indexed {} documents on {}/{} in {} seconds",
+					bulkLength, indexName, typeName,
+					(System.currentTimeMillis() - startTime)/ 1000.0);
+	}
         
         
-              /**
-               *  This method processes failures by iterating through each bulk response item
-               *  @param response, a BulkResponse
-               **/
-              private void processFailure(BulkResponse response)
-              {
-                     logger.warn("There was failures when executing bulk : " + response.buildFailureMessage());
-                      if(logger.isDebugEnabled())
-                       {
-                         for(BulkItemResponse item: response.getItems())
-                         {
-                           if(item.isFailed())
-                           {
-                             logger.debug("Error {} occured on index {}, type {}, id {} for {} operation " 
-                                     , item.getFailureMessage(), item.getIndex(), item.getType(), item.getId()
-                                     , item.getOpType());
-                           } 
-                         }
-                      }
-                }
+	/**
+	 *  This method processes failures by iterating through each bulk response item
+	 *  @param response, a BulkResponse
+	 **/
+	private void processBulkResponseFailure(BulkResponse response) {
+		logger.warn("There was failures when executing bulk : " + response.buildFailureMessage());
+
+		if(!logger.isDebugEnabled()) return;
+
+		for(BulkItemResponse item: response.getItems()) {
+			if (item.isFailed()) {
+				logger.debug("Error {} occured on index {}, type {}, id {} for {} operation "
+							, item.getFailureMessage(), item.getIndex(), item.getType(), item.getId()
+							, item.getOpType());
+			}
+		}
+	}
 
 	/**
 	 * Converts a map of results to a String JSON representation for it
@@ -1148,11 +1147,11 @@ public class Harvester implements Runnable {
 							if(!result.isEmpty())
 								return result;
 						}
-					} catch(Exception e){
+					} catch(Exception e) {
 						keepTrying = true;
 						logger.warn("Could not get label for uri {}. Retrying.",
 									uri);
-					}finally { qexec.close();}
+					} finally { qexec.close();}
 				}
 			} catch (QueryParseException qpe) {
 				logger.error("Exception for query {}. The label cannot be obtained",
