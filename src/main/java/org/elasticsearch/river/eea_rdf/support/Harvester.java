@@ -1,5 +1,6 @@
 package org.elasticsearch.river.eea_rdf.support;
 
+import com.hp.hpl.jena.graph.Node;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.client.Client;
@@ -705,12 +706,20 @@ public class Harvester implements Runnable {
 					try {
 						String subject = sol.getResource("s").toString();
 						String predicate = sol.getResource("p").toString();
-						String object = sol.get("o").toString();
+						RDFNode object = sol.get("o");
+
+						Node objNode;
+						if (object.isLiteral()) {
+							Literal obj = object.asLiteral();
+							objNode = NodeFactory.createLiteral(obj.getString(), obj.getDatatype());
+						} else {
+							objNode = NodeFactory.createLiteral(object.toString());
+						}
 
 						graph.add(new Triple(
 									NodeFactory.createURI(subject),
 									NodeFactory.createURI(predicate),
-									NodeFactory.createLiteral(object)));
+									objNode));
 
 					} catch(NoSuchElementException nsee) {
 						logger.error("Could not index [{}]: Query result was" +
@@ -1074,13 +1083,8 @@ public class Harvester implements Runnable {
 					.getDatatype()
 					.getJavaClass();
 
-				if(literalJavaClass.equals(Boolean.class)
-						|| literalJavaClass.equals(Byte.class)
-						|| literalJavaClass.equals(Double.class)
-						|| literalJavaClass.equals(Float.class)
-						|| literalJavaClass.equals(Integer.class)
-						|| literalJavaClass.equals(Long.class)
-						|| literalJavaClass.equals(Short.class)) {
+				if (literalJavaClass.equals(Boolean.class)
+						|| Number.class.isAssignableFrom(literalJavaClass)) {
 
 					result += literalValue;
 				}	else {
