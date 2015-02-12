@@ -1,49 +1,31 @@
 package org.elasticsearch.river.eea_rdf.support;
 
+import com.hp.hpl.jena.graph.Graph;
 import com.hp.hpl.jena.graph.Node;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
-import org.elasticsearch.client.Client;
-import static org.elasticsearch.common.xcontent.XContentFactory.*;
+import com.hp.hpl.jena.graph.NodeFactory;
+import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.query.*;
+import com.hp.hpl.jena.rdf.model.*;
+import com.hp.hpl.jena.sparql.engine.http.QueryExceptionHTTP;
+import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RDFLanguages;
+import org.apache.jena.riot.RiotException;
+import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.river.eea_rdf.settings.EEASettings;
 
-import org.apache.jena.riot.RDFDataMgr ;
-import org.apache.jena.riot.RDFLanguages ;
-import org.apache.jena.riot.RiotException;
-
-import com.hp.hpl.jena.rdf.model.*;
-import com.hp.hpl.jena.query.Query;
-import com.hp.hpl.jena.query.QueryFactory;
-import com.hp.hpl.jena.query.QueryExecution;
-import com.hp.hpl.jena.query.QueryExecutionFactory;
-import com.hp.hpl.jena.query.QueryParseException;
-import com.hp.hpl.jena.query.QuerySolution;
-import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.graph.Graph;
-import com.hp.hpl.jena.graph.Triple;
-import com.hp.hpl.jena.graph.NodeFactory;
-import com.hp.hpl.jena.sparql.engine.http.QueryExceptionHTTP;
-
-import java.util.HashSet;
-import java.util.Set;
-import java.util.List;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.NoSuchElementException;
-import java.util.Date;
-import java.lang.StringBuffer;
-import java.lang.Exception;
-import java.lang.Integer;
-import java.lang.Byte;
-import java.text.SimpleDateFormat;
 import java.io.IOException;
-import org.elasticsearch.action.bulk.BulkItemResponse;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 /**
  *
@@ -89,6 +71,8 @@ public class Harvester implements Runnable {
 
 	private Boolean closed = false;
 
+	private HashMap<String, String> uriLabelCache;
+
 	/**
  	 * Sets the {@link #Harvester}'s {@link #rdfUrls} parameter
  	 * @param url - a list of urls
@@ -96,6 +80,7 @@ public class Harvester implements Runnable {
  	 */
 	public Harvester rdfUrl(String url) {
 		url = url.substring(1, url.length() - 1);
+		uriLabelCache = new HashMap<String, String>();
 		rdfUrls = new HashSet<String>(Arrays.asList(url.split(",")));
 		return this;
 	}
@@ -418,71 +403,182 @@ public class Harvester implements Runnable {
 		this.closed = value;
 	}
 
-	@Override
-	public void run() {
-		long currentTime = System.currentTimeMillis();
+	private void setLastUpdate(Date date) {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-		Date now = new Date(currentTime);
-
-		if(indexAll)
-			runIndexAll();
-		else
-			runSync();
-
 		BulkRequestBuilder bulkRequest = client.prepareBulk();
 		try {
 			bulkRequest.add(client.prepareIndex(indexName, "stats", "1")
 					.setSource(jsonBuilder()
-						.startObject()
-						.field("last_update", sdf.format(now))
-					.endObject()));
+							.startObject()
+							.field("last_update", sdf.format(date))
+							.endObject()));
 		} catch (IOException ioe) {
 			logger.error("Could not add the stats to ES. {}",
-						 ioe.getLocalizedMessage());
+					ioe.getLocalizedMessage());
 		}
-		BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-		return ;
+		bulkRequest.execute().actionGet();
 	}
 
-	public void runSync() {
-		logger.info(
-				"Starting RDF synchronizer: from [{}], endpoint [{}], " +
-				"index name [{}], type name [{}]",
-				startTime, rdfEndpoint,	indexName, typeName);
 
-		while(true) {
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-			Date lastUpdate = new Date(System.currentTimeMillis());
+	public void run() {
+		long currentTime = System.currentTimeMillis();
+		boolean success = false;
 
-			if(this.closed){
-				logger.info(
-						"Ended synchronization from [{}], for endpoint [{}]," +
-						"at index name {}, type name {}",
-						lastUpdate, rdfEndpoint, indexName, typeName);
-				return;
-			}
-			/**
-			 * Synchronize with the endpoint
-			 */
+		if(indexAll)
+			success = runIndexAll();
+		else
+			success = runSync();
 
-			if(startTime.isEmpty()) {
-				GetResponse response = client
-					.prepareGet(indexName, "stats", "1")
-					.setFields("last_update")
-					.execute()
-					.actionGet();
-				startTime = (String)response.getField("last_update").getValue();
-			}
-
-			try {
-				lastUpdate = sdf.parse(startTime);
-			} catch (Exception e){
-				logger.error("Could not parse time. [{}]", e.getLocalizedMessage());
-			}
-
-			sync();
-			closed = true;
+		if (success) {
+			setLastUpdate(new Date(currentTime));
 		}
+	}
+
+	public boolean runSync() {
+		logger.info("Starting RDF synchronizer: from [{}], endpoint [{}], "
+				    + "index name [{}], type name [{}]",
+					startTime, rdfEndpoint,	indexName, typeName);
+
+
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+		Date lastUpdate = new Date(System.currentTimeMillis());
+
+
+		/**
+		 * Synchronize with the endpoint
+		 */
+
+		if(startTime.isEmpty()) {
+			GetResponse response = client
+				.prepareGet(indexName, "stats", "1")
+				.setFields("last_update")
+				.execute()
+				.actionGet();
+			startTime = (String)response.getField("last_update").getValue();
+		}
+
+		try {
+			lastUpdate = sdf.parse(startTime);
+		} catch (Exception e){
+			logger.error("Could not parse time. [{}]", e.getLocalizedMessage());
+		}
+
+		boolean success = sync();
+
+		closed = true;
+		logger.info("Ended synchronization from [{}], for endpoint [{}]," +
+					"index name [{}], type name [{}] with status {}",
+					lastUpdate, rdfEndpoint, indexName, typeName,
+					success ? "Success": "Failure");
+		return success;
+	}
+
+	/**
+	 * Get a set of unique queryObjName returned from a select query
+	 *
+	 * Used to retrieve sets of modified objects used in sync
+	 * @param rdfQuery query to execute
+	 * @param queryObjName name of the object returned
+	 * @return set of values for queryObjectName in the rdfQuery result
+	 */
+	HashSet<String> executeSyncQuery(String rdfQuery, String queryObjName) {
+		HashSet<String> rdfUrls = new HashSet<String>();
+
+		Query query = null;
+		try {
+			query = QueryFactory.create(rdfQuery);
+		} catch (QueryParseException qpe) {
+			logger.warn(
+					"Could not parse [{}]. Please provide a relevant quey. {}",
+					rdfQuery, qpe.getLocalizedMessage());
+			return null;
+		}
+
+		QueryExecution qexec = QueryExecutionFactory.sparqlService(
+				rdfEndpoint, query);
+		try {
+			ResultSet results = qexec.execSelect();
+
+			while(results.hasNext()) {
+				QuerySolution sol = results.nextSolution();
+				try {
+					String value = sol.getResource(queryObjName).toString();
+					rdfUrls.add(value);
+				} catch (NoSuchElementException nsee) {
+					logger.error(
+							"Encountered a NoSuchElementException: "
+							+ nsee.getLocalizedMessage());
+					return null;
+				}
+			}
+		} catch (Exception e) {
+			logger.error(
+					"Encountered a [{}] while querying the endpoint for sync",
+					e.getLocalizedMessage());
+			return null;
+		} finally {
+			qexec.close();
+		}
+
+		return rdfUrls;
+	}
+
+	/**
+	 * Build a query returning all triples in which members of
+	 * uris are the subjects of the triplets.
+	 *
+	 * If toDescribeURIs is true the query will automatically add logic
+	 * to retrieve the labels directly from the SPARQL endpoint.
+	 * @param uris URIs for queried resources
+	 * @return a CONSTRUCT query string
+	 */
+	private String getSyncQueryStr(Iterable<String> uris) {
+		StringBuilder uriSetStrBuilder = new StringBuilder();
+		String delimiter = "";
+
+		uriSetStrBuilder.append("(");
+		for (String uri : uris) {
+			uriSetStrBuilder.append(delimiter).append(String.format("<%s>", uri));
+			delimiter = ", ";
+		}
+		uriSetStrBuilder.append(")");
+
+		String uriSet = uriSetStrBuilder.toString();
+
+		/* Get base triplets having any element from uris as subject */
+		StringBuilder queryBuilder = new StringBuilder();
+		queryBuilder.append("CONSTRUCT { ?s ?p ?o } WHERE {")
+					.append("{?s ?p ?o")
+					.append(String.format(" . FILTER (?s in %s )", uriSet));
+
+		/* Perform uri label resolution only if desired */
+		if (!toDescribeURIs) {
+			queryBuilder.append("}}");
+			return queryBuilder.toString();
+		}
+
+		/* Filter out properties having a label */
+		int index = 0;
+		for (String prop: uriDescriptionList) {
+			index++;
+			String filterTemplate = " . OPTIONAL { ?o <%s> ?o%d } "
+								  + " . FILTER(!BOUND(?o%d))";
+			queryBuilder.append(String.format(filterTemplate, prop, index, index));
+		}
+		queryBuilder.append("}");
+
+		/* Add labels for filtered out properties */
+		for (String prop : uriDescriptionList) {
+			/* Resolve ?o as being the <prop> for resource ?o1 */
+			String partQueryTemplate = " UNION "
+									 + "{ ?s ?p ?o1"
+									 + " . FILTER (?s in %s)"
+									 + " . ?o1 <%s> ?o }";
+			queryBuilder.append(String.format(partQueryTemplate, uriSet, prop));
+		}
+
+		queryBuilder.append("}");
+		return queryBuilder.toString();
 
 	}
 
@@ -490,52 +586,22 @@ public class Harvester implements Runnable {
 	 * Starts a harvester with predefined queries to synchronize with the
 	 * changes from the SPARQL endpoint
 	 */
-	public void sync() {
-		rdfQuery = "PREFIX xsd:<http://www.w3.org/2001/XMLSchema#> " +
-			"SELECT ?resource WHERE { " +
-			"?resource <" + this.syncTimeProp + "> ?time ." +
-			this.syncConditions +
-			" FILTER (?time > xsd:dateTime(\"" + startTime + "\")) }";
+	public boolean sync() {
+		logger.info("Sync resources newer than {}", startTime);
+		String rdfQueryTemplate =
+				"PREFIX xsd:<http://www.w3.org/2001/XMLSchema#> "
+				+ "SELECT ?resource WHERE { "
+				+ "?resource <%s> ?time . %s"
+				+ " FILTER (?time > xsd:dateTime(\"%s\")) }";
 
-		rdfUrls = new HashSet<String>();
+		String queryStr = String.format(rdfQueryTemplate, syncTimeProp,
+										syncConditions, startTime);
+		rdfUrls = executeSyncQuery(queryStr, "resource");
 
-		try {
-			Query query = QueryFactory.create(rdfQuery);
-			QueryExecution qexec = QueryExecutionFactory.sparqlService(
-					rdfEndpoint, query);
-			try {
-				ResultSet results = qexec.execSelect();
-
-				while(results.hasNext()) {
-					QuerySolution sol = results.nextSolution();
-					try {
-						String value = sol.getResource("resource").toString();
-						if (value.contains("login_form")) {
-							continue;
-						}
-						if (value.endsWith("/@@rdf")) {
-							value = value.substring(0, value.length() - 6);
-						}
-						rdfUrls.add(value);
-					} catch (NoSuchElementException nsee) {
-						logger.error(
-							"Encountered a NoSuchElementException: " +
-							nsee.getLocalizedMessage());
-					}
-				}
-			} catch (Exception e) {
-				logger.error(
-						"Encountered a [{}] while querying the endpoint for sync",
-						e.getLocalizedMessage());
-			} finally {
-				qexec.close();
-			}
-		} catch (QueryParseException qpe) {
-			logger.warn(
-					"Could not parse [{}]. Please provide a relevant quey. {}",
-					rdfQuery, qpe.getLocalizedMessage());
+		if (rdfUrls == null) {
+			logger.error("Errors occurred during sync procedure. Aborting!");
+			return false;
 		}
-		int count = rdfUrls.size();
 
 		/**
 		 * If desired, query for old data that has the sync conditions modified
@@ -548,115 +614,102 @@ public class Harvester implements Runnable {
 		 *
 		 *
 		 */
-		if (this.syncOldData) {
-			rdfQuery = "PREFIX xsd:<http://www.w3.org/2001/XMLSchema#> " +
-			"SELECT ?resource WHERE { " +
-			"?resource <" + this.syncTimeProp + "> ?time ." +
-			" FILTER (?time > xsd:dateTime(\"" + startTime + "\")) }";
-			try {
-				Query query = QueryFactory.create(rdfQuery);
-				QueryExecution qexec = QueryExecutionFactory.sparqlService(
-						rdfEndpoint, query);
-				try {
-					ResultSet results = qexec.execSelect();
-					while(results.hasNext()) {
-						QuerySolution sol = results.nextSolution();
-						String value = sol.getResource("resource").toString();
-						if (value.contains("login_form")) {
-							continue;
-						}
-						if (value.endsWith("/@@rdf")) {
-							value = value.substring(0, value.length() - 6);
-						}
-						if (!rdfUrls.contains(value)) {
-							//delete the resource if it exists
-							logger.info("Deleting old resource: [{}] ", value);
 
-							DeleteResponse response = client.prepareDelete(
-															indexName,
-															typeName,
-															value)
-        												.execute()
-        												.actionGet();
-        					count++;
-						}
-					}
-				} catch (NoSuchElementException nsee) {
-					logger.error("Error when querying without conditions. {} ",
-								 nsee.getLocalizedMessage());
-				} catch (Exception e) {
-					logger.error(
-						"Error while querying for sync, without conditions. {}",
-						e.getLocalizedMessage());
-				} finally {
-					qexec.close();
-				}
-			} catch (QueryParseException qpe) {
-				logger.warn(
-					"Could not parse [{}]. Please provide a relevant quey {}",
-					rdfQuery, qpe.getLocalizedMessage());
+		int deleted = 0;
+		int count = 0;
+		if (this.syncOldData) {
+			rdfQueryTemplate = "PREFIX xsd:<http://www.w3.org/2001/XMLSchema#> "
+							 + "SELECT ?resource WHERE { "
+					   		 + "?resource <%s> ?time ."
+					   		 + " FILTER (?time > xsd:dateTime(\"%s\")) }";
+			queryStr = String.format(rdfQueryTemplate, syncTimeProp, startTime);
+
+			HashSet<String> notMatchingUrls = executeSyncQuery(queryStr, "resource");
+
+			if (notMatchingUrls == null) {
+				logger.error("Errors occurred during modified content sync query. Aborting!");
+				return false;
 			}
 
+			notMatchingUrls.removeAll(rdfUrls);
+
+			for (String uri : notMatchingUrls) {
+				DeleteRequestBuilder request = client.prepareDelete(
+											indexName, typeName, uri);
+				DeleteResponse response = request.execute().actionGet();
+
+				if (response.isFound()) {
+					deleted++;
+					logger.info("Deleted resource not matching sync properties: {}", uri);
+				}
+			}
 		}
 
+		/* Prepare a series of bulk uris to be described so we can make
+		 * a smaller number of calls to the SPARQL endpoint. */
+		ArrayList<ArrayList<String>> bulks = new ArrayList<ArrayList<String>>();
+		ArrayList<String> currentBulk = new ArrayList<String>();
+
 		for (String uri : rdfUrls) {
-			//make query for each/all entries
-			switch(rdfQueryType) {
-				case 0: rdfQuery = "CONSTRUCT {<" + uri + "> ?p ?o WHERE { <" +
-								uri + "> ?p ?o}";
-								break;
-				case 1: rdfQuery = "SELECT <" + uri + "> as ?s ?p ?o WHERE { <" +
-								uri + "> ?p ?o}";
-								break;
-				case 2: rdfQuery = "DESCRIBE <" + uri + ">";
-								break;
-				default: rdfQuery = "";
-								 break;
+			currentBulk.add(uri);
+
+			if (currentBulk.size() == EEASettings.DEFAULT_BULK_SIZE) {
+				bulks.add(currentBulk);
+				currentBulk = new ArrayList<String>();
 			}
-			rdfQuery = "DESCRIBE <" + uri + ">";
+		}
+
+		if (currentBulk.size() > 0) {
+			bulks.add(currentBulk);
+		}
+
+		/* Execute RDF queries for the resources in each bulk */
+		for (ArrayList<String> bulk : bulks) {
+			String syncQuery = getSyncQueryStr(bulk);
+
 			try {
-				Query query = QueryFactory.create(rdfQuery);
+				Query query = QueryFactory.create(syncQuery);
 				QueryExecution qexec = QueryExecutionFactory.sparqlService(
 						rdfEndpoint, query);
 				try {
 					Model constructModel = ModelFactory.createDefaultModel();
-
 					qexec.execConstruct(constructModel);
-
-					if (constructModel.isEmpty() && !indexAll) {
-						//delete the resource
-						logger.info("Deleting [{}] ", uri);
-
-						DeleteResponse response = client.prepareDelete(
-							indexName,
-							typeName,
-							uri)
-        												.execute()
-        												.actionGet();
-					}
-
 					BulkRequestBuilder bulkRequest = client.prepareBulk();
+
+					/**
+					 *  When adding the model to ES save old state of toDescribeURIs
+					 *  as the query already returned the correct labels.
+					 */
+					boolean oldToDescribeURIs = toDescribeURIs;
+					toDescribeURIs = false;
 					addModelToES(constructModel, bulkRequest);
+					toDescribeURIs = oldToDescribeURIs;
+					count += bulk.size();
 				} catch (Exception e) {
 					logger.error(
 						"Error while querying for modified content. {}",
 						e.getLocalizedMessage());
-				} finally {	qexec.close(); }
+					return false;
+				} finally {
+					qexec.close();
+				}
 			} catch (QueryParseException  qpe) {
 				logger.warn(
 					"Could not parse [{}]. Please provide a relevant query. {}",
 					rdfQuery, qpe.getLocalizedMessage());
+				return false;
 			}
 
 		}
-		logger.info("Finished synchronisation for {} resources ", count);
+		logger.info("Finished synchronisation: Deleted {}, Updated {}/{}",
+					deleted, count, rdfUrls.size());
+		return true;
 	}
 
 	/**
 	 * Starts the harvester for queries and/or URLs
 	 */
-	public void runIndexAll() {
-
+	public boolean runIndexAll() {
 		logger.info(
 				"Starting RDF harvester: endpoint [{}], queries [{}]," +
 				"URLs [{}], index name [{}], typeName [{}]",
@@ -667,8 +720,7 @@ public class Harvester implements Runnable {
 				logger.info("Ended harvest for endpoint [{}], queries [{}]," +
 						"URLs [{}], index name {}, type name {}",
 						rdfEndpoint, rdfQueries, rdfUrls, indexName, typeName);
-
-				return;
+				return true;
 			}
 
 			/**
@@ -1086,7 +1138,7 @@ public class Harvester implements Runnable {
 					.getJavaClass();
 
 				if (literalJavaClass.equals(Boolean.class)
-						|| Number.class.isAssignableFrom(literalJavaClass)) {
+					|| Number.class.isAssignableFrom(literalJavaClass)) {
 
 					result += literalValue;
 				}	else {
@@ -1131,6 +1183,9 @@ public class Harvester implements Runnable {
 	 */
 	private String getLabelForUri(String uri) {
 		String result = "";
+		if (uriLabelCache.containsKey(uri)) {
+			return uriLabelCache.get(uri);
+		}
 		for(String prop:uriDescriptionList) {
 			String innerQuery = "SELECT ?r WHERE {<" + uri + "> <" +
 				prop + "> ?r } LIMIT 1";
@@ -1150,8 +1205,10 @@ public class Harvester implements Runnable {
 							QuerySolution sol = results.nextSolution();
 							result = EEASettings.parseForJson(
 									sol.getLiteral("r").getLexicalForm());
-							if(!result.isEmpty())
+							if(!result.isEmpty()) {
+								uriLabelCache.put(uri, result);
 								return result;
+							}
 						}
 					} catch(Exception e) {
 						keepTrying = true;
