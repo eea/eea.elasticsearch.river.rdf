@@ -35,7 +35,7 @@ To install the RDF River plugin run from the previously extracted directory::
 
 Note:
  *raw.github.com* urls are deprecated and will be checked out from the source tree. Please use the url described above
- to install the plugin.
+ to install the plugin. You can find all of the legacy archives previously available in the source tree `here <https://github.com/eea/eea.elasticsearch.river.rdf/releases/download/v1.1/legacy-releases.zip>`_. 
 
 Main features
 =============
