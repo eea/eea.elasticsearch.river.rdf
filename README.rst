@@ -17,26 +17,25 @@ Installation
 
 Prerequisites:
 
-* ElasticSearch 0.90.2
+* ElasticSearch 0.90.2 or later
 
 * Java 7 Runtime Environment
 
 Binaries for this plugin are available at:
 
-https://github.com/eea/eea.elasticsearch.river.rdf/blob/master/target/releases/
+https://github.com/eea/eea.elasticsearch.river.rdf/releases
 
 In order to install the plugin, you first need to have
 `Elasticsearch <http://www.elasticsearch.org/download/>`_ installed. Just
-download the latest release and extract it. Add the plugin's binaries to the
-elasticsearch-X.Y.Z/plugins/name_of_plugin/ directory, where X.Y.Z is the current
-ElasticSearch version.
+download the latest release and extract it.
 
-The same should be done when updating ElasticSearch to the latest version:
-download the latest release and extract it. Copy the elasticsearch-x.y.z/plugins
-directory to elasticsearch-X.Y.Z, where x.y.z is the previous ElasticSearch
-version and X.Y.Z the current one. Replace the previous ElasticSearch directory
-with the new one. Restart ElasticSearch.
+To install the RDF River plugin run from the previously extracted directory::
 
+./bin/plugin --url https://github.com/eea/eea.elasticsearch.river.rdf/releases/download/$PLUGIN_VERSION/eea-rdf-river-plugin-$PLUGIN_VERSION.zip -i eea-rdf-river
+
+Note:
+ *raw.github.com* urls are deprecated and will be checked out from the source tree. Please use the url described above
+ to install the plugin.
 
 Main features
 =============
@@ -217,11 +216,10 @@ The default value for "addLanguage" is true and for "language", "en".
 uriDescription
 ++++++++++++++
 
-[TODO] - description might change for future versions
 The value of each predicate (the object) can only be a Literal or a Resource. When it is a Resource (URI) it is 
 very difficult to obtain information from it, if the information is not indexed in ElasticSearch. Whenever 
 "uriDescription" is set, the URIs are replaced by the resource's label. The label is the first of the properties 
-given as arguments for "uriDescription", for which the resource has an object. 
+given as arguments for "uriDescription", for which the resource has an object.
 
 ::
 
@@ -237,7 +235,34 @@ given as arguments for "uriDescription", for which the resource has an object.
       "uriDescription" : ["http://www.w3.org/2000/01/rdf-schema#label", "http://purl.org/dc/terms/title"]
    }
  }'
+
+Note:
+ "uriDescription" is used in Sync queries to *automatically* retrieve descrpition for resources.
+ When using "uriDescription" without query optimization, the index speed will increase. A good practice when
+ using this feature is:
  
+ * Add the uriDescription fields in synchronization indices
+ * Add the uriDescription fields in index creation queries *AND* rewrite your queries so the SPARQL endpoint
+   responds with Literals rather than Resources:
+::
+
+ SELECT ?s ?p ?o WHERE { $COND }
+ 
+can be rewritten as:
+
+::
+ 
+ SELECT ?s ?p ?o WHERE {
+   {
+     $COND . FILTER(isLiteral(?o))
+   } UNION { 
+     ?s ?p ?o1 .
+     $COND -- applied on ?o1 instead of ?o
+     ?o1 <http://purl.org/dc/terms/title> ?o
+   }
+ }
+ 
+This optimization ensures that the query will return Literals which are indexed faster than Resources.
 
 Blacklists and whitelists
 =========================
