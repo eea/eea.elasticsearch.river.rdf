@@ -1,15 +1,7 @@
 *.class
 run
 release
-/target/archive-tmp
-/target/classes
-/target/eea-rdf-river-plugin-1.0-sources.jar
-/target/elasticsearch-eea-rdf-river-plugin-0.90.2.jar
-/target/elasticsearch-eea-rdf-river-plugin-0.90.3.jar
-/target/lib
-/target/maven-archiver
-/target/maven-status
-/target/test-classes
+/target/
 /src/test/java/org/elasticsearch/plugin/
 /src/main/java/org/elasticsearch/river/eea_rdf/settings/EEASettings.class
 pom.xml.versionsBackup
