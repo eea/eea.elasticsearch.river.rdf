@@ -138,8 +138,8 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 							indexSettings.get("index"),
 							EEASettings.DEFAULT_INDEX_NAME))
 					 .type(XContentMapValues.nodeStringValue(
-							 indexSettings.get("type"),
-							 EEASettings.DEFAULT_TYPE_NAME));
+							indexSettings.get("type"),
+							EEASettings.DEFAULT_TYPE_NAME));
 		}
 		else {
 			harvester.index(EEASettings.DEFAULT_INDEX_NAME)
@@ -156,7 +156,7 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 	}
 
 	public void close() {
-		harvester.log("Closing EEA RDF river {}" + riverName.name());
+		harvester.log("Closing EEA RDF river [" + riverName.name() + "]");
 		harvester.setClose(true);
 		harvesterThread.interrupt();
 	}

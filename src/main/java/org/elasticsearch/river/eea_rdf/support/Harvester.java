@@ -437,7 +437,7 @@ public class Harvester implements Runnable {
 		long currentTime = System.currentTimeMillis();
 		boolean success;
 
-		if(indexAll)
+		if (indexAll)
 			success = runIndexAll();
 		else
 			success = runSync();
@@ -857,9 +857,6 @@ public class Harvester implements Runnable {
 	/**
 	 * Queries the {@link #rdfEndpoint(String)} with each of the {@link #rdfQueries}
 	 * and harvests the results of the query.
-	 *
-	 * Observation: At this time only the CONSTRUCT and SELECT queries are
-	 * supported
 	 */
 	private void harvestFromEndpoint() {
 
@@ -1117,10 +1114,10 @@ public class Harvester implements Runnable {
 			ArrayList<String> value = entry.getValue();
 			if(value.size() == 1)
 				result.append(String.format("\"%s\" : %s,\n",
-							  entry.getKey(), value.get(0)));
+						entry.getKey(), value.get(0)));
 			else
 				result.append(String.format("\"%s\" : %s,\n",
-							  entry.getKey(), value.toString()));
+						entry.getKey(), value.toString()));
 		}
 
 		result.setCharAt(result.length() - 2, '}');
