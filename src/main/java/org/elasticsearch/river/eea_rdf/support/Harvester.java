@@ -47,7 +47,6 @@ public class Harvester implements Runnable {
 	private Set<String> rdfUrls;
 	private String rdfEndpoint;
 	private List<String> rdfQueries;
-	private String rdfQuery;
 	private QueryType rdfQueryType;
 	private List<String> rdfPropList;
 	private Boolean rdfListType = false;
@@ -80,9 +79,9 @@ public class Harvester implements Runnable {
 	private HashMap<String, String> uriLabelCache;
 
 	/**
- 	 * Sets the {@link #Harvester}'s {@link #rdfUrls} parameter
+ 	 * Sets the {@link Harvester}'s {@link #rdfUrls} parameter
  	 * @param url - a list of urls
- 	 * @return the {@link #Harvester} with the {@link #rdfUrls} parameter set
+ 	 * @return the {@link Harvester} with the {@link #rdfUrls} parameter set
  	 */
 	public Harvester rdfUrl(String url) {
 		url = url.substring(1, url.length() - 1);
@@ -92,20 +91,20 @@ public class Harvester implements Runnable {
 	}
 
 	/**
-	 * Sets the {@link #Harvester}'s {@link #rdfEndpoint} parameter
+	 * Sets the {@link Harvester}'s {@link #rdfEndpoint} parameter
 	 * @param endpoint - new endpoint
-	 * @return the same {@link #Harvester} with the {@link #rdfEndpoint}
+	 * @return the same {@link Harvester} with the {@link #rdfEndpoint}
 	 * parameter set
 	 */
 	public Harvester rdfEndpoint(String endpoint) {
-		this.rdfEndpoint = endpoint;
+		rdfEndpoint = endpoint;
 		return this;
 	}
 
 	/**
-	 * Sets the {@link #Harvester}'s {@link #rdfQuery} parameter
+	 * Sets the {@link Harvester}'s {@link #rdfQuery} parameter
 	 * @param query - new list of queries
-	 * @return the same {@link #Harvester} with the {@link #rdfQuery} parameter
+	 * @return the same {@link Harvester} with the {@link #rdfQuery} parameter
 	 * set
 	 */
 	public Harvester rdfQuery(List<String> query) {
@@ -114,9 +113,9 @@ public class Harvester implements Runnable {
 	}
 
 	/**
-	 * Sets the {@link #Harvester}'s {@link #rdfQueryType} parameter
+	 * Sets the {@link Harvester}'s {@link #rdfQueryType} parameter
 	 * @param queryType - the type of any possible query
-	 * @return the same {@link #Harvester} with the {@link #rdfQueryType}
+	 * @return the same {@link Harvester} with the {@link #rdfQueryType}
 	 * parameter set
 	 */
 	public Harvester rdfQueryType(String queryType) {
@@ -124,18 +123,19 @@ public class Harvester implements Runnable {
 			rdfQueryType = QueryType.valueOf(queryType.toUpperCase());
 		} catch (IllegalArgumentException e) {
 			logger.error("Bad query type: {}", queryType);
-			// River process can't continue
-			throw(e);
+
+			/* River process can't continue */
+			throw e;
 		}
 		return this;
 	}
 
 	/**
-	 * Sets the {@link #Harvester}'s {@link #rdfPropList} parameter
+	 * Sets the {@link Harvester}'s {@link #rdfPropList} parameter
 	 * @param list - a list of properties names that are either required in
 	 * the object description, or undesired, depending on its
 	 * {@link #rdfListType}
-	 * @return the same {@link #Harvester} with the {@link #rdfPropList}
+	 * @return the same {@link Harvester} with the {@link #rdfPropList}
 	 * parameter set
 	 */
 	public Harvester rdfPropList(List<String> list) {
@@ -147,118 +147,119 @@ public class Harvester implements Runnable {
 	}
 
 	/**
-	 * Sets the {@link #Harvester}'s {@link #rdfListType} parameter
+	 * Sets the {@link Harvester}'s {@link #rdfListType} parameter
 	 * @param listType - a type ("black" or "white") for the {@link #rdfPropList}
 	 * in case it exists
-	 * @return the same {@link #Harvester} with the {@link #rdfListType}
+	 * @return the same {@link Harvester} with the {@link #rdfListType}
 	 * parameter set
 	 * @Observation A blacklist contains properties that should not be indexed
 	 * with the data while a whitelist contains all the properties that should
 	 * be indexed with the data.
 	 */
 	public Harvester rdfListType(String listType) {
-		if(listType.equals("white"))
-			this.rdfListType = true;
+		if (listType.equals("white"))
+			rdfListType = true;
 		return this;
 	}
 
 	/**
-	 * Sets the {@link #Harvester}'s {@link #addLanguage} parameter.
+	 * Sets the {@link Harvester}'s {@link #addLanguage} parameter.
 	 * @param rdfAddLanguage - a new value for the parameter
-	 * @return the same {@link #Harvester} with the {@link #addLanguage}
+	 * @return the same {@link Harvester} with the {@link #addLanguage}
 	 * parameter set
 	 * @Observation When "addLanguage" is set on "true", all the languages
 	 * of the String Literals will be included in the output of a new property,
 	 * "language".
 	 */
 	public Harvester rdfAddLanguage(Boolean rdfAddLanguage) {
-		this.addLanguage = rdfAddLanguage;
+		addLanguage = rdfAddLanguage;
 		return this;
 	}
 
 	/**
-	 * Sets the {@link #Harvester}'s {@link #language} parameter. The default
+	 * Sets the {@link Harvester}'s {@link #language} parameter. The default
 	 * value is 'en"
 	 * @param rdfLanguage - new value for the parameter
-	 * @return the same {@link #Harvester} with the {@link #language} parameter
+	 * @return the same {@link Harvester} with the {@link #language} parameter
 	 * set
 	 */
 	public Harvester rdfLanguage(String rdfLanguage) {
-		this.language = rdfLanguage;
-		if(!this.language.isEmpty()){
-			this.addLanguage = true;
-			if(!this.language.startsWith("\""))
-				this.language = "\"" +  this.language + "\"";
+		language = rdfLanguage;
+		if(!language.isEmpty()) {
+			addLanguage = true;
+			/* Quote the language str */
+			if(!language.startsWith("\""))
+				language = "\"" +  this.language + "\"";
 		}
 		return this;
 	}
 
 	/**
-	 * Sets the {@link #Harvester}'s {@link #normalizeProp} parameter.
+	 * Sets the {@link Harvester}'s {@link #normalizeProp} parameter.
 	 * {@link #normalizeProp} contains pairs of property-replacement. The
 	 * properties are replaced with the given values and if one resource has
 	 * both properties their values are grouped in a list.
 	 *
 	 * @param normalizeProp - new value for the parameter
-	 * @return the same {@link #Harvester} with the {@link #normalizeProp}
+	 * @return the same {@link Harvester} with the {@link #normalizeProp}
 	 * parameter set
 	 * @Observation In case there is at least one property, the
 	 * {@link #willNormalizeProp} parameter is set to true.
 	 */
 	public Harvester rdfNormalizationProp(Map<String, String> normalizeProp) {
 		if(normalizeProp != null || !normalizeProp.isEmpty()) {
-			willNormalizeProp = true;
+			this.willNormalizeProp = true;
 			this.normalizeProp = normalizeProp;
 		}
 		return this;
 	}
 
 	/**
-	 * Sets the {@link #Harvester}'s {@link #normalizeObj} parameter.
+	 * Sets the {@link Harvester}'s {@link #normalizeObj} parameter.
 	 * {@link #normalizeObj} contains pairs of object-replacement. Objects
 	 * are replaced with given values no matter of the property whose value
 	 * they represent.
 	 *
 	 * @param normalizeObj - new value for the parameter
-	 * @return the same {@link #Harvester} with the {@link #normalizeObj}
+	 * @return the same {@link Harvester} with the {@link #normalizeObj}
 	 * parameter set
 	 * @Observation In case there is at least one object to be normalized, the
 	 * {@link #willNormalizeObj} parameter is set to true
 	 */
 	public Harvester rdfNormalizationObj(Map<String, String> normalizeObj) {
 		if(normalizeObj != null || !normalizeObj.isEmpty()) {
-			willNormalizeObj = true;
+			this.willNormalizeObj = true;
 			this.normalizeObj = normalizeObj;
 		}
 		return this;
 	}
 
 	/**
-	 * Sets the {@link #Harvester}'s {@link #normalizeMissing} parameter.
+	 * Sets the {@link Harvester}'s {@link #normalizeMissing} parameter.
 	 * {@link #normalizeMissing} contains pairs of property-value. Missing
 	 * properties are indexed with the given value.
 	 *
 	 * @param normalizeMissing - new value for the parameter
-	 * @return the same {@link #Harvester} with the {@link #normalizeMissing}
+	 * @return the same {@link Harvester} with the {@link #normalizeMissing}
 	 * parameter set
 	 * @Observation In case there is at least one object to be normalized, the
 	 * {@link #willNormalizeMissing} parameter is set to true
 	 */
 	public Harvester rdfNormalizationMissing(Map<String, String> normalizeMissing) {
 		if(normalizeMissing != null || !normalizeMissing.isEmpty()) {
-			willNormalizeMissing = true;
+			this.willNormalizeMissing = true;
 			this.normalizeMissing = normalizeMissing;
 		}
 		return this;
 	}
 	
 	/**
-	 * Sets the {@link #Harvester}'s {@link #blackMap} parameter. A blackMap
+	 * Sets the {@link Harvester}'s {@link #blackMap} parameter. A blackMap
 	 * contains all the pairs property - list of objects that are not meant to
 	 * be indexed.
 	 *
 	 * @param blackMap - a new value for the parameter
-	 * @return the same {@link #Harvester} with the {@link #blackMap}
+	 * @return the same {@link Harvester} with the {@link #blackMap}
 	 * parameter set
 	 */
 	public Harvester rdfBlackMap(Map<String,Object> blackMap) {
@@ -274,12 +275,12 @@ public class Harvester implements Runnable {
 	}
 
 	/**
-	 * Sets the {@link #Harvester}'s {@link #whiteMap} parameter.  A whiteMap
+	 * Sets the {@link Harvester}'s {@link #whiteMap} parameter.  A whiteMap
 	 * contains all the pairs property - list of objects that are meant to be
 	 * indexed.
 	 *
 	 * @param whiteMap - a new value for the parameter
-	 * @return the same {@link #Harvester} with the {@link #whiteMap}
+	 * @return the same {@link Harvester} with the {@link #whiteMap}
 	 * parameter set
 	 */
 	public Harvester rdfWhiteMap(Map<String,Object> whiteMap) {
@@ -295,13 +296,13 @@ public class Harvester implements Runnable {
 	}
 
 	/**
-	 * Sets the {@link #Harvester}'s {@link #uriDescriptionList} parameter.
+	 * Sets the {@link Harvester}'s {@link #uriDescriptionList} parameter.
 	 * Whenever {@link #uriDescriptionList} is set, all the objects represented
 	 * by URIs are replaced with the resource's label. The label is the first
 	 * of the properties in the given list, for which the resource has an object.
 	 *
 	 * @param uriList - a new value for the parameter
-	 * @return the same {@link #Harvester} with the {@link #uriDescriptionList}
+	 * @return the same {@link Harvester} with the {@link #uriDescriptionList}
 	 * parameter set
 	 *
 	 * @Observation If the list is not empty, the {@link #toDescribeURIs}
@@ -316,13 +317,13 @@ public class Harvester implements Runnable {
 	}
 
 	/**
-	 * Sets the {@link #Harvester}'s {@link #uriDescriptionList} parameter.
+	 * Sets the {@link Harvester}'s {@link #uriDescriptionList} parameter.
 	 * When it is set to true  a new property is added to each resource:
-	 * {@link http://www.w3.org/1999/02/22-rdf-syntax-ns#about}, having the value
+	 * <http://www.w3.org/1999/02/22-rdf-syntax-ns#about>, having the value
 	 * equal to the resource's URI.
 	 *
 	 * @param rdfAddUriForResource - a new value for the parameter
-	 * @return the same {@link #Harvester} with the {@link #addUriForResource}
+	 * @return the same {@link Harvester} with the {@link #addUriForResource}
 	 * parameter set
 	 */
 	public Harvester rdfAddUriForResource(Boolean rdfAddUriForResource) {
@@ -331,11 +332,11 @@ public class Harvester implements Runnable {
 	}
 
 	/**
-	 * Sets the {@link #Harvester}'s {@link #syncConditions} parameter. It
+	 * Sets the {@link Harvester}'s {@link #syncConditions} parameter. It
 	 * represents the sync query's additional conditions for indexing. These
 	 * conditions are added to the time filter.
 	 * @param syncCond - a new value for the parameter
-	 * @return the same {@link #Harvester} with the {@link #syncConditions}
+	 * @return the same {@link Harvester} with the {@link #syncConditions}
 	 * parameter set
 	 */
 	public Harvester rdfSyncConditions(String syncCond) {
@@ -346,11 +347,11 @@ public class Harvester implements Runnable {
 	}
 
 	/**
-	 * Sets the {@link #Harvester}'s {@link #syncTimeProp} parameter. It
+	 * Sets the {@link Harvester}'s {@link #syncTimeProp} parameter. It
 	 * represents the sync query's time parameter used when filtering the
 	 * endpoint's last updates.
 	 * @param syncTimeProp - a new value for the parameter
-	 * @return the same {@link #Harvester} with the {@link #syncTimeProp}
+	 * @return the same {@link Harvester} with the {@link #syncTimeProp}
 	 * parameter set
 	 */
 	public Harvester rdfSyncTimeProp(String syncTimeProp) {
@@ -359,12 +360,12 @@ public class Harvester implements Runnable {
 	}
 
     /**
-     * Sets the {@link #Harvester}'s {@link #syncOldData} parameter. When this
+     * Sets the {@link Harvester}'s {@link #syncOldData} parameter. When this
      * parameter is set to true, the endpoint will be queried again without the
      * {@link #syncConditions} to update existing resources that were changed.
      * THe default value is true
      * @param syncOldData - a new value for the parameter
-     * return the same {@link #Harvester} with the {@link #syncOldData}
+     * return the same {@link Harvester} with the {@link #syncOldData}
      * parameter set
      */
 	public Harvester rdfSyncOldData(Boolean syncOldData) {
@@ -698,8 +699,8 @@ public class Harvester implements Runnable {
 				}
 			} catch (QueryParseException  qpe) {
 				logger.warn(
-					"Could not parse [{}]. Please provide a relevant query. {}",
-					rdfQuery, qpe.getLocalizedMessage());
+					"Could not parse Sync query. Please provide a relevant query. {}",
+					qpe.getLocalizedMessage());
 				return false;
 			}
 
@@ -841,7 +842,7 @@ public class Harvester implements Runnable {
 	}
 
 	/**
-	 * Queries the {@link #rdfEndpoint(String)} with the {@link #rdfQuery(String)}
+	 * Queries the {@link #rdfEndpoint(String)} with each of the {@link #rdfQueries}
 	 * and harvests the results of the query.
 	 *
 	 * Observation: At this time only the CONSTRUCT and SELECT queries are
@@ -852,7 +853,7 @@ public class Harvester implements Runnable {
 		Query query = null;
 		QueryExecution qexec = null;
 
-		for (String rdfQuery:rdfQueries) {
+		for (String rdfQuery : rdfQueries) {
 			logger.info(
 				"Harvesting with query: [{}] on index [{}] and type [{}]",
  				rdfQuery, indexName, typeName);
@@ -944,6 +945,7 @@ public class Harvester implements Runnable {
 							rdfLanguages.add("\"" + lang + "\"");
 						}
 					} catch (Exception e) {
+						
 					}
 				}
 

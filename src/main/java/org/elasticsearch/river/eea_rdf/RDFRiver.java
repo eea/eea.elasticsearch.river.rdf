@@ -27,115 +27,125 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 	private volatile Thread harvesterThread;
 
 	@Inject
-	public RDFRiver(RiverName riverName, RiverSettings settings,
-			@RiverIndexName String riverIndexName, Client client) {
-
+	public RDFRiver(RiverName riverName,
+					RiverSettings settings,
+					@RiverIndexName String riverIndexName,
+					Client client) {
 		super(riverName, settings);
-
 		harvester = new Harvester().client(client);
+		addHarvesterSettings(settings);
+	}
 
-		if (settings.settings().containsKey("eeaRDF")) {
-			Map<String, Object> eeaSettings = (Map<String, Object>)settings.
-													settings().get("eeaRDF");
+	/** Type casting accessors for river settings **/
+	@SuppressWarnings("unchecked")
+	private static Map<String, Object> extractSettings(RiverSettings settings,
+													   String key) {
+		return (Map<String, Object>)settings.settings().get(key);
+	}
 
-			harvester
-				.rdfIndexType(XContentMapValues.nodeStringValue(
-							eeaSettings.get("indexType"), "full"))
-				.rdfStartTime(XContentMapValues.nodeStringValue(
-							eeaSettings.get("startTime"),""))
-				.rdfUrl(XContentMapValues.nodeStringValue(
-							eeaSettings.get("uris"), "[]"))
-				.rdfEndpoint(XContentMapValues.nodeStringValue(
-							eeaSettings.get("endpoint"),
-							EEASettings.DEFAULT_ENDPOINT))
-				.rdfQueryType(XContentMapValues.nodeStringValue(
-							eeaSettings.get("queryType"),
-							EEASettings.DEFAULT_QUERYTYPE))
-				.rdfListType(XContentMapValues.nodeStringValue(
-							eeaSettings.get("listtype"),
-							EEASettings.DEFAULT_LIST_TYPE))
-				.rdfAddLanguage(XContentMapValues.nodeBooleanValue(
-							eeaSettings.get("addLanguage"),
-							EEASettings.DEFAULT_ADD_LANGUAGE))
-				.rdfLanguage(XContentMapValues.nodeStringValue(
-							eeaSettings.get("language"),
-							EEASettings.DEFAULT_LANGUAGE))
-				.rdfAddUriForResource(XContentMapValues.nodeBooleanValue(
-							eeaSettings.get("includeResourceURI"),
-							EEASettings.DEFAULT_ADD_URI))
-				.rdfURIDescription(XContentMapValues.nodeStringValue(
-							eeaSettings.get("uriDescription"),
-							EEASettings.DEFAULT_URI_DESCRIPTION))
-				.rdfSyncConditions(XContentMapValues.nodeStringValue(
-							eeaSettings.get("syncConditions"),
-							EEASettings.DEFAULT_SYNC_COND))
-				.rdfSyncTimeProp(XContentMapValues.nodeStringValue(
-							eeaSettings.get("syncTimeProp"),
-							EEASettings.DEFAULT_SYNC_TIME_PROP))
-				.rdfSyncOldData(XContentMapValues.nodeBooleanValue(
-							eeaSettings.get("syncOldData"),
-							EEASettings.DEFAULT_SYNC_OLD_DATA));
+	@SuppressWarnings("unchecked")
+	private static Map<String, String> getStrStrMapFromSettings(Map<String, Object> settings,
+																String key) {
+		return (Map<String, String>)settings.get(key);
+	}
 
-			if(eeaSettings.containsKey("proplist")) {
-				harvester.rdfPropList((
-						List<String>) eeaSettings.get("proplist"));
-			}
-			if(eeaSettings.containsKey("query")) {
-				harvester.rdfQuery((
-							List<String>)eeaSettings.get("query"));
-			} else {
-				harvester.rdfQuery(EEASettings.DEFAULT_QUERIES);
-			}
-			if(eeaSettings.containsKey("normProp")) {
-				harvester
-					.rdfNormalizationProp((
-								Map<String,String>)eeaSettings.get("normProp"));
-			}
-			if(eeaSettings.containsKey("normMissing")) {
-				harvester
-						.rdfNormalizationMissing((
-								Map<String,String>)eeaSettings.get("normMissing"));
-			}
-			if(eeaSettings.containsKey("normObj")) {
-				harvester
-					.rdfNormalizationObj((
-								Map<String,String>)eeaSettings.get("normObj"));
-			}
-			if(eeaSettings.containsKey("blackMap")) {
-				harvester
-					.rdfBlackMap((
-								Map<String,Object>)eeaSettings.get("blackMap"));
-			}
-			if(eeaSettings.containsKey("whiteMap")) {
-				harvester
-					.rdfWhiteMap((
-								Map<String,Object>)eeaSettings.get("whiteMap"));
-			}
+	@SuppressWarnings("unchecked")
+	private static Map<String, Object> getStrObjMapFromSettings(Map<String, Object> settings,
+																String key) {
+		return (Map<String, Object>)settings.get(key);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static List<String> getStrListFromSettings(Map<String, Object> settings,
+													   String key) {
+		return (List<String>)settings.get(key);
+	}
+
+	private void addHarvesterSettings(RiverSettings settings) {
+		if (!settings.settings().containsKey("eeaRDF")) {
+			throw new IllegalArgumentException(
+					"There are no eeaRDF settings in the river settings");
 		}
-		else {
-			throw new	IllegalArgumentException(
-					"There are no eeaRDF settings in the	river settings");
+
+		Map<String, Object> rdfSettings = extractSettings(settings, "eeaRDF");
+
+		harvester.rdfIndexType(XContentMapValues.nodeStringValue(
+				rdfSettings.get("indexType"), "full"))
+				.rdfStartTime(XContentMapValues.nodeStringValue(
+						rdfSettings.get("startTime"),""))
+				.rdfUrl(XContentMapValues.nodeStringValue(
+						rdfSettings.get("uris"), "[]"))
+				.rdfEndpoint(XContentMapValues.nodeStringValue(
+						rdfSettings.get("endpoint"),
+						EEASettings.DEFAULT_ENDPOINT))
+				.rdfQueryType(XContentMapValues.nodeStringValue(
+						rdfSettings.get("queryType"),
+						EEASettings.DEFAULT_QUERYTYPE))
+				.rdfListType(XContentMapValues.nodeStringValue(
+						rdfSettings.get("listtype"),
+						EEASettings.DEFAULT_LIST_TYPE))
+				.rdfAddLanguage(XContentMapValues.nodeBooleanValue(
+						rdfSettings.get("addLanguage"),
+						EEASettings.DEFAULT_ADD_LANGUAGE))
+				.rdfLanguage(XContentMapValues.nodeStringValue(
+						rdfSettings.get("language"),
+						EEASettings.DEFAULT_LANGUAGE))
+				.rdfAddUriForResource(XContentMapValues.nodeBooleanValue(
+						rdfSettings.get("includeResourceURI"),
+						EEASettings.DEFAULT_ADD_URI))
+				.rdfURIDescription(XContentMapValues.nodeStringValue(
+						rdfSettings.get("uriDescription"),
+						EEASettings.DEFAULT_URI_DESCRIPTION))
+				.rdfSyncConditions(XContentMapValues.nodeStringValue(
+						rdfSettings.get("syncConditions"),
+						EEASettings.DEFAULT_SYNC_COND))
+				.rdfSyncTimeProp(XContentMapValues.nodeStringValue(
+						rdfSettings.get("syncTimeProp"),
+						EEASettings.DEFAULT_SYNC_TIME_PROP))
+				.rdfSyncOldData(XContentMapValues.nodeBooleanValue(
+						rdfSettings.get("syncOldData"),
+						EEASettings.DEFAULT_SYNC_OLD_DATA));
+
+		if (rdfSettings.containsKey("proplist")) {
+			harvester.rdfPropList(getStrListFromSettings(rdfSettings, "proplist"));
+		}
+		if(rdfSettings.containsKey("query")) {
+			harvester.rdfQuery(getStrListFromSettings(rdfSettings, "query"));
+		} else {
+			harvester.rdfQuery(EEASettings.DEFAULT_QUERIES);
+		}
+
+		if(rdfSettings.containsKey("normProp")) {
+			harvester.rdfNormalizationProp(getStrStrMapFromSettings(rdfSettings, "normProp"));
+		}
+		if(rdfSettings.containsKey("normMissing")) {
+			harvester.rdfNormalizationMissing(getStrStrMapFromSettings(rdfSettings, "normMissing"));
+		}
+		if(rdfSettings.containsKey("normObj")) {
+			harvester.rdfNormalizationObj(getStrStrMapFromSettings(rdfSettings, "normObj"));
+		}
+		if(rdfSettings.containsKey("blackMap")) {
+			harvester.rdfBlackMap(getStrObjMapFromSettings(rdfSettings, "blackMap"));
+		}
+		if(rdfSettings.containsKey("whiteMap")) {
+			harvester.rdfWhiteMap(getStrObjMapFromSettings(rdfSettings, "whiteMap"));
 		}
 
 		if(settings.settings().containsKey("index")){
-			Map<String, Object> indexSettings = (Map<String, Object>)settings.
-				settings().get("index");
-			harvester
-				.index(XContentMapValues.nodeStringValue(
+			Map<String, Object> indexSettings = extractSettings(settings, "index");
+			harvester.index(XContentMapValues.nodeStringValue(
 							indexSettings.get("index"),
-							"rdfdata"))
-				.type(XContentMapValues.nodeStringValue(
-							indexSettings.get("type"),
-							"resource"));
+							EEASettings.DEFAULT_INDEX_NAME))
+					 .type(XContentMapValues.nodeStringValue(
+							 indexSettings.get("type"),
+							 EEASettings.DEFAULT_TYPE_NAME));
 		}
 		else {
-			harvester
-				.index(EEASettings.DEFAULT_INDEX_NAME)
-				.type(EEASettings.DEFAULT_TYPE_NAME);
+			harvester.index(EEASettings.DEFAULT_INDEX_NAME)
+					 .type(EEASettings.DEFAULT_TYPE_NAME);
 		}
 	}
-
-	@Override
+	
 	public void start() {
 		harvesterThread = EsExecutors.daemonThreadFactory(
 				settings.globalSettings(),
@@ -144,7 +154,6 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 		harvesterThread.start();
 	}
 
-	@Override
 	public void close() {
 		harvester.log("Closing EEA RDF river {}" + riverName.name());
 		harvester.setClose(true);
