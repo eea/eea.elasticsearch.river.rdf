@@ -102,9 +102,9 @@ public class Harvester implements Runnable {
 	}
 
 	/**
-	 * Sets the {@link Harvester}'s {@link #rdfQuery} parameter
+	 * Sets the {@link Harvester}'s {@link #rdfQueries} parameter
 	 * @param query - new list of queries
-	 * @return the same {@link Harvester} with the {@link #rdfQuery} parameter
+	 * @return the same {@link Harvester} with the {@link #rdfQueries} parameter
 	 * set
 	 */
 	public Harvester rdfQuery(List<String> query) {
@@ -207,7 +207,7 @@ public class Harvester implements Runnable {
 	 * {@link #willNormalizeProp} parameter is set to true.
 	 */
 	public Harvester rdfNormalizationProp(Map<String, String> normalizeProp) {
-		if(normalizeProp != null || !normalizeProp.isEmpty()) {
+		if (normalizeProp != null && !normalizeProp.isEmpty()) {
 			this.willNormalizeProp = true;
 			this.normalizeProp = normalizeProp;
 		}
@@ -227,7 +227,7 @@ public class Harvester implements Runnable {
 	 * {@link #willNormalizeObj} parameter is set to true
 	 */
 	public Harvester rdfNormalizationObj(Map<String, String> normalizeObj) {
-		if(normalizeObj != null || !normalizeObj.isEmpty()) {
+		if(normalizeObj != null && !normalizeObj.isEmpty()) {
 			this.willNormalizeObj = true;
 			this.normalizeObj = normalizeObj;
 		}
@@ -246,7 +246,7 @@ public class Harvester implements Runnable {
 	 * {@link #willNormalizeMissing} parameter is set to true
 	 */
 	public Harvester rdfNormalizationMissing(Map<String, String> normalizeMissing) {
-		if(normalizeMissing != null || !normalizeMissing.isEmpty()) {
+		if(normalizeMissing != null && !normalizeMissing.isEmpty()) {
 			this.willNormalizeMissing = true;
 			this.normalizeMissing = normalizeMissing;
 		}
@@ -262,11 +262,13 @@ public class Harvester implements Runnable {
 	 * @return the same {@link Harvester} with the {@link #blackMap}
 	 * parameter set
 	 */
+	@SuppressWarnings("unchecked")
 	public Harvester rdfBlackMap(Map<String,Object> blackMap) {
-		if(blackMap != null || !blackMap.isEmpty()) {
+		if(blackMap != null && !blackMap.isEmpty()) {
 			hasBlackMap = true;
 			this.blackMap =  new HashMap<String,Set<String>>();
 			for(Map.Entry<String,Object> entry : blackMap.entrySet()) {
+
 				this.blackMap.put(
 					entry.getKey(), new HashSet((List<String>)entry.getValue()));
 			}
@@ -283,8 +285,9 @@ public class Harvester implements Runnable {
 	 * @return the same {@link Harvester} with the {@link #whiteMap}
 	 * parameter set
 	 */
+	@SuppressWarnings("unchecked")
 	public Harvester rdfWhiteMap(Map<String,Object> whiteMap) {
-		if(whiteMap != null || !whiteMap.isEmpty()) {
+		if(whiteMap != null && !whiteMap.isEmpty()) {
 			hasWhiteMap = true;
 			this.whiteMap =  new HashMap<String,Set<String>>();
 			for(Map.Entry<String,Object> entry : whiteMap.entrySet()) {
@@ -426,7 +429,7 @@ public class Harvester implements Runnable {
 
 	public void run() {
 		long currentTime = System.currentTimeMillis();
-		boolean success = false;
+		boolean success;
 
 		if(indexAll)
 			success = runIndexAll();
@@ -488,7 +491,7 @@ public class Harvester implements Runnable {
 	HashSet<String> executeSyncQuery(String rdfQuery, String queryObjName) {
 		HashSet<String> rdfUrls = new HashSet<String>();
 
-		Query query = null;
+		Query query;
 		try {
 			query = QueryFactory.create(rdfQuery);
 		} catch (QueryParseException qpe) {
@@ -850,8 +853,8 @@ public class Harvester implements Runnable {
 	 */
 	private void harvestFromEndpoint() {
 
-		Query query = null;
-		QueryExecution qexec = null;
+		Query query;
+		QueryExecution qexec;
 
 		for (String rdfQuery : rdfQueries) {
 			logger.info(
@@ -926,26 +929,23 @@ public class Harvester implements Runnable {
 		Set<String> rdfLanguages = new HashSet<String>();
 
 		for(Property prop: properties) {
-			long t = System.currentTimeMillis();
 			NodeIterator niter = model.listObjectsOfProperty(rs,prop);
 			String property = prop.toString();
 			results = new ArrayList<String>();
 
 
-			String lang = "";
-			String currValue = "";
+			String lang;
+			String currValue;
 
 			while (niter.hasNext()) {
 				RDFNode node = niter.next();
 				currValue = getStringForResult(node);
 				if (addLanguage) {
-					try {
+					if (node.isLiteral()) {
 						lang = node.asLiteral().getLanguage();
 						if (!lang.isEmpty()) {
 							rdfLanguages.add("\"" + lang + "\"");
 						}
-					} catch (Exception e) {
-						
 					}
 				}
 
@@ -962,18 +962,18 @@ public class Harvester implements Runnable {
 				boolean whiteMapCond = hasWhiteMap
 						&& whiteMap.containsKey(property)
 						&& !whiteMap.get(property).contains(shortValue);
-
 				boolean blackMapCond = hasBlackMap
 						&& blackMap.containsKey(property)
 						&& blackMap.get(property).contains(shortValue);
+
 				if (whiteMapCond || blackMapCond) {
 					continue;
+				}
+
+				if (willNormalizeObj && normalizeObj.containsKey(shortValue)) {
+					results.add("\"" + normalizeObj.get(shortValue) + "\"");
 				} else {
-					if (willNormalizeObj && normalizeObj.containsKey(shortValue)) {
-						results.add("\"" + normalizeObj.get(shortValue) + "\"");
-					} else {
-						results.add(currValue);
-					}
+					results.add(currValue);
 				}
 			}
 
@@ -1106,12 +1106,13 @@ public class Harvester implements Runnable {
 		for(Map.Entry<String, ArrayList<String>> entry : map.entrySet()) {
 			ArrayList<String> value = entry.getValue();
 			if(value.size() == 1)
-				result.append("\"" + entry.getKey() + "\" : " +
-					value.get(0) + ",\n");
+				result.append(String.format("\"%s\" : %s,\n",
+							  entry.getKey(), value.get(0)));
 			else
-				result.append("\"" + entry.getKey() + "\" : " +
-					value.toString() + ",\n");
+				result.append(String.format("\"%s\" : %s,\n",
+							  entry.getKey(), value.toString()));
 		}
+
 		result.setCharAt(result.length() - 2, '}');
 		return result.toString();
 	}
@@ -1185,7 +1186,7 @@ public class Harvester implements Runnable {
 	 * if no label is obtained from the endpoint
 	 */
 	private String getLabelForUri(String uri) {
-		String result = "";
+		String result;
 		if (uriLabelCache.containsKey(uri)) {
 			return uriLabelCache.get(uri);
 		}
