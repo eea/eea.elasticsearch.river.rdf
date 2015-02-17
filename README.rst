@@ -43,11 +43,12 @@ Main features
 1. Indexing RDFs given by their URIs
 2. Indexing triples retrieved from a SPARQL endpoint, through SELECT queries
 3. Indexing triples retrieved from a SPARQL endpoint, through CONSTRUCT queries
-4. Customizable index and type names
-5. Blacklist of unnecessary properties
-6. Whitelist of required properties
-7. Normalization of properties from different namespaces
-8. Normalization of missing properties
+4. Indexing triples retrieved from a SPARQL endpoint, through DESCRIBE queries
+5. Customizable index and type names
+6. Blacklist of unnecessary properties
+7. Whitelist of required properties
+8. Normalization of properties from different namespaces
+9. Normalization of missing properties
 
 Indexing
 ========
@@ -134,7 +135,24 @@ CONSTRUCT queries are more simple.
       "queryType" : "construct"
    }
  }'
- 
+
+DESCRIBE queries can be written as such:
+
+::
+ curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+   "type" : "eeaRDF",
+   "eeaRDF" : {
+      "endpoint" : "http://semantic.eea.europa.eu/sparql",
+      "query" : [
+        "DESCRIBE ?r WHERE { ?r a <http://www.eea.europa.eu/portal_types/AssessmentPart#AssessmentPart> }
+      ],
+      "queryType" : "describe"
+   }
+ }'
+
+Note:
+    DESCRIBE queries can produce larger results than other types of queries,
+    making the river plugin run out of memory.
  
 **Tips**: `See how to optimize your queries / avoid endpoint timeout <http://taskman.eionet.europa.eu/projects/zope/wiki/HowToWriteOptimalSPARQLQueries>`_
 
