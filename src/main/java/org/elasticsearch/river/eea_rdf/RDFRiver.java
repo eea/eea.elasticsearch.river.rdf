@@ -32,7 +32,8 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 					@RiverIndexName String riverIndexName,
 					Client client) {
 		super(riverName, settings);
-		harvester = new Harvester().client(client);
+		harvester = new Harvester();
+		harvester.client(client).riverName(riverName.name());
 		addHarvesterSettings(settings);
 	}
 

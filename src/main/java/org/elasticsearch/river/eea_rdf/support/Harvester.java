@@ -73,6 +73,7 @@ public class Harvester implements Runnable {
 	private Client client;
 	private String indexName;
 	private String typeName;
+	private String riverName;
 
 	private Boolean closed = false;
 
@@ -391,6 +392,11 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
+	public Harvester riverName(String riverName) {
+		this.riverName = riverName;
+		return this;
+	}
+
 	public Harvester rdfIndexType(String indexType) {
 		if (indexType.equals("sync"))
 			this.indexAll = false;
@@ -439,6 +445,10 @@ public class Harvester implements Runnable {
 		if (success) {
 			setLastUpdate(new Date(currentTime));
 		}
+
+		client.admin().indices()
+			  .prepareDeleteMapping("_river").setType(riverName)
+			  .execute().actionGet();
 	}
 
 	public boolean runSync() {
