@@ -78,7 +78,7 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 
 			if(eeaSettings.containsKey("proplist")) {
 				harvester.rdfPropList((
-							List<String>)eeaSettings.get("proplist"));
+						List<String>) eeaSettings.get("proplist"));
 			}
 			if(eeaSettings.containsKey("query")) {
 				harvester.rdfQuery((
