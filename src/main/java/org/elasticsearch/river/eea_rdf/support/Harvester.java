@@ -584,13 +584,36 @@ public class Harvester implements Runnable {
 		}
 		queryBuilder.append("}");
 
+		/* We need this redundant clause as UNION queries can't handle sub-selects
+		 * without a prior clause.
+		 */
+		String redundantClause = "<http://www.w3.org/2000/01/rdf-schema#Class> "
+							   + "a <http://www.w3.org/2000/01/rdf-schema#Class>";
+
 		/* Add labels for filtered out properties */
 		for (String prop : uriDescriptionList) {
-			/* Resolve ?o as being the <prop> for resource ?o1 */
+			/* Resolve ?o as str(?label) for the resource ?res
+			 * label is taken as being ?res <prop> ?label
+			 *
+			 * We need to take str(?label) in order to drop
+			 * language references of the terms so that the document
+			 * is indexed with a language present only in it's top-level
+			 * properties.
+			 *
+			 * As some Virtuoso versions do not allow the usage
+			 * of BIND so we have to create a sub-select in order to bind
+			 * ?o to str(?label)
+			 *
+			 * The sub-select works only with a prior clause.
+			 * We are using a redundant clause that is always true
+			 */
 			String partQueryTemplate = " UNION "
-									 + "{ ?s ?p ?o1"
-									 + " . FILTER (?s in %s)"
-									 + " . ?o1 <%s> ?o }";
+									 + "{ "
+									 + redundantClause + " . "
+									 + "{ SELECT ?s ?p (str(?label) as ?o) { "
+									 + "   ?s ?p ?res"
+									 + "   . FILTER (?s in %s)"
+									 + "   . ?res <%s> ?label }}}";
 			queryBuilder.append(String.format(partQueryTemplate, uriSet, prop));
 		}
 
