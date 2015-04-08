@@ -34,7 +34,7 @@ To install the RDF River plugin run from the previously extracted directory::
 ./bin/plugin --url https://github.com/eea/eea.elasticsearch.river.rdf/releases/download/$PLUGIN_VERSION/eea-rdf-river-plugin-$PLUGIN_VERSION.zip -i eea-rdf-river
 
 Note:
- *raw.github.com* urls are deprecated and will be checked out from the source tree. Please use the url described above
+ *raw.github.com* urls are deprecated and will were checked out from the source tree. Please use the url described above
  to install the plugin. You can find all of the legacy archives previously available in the source tree `here <https://github.com/eea/eea.elasticsearch.river.rdf/releases/download/v1.1/legacy-releases.zip>`_. 
 
 Main features
@@ -49,6 +49,7 @@ Main features
 7. Whitelist of required properties
 8. Normalization of properties from different namespaces
 9. Normalization of missing properties
+10. Synchronization with an endpoint
 
 Indexing
 ========
@@ -139,6 +140,7 @@ CONSTRUCT queries are more simple.
 DESCRIBE queries can be written as such:
 
 ::
+
  curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
@@ -447,8 +449,9 @@ the time of the last index operation will be considered.
    }
  }'
  
-There are two possible settings for the sync river:
+There are three possible settings for the sync river:
  * syncConditions
+ * graphSyncConditions
  * syncTimeProp
  
 SyncConditions
@@ -469,13 +472,35 @@ The resource being indexed is always "?resource".
       "syncConditions": "{{?resource a <http://www.eea.europa.eu/portal_types/DataFile#DataFile>} UNION {?resource a <http://www.eea.europa.eu/portal_types/Image#Image>}}"
    }
  }'
- 
+
+
+GraphSyncConditions
++++++++++++++++++++
+
+This porperty allows the user to add extra filters on the source graph of the ?resource.
+Similar with SyncConditions this allows to filter out irrelevant triples from the index.
+The source graph of the resource being indexed is always "?graph". 
+
+::
+
+ curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+   "type" : "eeaRDF",
+   "eeaRDF" : {
+      "indexType" : "sync",
+      "endpoint" : "http://semantic.eea.europa.eu/sparql",
+      "syncConditions": "{{?resource a <http://www.eea.europa.eu/portal_types/DataFile#DataFile>} UNION {?resource a <http://www.eea.europa.eu/portal_types/Image#Image>}}"
+      "graphSyncConditions": "FILTER (str(?graph) = concat(str(?resource), "/@@rdf"))"
+   }
+ }'
+
+
+
 SyncTimeProp
 ++++++++++++
 
 Different endpoints may have different properties to present the time when some triple is harvested. 
 SyncTimeProp sets this property to some known URI so the sync river will only index those triples that
-have a higher value for this property than the startTime value. 
+**exist in graphs** which have a higher value for this property than the startTime value.
 
 ::
 
@@ -487,7 +512,14 @@ have a higher value for this property than the startTime value.
       "syncTimeProp": "http://cr.eionet.europa.eu/ontologies/contreg.rdf#lastRefreshed"
    }
  }'
- 
+
+
+Note:
+  Many of the endpoints update the timestamp of the last harvest as the property of the source graph.
+  Also, resources should not have properties reflecting harvest statistics. Therefore,
+  it is safer to query the SyncTimeProp of graph rather than the one of the resource.
+
+
 SyncOldData
 +++++++++++
 
