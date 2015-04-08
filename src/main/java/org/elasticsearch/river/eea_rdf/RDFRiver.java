@@ -74,7 +74,7 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 				rdfSettings.get("indexType"), "full"))
 				.rdfStartTime(XContentMapValues.nodeStringValue(
 						rdfSettings.get("startTime"),""))
-				.rdfUrl(XContentMapValues.nodeStringValue(
+				.rdfUris(XContentMapValues.nodeStringValue(
 						rdfSettings.get("uris"), "[]"))
 				.rdfEndpoint(XContentMapValues.nodeStringValue(
 						rdfSettings.get("endpoint"),
@@ -100,6 +100,8 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 				.rdfSyncConditions(XContentMapValues.nodeStringValue(
 						rdfSettings.get("syncConditions"),
 						EEASettings.DEFAULT_SYNC_COND))
+				.rdfGraphSyncConditions(XContentMapValues.nodeStringValue(
+						rdfSettings.get("graphSyncConditions"), ""))
 				.rdfSyncTimeProp(XContentMapValues.nodeStringValue(
 						rdfSettings.get("syncTimeProp"),
 						EEASettings.DEFAULT_SYNC_TIME_PROP))
@@ -157,7 +159,7 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 
 	public void close() {
 		harvester.log("Closing EEA RDF river [" + riverName.name() + "]");
-		harvester.setClose(true);
+		harvester.close();
 		harvesterThread.interrupt();
 	}
 }

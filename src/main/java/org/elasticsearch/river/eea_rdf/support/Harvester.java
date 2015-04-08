@@ -13,13 +13,16 @@ import org.apache.jena.riot.RiotException;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.river.eea_rdf.settings.EEASettings;
+import org.elasticsearch.search.SearchHit;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -42,34 +45,47 @@ public class Harvester implements Runnable {
 
 	private final ESLogger logger = Loggers.getLogger(Harvester.class);
 
+	private String rdfEndpoint = "";
+
+	/* Harvester operation info */
 	private Boolean indexAll = true;
-	private String startTime;
-	private Set<String> rdfUrls;
-	private String rdfEndpoint;
-	private List<String> rdfQueries;
+	private String startTime = "";
+
+	/* Harvest from uris options */
+	private Set<String> rdfUris = new HashSet<String>();
+
+	/* Harvest from query options */
+	private List<String> rdfQueries = new ArrayList<String>();
 	private QueryType rdfQueryType;
-	private List<String> rdfPropList;
-	private Boolean rdfListType = false;
-	private Boolean hasList = false;
-	private Map<String, String> normalizeProp;
-	private Map<String, String> normalizeObj;
-	private Map<String, String> normalizeMissing;
-	private Boolean willNormalizeProp = false;
-	private Boolean willNormalizeObj = false;
+
+	/* WhiteList / BlackList properties */
+	private List<String> rdfPropList = new ArrayList<String>();
+	private Boolean isWhitePropList = false;
+
+	/* Normalization options */
+	private Map<String, String> normalizeProp = new HashMap<String, String>();
+	private Map<String, String> normalizeObj = new HashMap<String, String>();
+	private Map<String, String> normalizeMissing = new HashMap<String, String>();
+
+	/* Language options */
 	private Boolean addLanguage = false;
 	private String language;
-	private List<String> uriDescriptionList;
-	private Boolean toDescribeURIs = false;
-	private Boolean addUriForResource;
-	private Boolean hasBlackMap = false;
-	private Boolean hasWhiteMap = false;
-	private Boolean willNormalizeMissing = false;
-	private Map<String,Set<String>> blackMap;
-	private Map<String,Set<String>> whiteMap;
+
+	/* Resource augmenting options */
+	private List<String> uriDescriptionList = new ArrayList<String>();
+	private Boolean addUriForResource = false;
+
+	/* BlackMap and WhiteMap */
+	private Map<String,Set<String>> blackMap = new HashMap<String, Set<String>>();
+	private Map<String,Set<String>> whiteMap = new HashMap<String, Set<String>>();
+
+	/* Sync options */
 	private String syncConditions;
 	private String syncTimeProp;
+	private String graphSyncConditions;
 	private Boolean syncOldData;
 
+	/* ES api options */
 	private Client client;
 	private String indexName;
 	private String typeName;
@@ -77,17 +93,20 @@ public class Harvester implements Runnable {
 
 	private Boolean closed = false;
 
-	private HashMap<String, String> uriLabelCache;
+	public void log(String message) { logger.info(message); }
+
+	public void close() { closed = true; }
+
+	private HashMap<String, String> uriLabelCache = new HashMap<String, String>();
 
 	/**
- 	 * Sets the {@link Harvester}'s {@link #rdfUrls} parameter
+ 	 * Sets the {@link Harvester}'s {@link #rdfUris} parameter
  	 * @param url - a list of urls
- 	 * @return the {@link Harvester} with the {@link #rdfUrls} parameter set
+ 	 * @return the {@link Harvester} with the {@link #rdfUris} parameter set
  	 */
-	public Harvester rdfUrl(String url) {
+	public Harvester rdfUris(String url) {
 		url = url.substring(1, url.length() - 1);
-		uriLabelCache = new HashMap<String, String>();
-		rdfUrls = new HashSet<String>(Arrays.asList(url.split(",")));
+		rdfUris = new HashSet<String>(Arrays.asList(url.split(",")));
 		return this;
 	}
 
@@ -135,31 +154,30 @@ public class Harvester implements Runnable {
 	 * Sets the {@link Harvester}'s {@link #rdfPropList} parameter
 	 * @param list - a list of properties names that are either required in
 	 * the object description, or undesired, depending on its
-	 * {@link #rdfListType}
+	 * {@link #isWhitePropList}
 	 * @return the same {@link Harvester} with the {@link #rdfPropList}
 	 * parameter set
 	 */
 	public Harvester rdfPropList(List<String> list) {
 		if(!list.isEmpty()) {
-			hasList = true;
 			rdfPropList = new ArrayList<String>(list);
 		}
 		return this;
 	}
 
 	/**
-	 * Sets the {@link Harvester}'s {@link #rdfListType} parameter
+	 * Sets the {@link Harvester}'s {@link #isWhitePropList} parameter
 	 * @param listType - a type ("black" or "white") for the {@link #rdfPropList}
 	 * in case it exists
-	 * @return the same {@link Harvester} with the {@link #rdfListType}
+	 * @return the same {@link Harvester} with the {@link #isWhitePropList}
 	 * parameter set
 	 * @Observation A blacklist contains properties that should not be indexed
-	 * with the data while a whitelist contains all the properties that should
+	 * with the data while a white-list contains all the properties that should
 	 * be indexed with the data.
 	 */
 	public Harvester rdfListType(String listType) {
 		if (listType.equals("white"))
-			rdfListType = true;
+			isWhitePropList = true;
 		return this;
 	}
 
@@ -204,12 +222,9 @@ public class Harvester implements Runnable {
 	 * @param normalizeProp - new value for the parameter
 	 * @return the same {@link Harvester} with the {@link #normalizeProp}
 	 * parameter set
-	 * @Observation In case there is at least one property, the
-	 * {@link #willNormalizeProp} parameter is set to true.
 	 */
 	public Harvester rdfNormalizationProp(Map<String, String> normalizeProp) {
 		if (normalizeProp != null && !normalizeProp.isEmpty()) {
-			this.willNormalizeProp = true;
 			this.normalizeProp = normalizeProp;
 		}
 		return this;
@@ -224,12 +239,9 @@ public class Harvester implements Runnable {
 	 * @param normalizeObj - new value for the parameter
 	 * @return the same {@link Harvester} with the {@link #normalizeObj}
 	 * parameter set
-	 * @Observation In case there is at least one object to be normalized, the
-	 * {@link #willNormalizeObj} parameter is set to true
 	 */
 	public Harvester rdfNormalizationObj(Map<String, String> normalizeObj) {
 		if(normalizeObj != null && !normalizeObj.isEmpty()) {
-			this.willNormalizeObj = true;
 			this.normalizeObj = normalizeObj;
 		}
 		return this;
@@ -243,12 +255,9 @@ public class Harvester implements Runnable {
 	 * @param normalizeMissing - new value for the parameter
 	 * @return the same {@link Harvester} with the {@link #normalizeMissing}
 	 * parameter set
-	 * @Observation In case there is at least one object to be normalized, the
-	 * {@link #willNormalizeMissing} parameter is set to true
 	 */
 	public Harvester rdfNormalizationMissing(Map<String, String> normalizeMissing) {
 		if(normalizeMissing != null && !normalizeMissing.isEmpty()) {
-			this.willNormalizeMissing = true;
 			this.normalizeMissing = normalizeMissing;
 		}
 		return this;
@@ -266,7 +275,6 @@ public class Harvester implements Runnable {
 	@SuppressWarnings("unchecked")
 	public Harvester rdfBlackMap(Map<String,Object> blackMap) {
 		if(blackMap != null && !blackMap.isEmpty()) {
-			hasBlackMap = true;
 			this.blackMap =  new HashMap<String,Set<String>>();
 			for(Map.Entry<String,Object> entry : blackMap.entrySet()) {
 
@@ -289,8 +297,7 @@ public class Harvester implements Runnable {
 	@SuppressWarnings("unchecked")
 	public Harvester rdfWhiteMap(Map<String,Object> whiteMap) {
 		if(whiteMap != null && !whiteMap.isEmpty()) {
-			hasWhiteMap = true;
-			this.whiteMap =  new HashMap<String,Set<String>>();
+			this.whiteMap = new HashMap<String,Set<String>>();
 			for(Map.Entry<String,Object> entry : whiteMap.entrySet()) {
 				this.whiteMap.put(
 					entry.getKey(), new HashSet((List<String>)entry.getValue()));
@@ -308,14 +315,9 @@ public class Harvester implements Runnable {
 	 * @param uriList - a new value for the parameter
 	 * @return the same {@link Harvester} with the {@link #uriDescriptionList}
 	 * parameter set
-	 *
-	 * @Observation If the list is not empty, the {@link #toDescribeURIs}
-	 * property is set to true
 	 */
 	public Harvester rdfURIDescription(String uriList) {
 		uriList = uriList.substring(1, uriList.length() - 1);
-		if(!uriList.isEmpty())
-			toDescribeURIs = true;
 		uriDescriptionList = Arrays.asList(uriList.split(","));
 		return this;
 	}
@@ -338,15 +340,38 @@ public class Harvester implements Runnable {
 	/**
 	 * Sets the {@link Harvester}'s {@link #syncConditions} parameter. It
 	 * represents the sync query's additional conditions for indexing. These
-	 * conditions are added to the time filter.
+	 * conditions are added within the graphs matching the time filter.
+	 * Use the ?resource variable to address the resource that should match
+	 * the conditions within the graph.
 	 * @param syncCond - a new value for the parameter
 	 * @return the same {@link Harvester} with the {@link #syncConditions}
 	 * parameter set
 	 */
 	public Harvester rdfSyncConditions(String syncCond) {
 		this.syncConditions = syncCond;
-		if(!syncCond.isEmpty())
+		if (!syncCond.isEmpty() &&
+			!syncCond.trim().endsWith(".")) {
 			this.syncConditions += " . ";
+		}
+		return this;
+	}
+
+	/**
+	 * Sets the {@link Harvester}'s {@link #graphSyncConditions} parameter. It
+	 * represents the sync query's graph conditions for indexing. These
+	 * conditions are added to the graphs matching the time filter.
+	 * Use the ?graph variable to address the graph that should match
+	 * the conditions. In this context, ?resource is also bound.
+	 * @param graphSyncConditions - a new value for the parameter
+	 * @return the same {@link Harvester} with the {@link #syncConditions}
+	 * parameter set
+	 */
+	public Harvester rdfGraphSyncConditions(String graphSyncConditions) {
+		this.graphSyncConditions = graphSyncConditions;
+		if (!graphSyncConditions.isEmpty() &&
+		    !graphSyncConditions.trim().endsWith(".")) {
+			this.graphSyncConditions += " . ";
+		}
 		return this;
 	}
 
@@ -408,13 +433,6 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
-	public void log(String message) {
-		logger.info(message);
-	}
-
-	public void setClose(Boolean value) {
-		this.closed = value;
-	}
 
 	private void setLastUpdate(Date date) {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
@@ -432,10 +450,29 @@ public class Harvester implements Runnable {
 		bulkRequest.execute().actionGet();
 	}
 
+	private String getLastUpdate() {
+		String res;
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+		GetResponse response = client
+				.prepareGet(indexName, "stats", "1")
+				.setFields("last_update")
+				.execute()
+				.actionGet();
+
+		if (!response.getFields().isEmpty()) {
+			res = (String) response.getField("last_update").getValue();
+		} else {
+			res = sdf.format(new Date(0));
+		}
+		return res;
+	}
+
 
 	public void run() {
 		long currentTime = System.currentTimeMillis();
 		boolean success;
+
+		if (startTime.isEmpty()) startTime = getLastUpdate();
 
 		if (indexAll)
 			success = runIndexAll();
@@ -452,40 +489,16 @@ public class Harvester implements Runnable {
 	}
 
 	public boolean runSync() {
-		logger.info("Starting RDF synchronizer: from [{}], endpoint [{}], "
-				    + "index name [{}], type name [{}]",
-					startTime, rdfEndpoint,	indexName, typeName);
-
-
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-		Date lastUpdate = new Date(System.currentTimeMillis());
-
-
-		/**
-		 * Synchronize with the endpoint
-		 */
-
-		if(startTime.isEmpty()) {
-			GetResponse response = client
-				.prepareGet(indexName, "stats", "1")
-				.setFields("last_update")
-				.execute()
-				.actionGet();
-			startTime = (String)response.getField("last_update").getValue();
-		}
-
-		try {
-			lastUpdate = sdf.parse(startTime);
-		} catch (Exception e){
-			logger.error("Could not parse time. [{}]", e.getLocalizedMessage());
-		}
+		logger.info("Starting RDF synchronization: endpoint [{}], " +
+				    "index name [{}], type name [{}]",
+					rdfEndpoint, indexName, typeName);
 
 		boolean success = sync();
-
 		closed = true;
+
 		logger.info("Ended synchronization from [{}], for endpoint [{}]," +
 					"index name [{}], type name [{}] with status {}",
-					lastUpdate, rdfEndpoint, indexName, typeName,
+					startTime, rdfEndpoint, indexName, typeName,
 					success ? "Success": "Failure");
 		return success;
 	}
@@ -506,25 +519,25 @@ public class Harvester implements Runnable {
 			query = QueryFactory.create(rdfQuery);
 		} catch (QueryParseException qpe) {
 			logger.warn(
-					"Could not parse [{}]. Please provide a relevant quey. {}",
+					"Could not parse [{}]. Please provide a relevant query. {}",
 					rdfQuery, qpe.getLocalizedMessage());
 			return null;
 		}
 
-		QueryExecution qexec = QueryExecutionFactory.sparqlService(
+		QueryExecution qExec = QueryExecutionFactory.sparqlService(
 				rdfEndpoint, query);
 		try {
-			ResultSet results = qexec.execSelect();
+			ResultSet results = qExec.execSelect();
 
 			while(results.hasNext()) {
 				QuerySolution sol = results.nextSolution();
 				try {
 					String value = sol.getResource(queryObjName).toString();
 					rdfUrls.add(value);
-				} catch (NoSuchElementException nsee) {
+				} catch (NoSuchElementException e) {
 					logger.error(
 							"Encountered a NoSuchElementException: "
-							+ nsee.getLocalizedMessage());
+							+ e.getLocalizedMessage());
 					return null;
 				}
 			}
@@ -534,7 +547,7 @@ public class Harvester implements Runnable {
 					e.getLocalizedMessage());
 			return null;
 		} finally {
-			qexec.close();
+			qExec.close();
 		}
 
 		return rdfUrls;
@@ -569,7 +582,7 @@ public class Harvester implements Runnable {
 					.append(String.format(" . FILTER (?s in %s )", uriSet));
 
 		/* Perform uri label resolution only if desired */
-		if (!toDescribeURIs) {
+		if (uriDescriptionList.isEmpty()) {
 			queryBuilder.append("}}");
 			return queryBuilder.toString();
 		}
@@ -622,23 +635,66 @@ public class Harvester implements Runnable {
 
 	}
 
+
+	/**
+	 * Remove the documents from ElasticSearch that are not present in
+	 * uris
+	 * @param uris uris that should be present in the index.
+	 * @return true if the action completed, false if it failed during
+	 * the process.
+	 */
+	private int removeMissingUris(Set<String> uris) {
+		int searchKeepAlive = 60000;
+		int count = 0;
+
+		SearchResponse response = client.prepareSearch()
+				.setIndices(indexName)
+				.setTypes(typeName)
+				.setScroll(new TimeValue(searchKeepAlive))
+				.setQuery(QueryBuilders.matchAllQuery())
+				.execute()
+				.actionGet();
+
+		while (response.getHits().getHits().length > 0) {
+			for (SearchHit hit : response.getHits()) {
+				if (uris.contains(hit.getId()))
+					continue;
+
+				DeleteResponse deleteResponse =
+						client.prepareDelete(indexName, typeName, hit.getId())
+								.execute()
+								.actionGet();
+				if (deleteResponse.isFound()) count++;
+			}
+
+			response = client.prepareSearchScroll(response.getScrollId())
+					.setScroll(new TimeValue(searchKeepAlive))
+					.execute()
+					.actionGet();
+		}
+		return count;
+	}
+
 	/**
 	 * Starts a harvester with predefined queries to synchronize with the
 	 * changes from the SPARQL endpoint
 	 */
 	public boolean sync() {
 		logger.info("Sync resources newer than {}", startTime);
+
 		String rdfQueryTemplate =
 				"PREFIX xsd:<http://www.w3.org/2001/XMLSchema#> "
-				+ "SELECT ?resource WHERE { "
-				+ "?resource <%s> ?time . %s"
+				+ "SELECT DISTINCT ?resource WHERE { "
+				+ " GRAPH ?graph { %s }"
+				+ " ?graph <%s> ?time .  %s "
 				+ " FILTER (?time > xsd:dateTime(\"%s\")) }";
 
-		String queryStr = String.format(rdfQueryTemplate, syncTimeProp,
-										syncConditions, startTime);
-		rdfUrls = executeSyncQuery(queryStr, "resource");
+		String queryStr = String.format(rdfQueryTemplate, syncConditions,
+										syncTimeProp, graphSyncConditions,
+										startTime);
+		Set<String> syncUris = executeSyncQuery(queryStr, "resource");
 
-		if (rdfUrls == null) {
+		if (syncUris == null) {
 			logger.error("Errors occurred during sync procedure. Aborting!");
 			return false;
 		}
@@ -658,31 +714,19 @@ public class Harvester implements Runnable {
 		int deleted = 0;
 		int count = 0;
 		if (this.syncOldData) {
-			rdfQueryTemplate = "PREFIX xsd:<http://www.w3.org/2001/XMLSchema#> "
-							 + "SELECT ?resource WHERE { "
-					   		 + "?resource <%s> ?time ."
-					   		 + " FILTER (?time > xsd:dateTime(\"%s\")) }";
-			queryStr = String.format(rdfQueryTemplate, syncTimeProp, startTime);
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+			queryStr = String.format(rdfQueryTemplate, syncConditions,
+									 syncTimeProp, graphSyncConditions,
+									 sdf.format(new Date(0)));
 
-			HashSet<String> notMatchingUrls = executeSyncQuery(queryStr, "resource");
+			HashSet<String> allIndexURIs = executeSyncQuery(queryStr, "resource");
 
-			if (notMatchingUrls == null) {
+			if (allIndexURIs == null) {
 				logger.error("Errors occurred during modified content sync query. Aborting!");
 				return false;
 			}
 
-			notMatchingUrls.removeAll(rdfUrls);
-
-			for (String uri : notMatchingUrls) {
-				DeleteRequestBuilder request = client.prepareDelete(
-											indexName, typeName, uri);
-				DeleteResponse response = request.execute().actionGet();
-
-				if (response.isFound()) {
-					deleted++;
-					logger.info("Deleted resource not matching sync properties: {}", uri);
-				}
-			}
+			deleted = removeMissingUris(allIndexURIs);
 		}
 
 		/* Prepare a series of bulk uris to be described so we can make
@@ -690,7 +734,7 @@ public class Harvester implements Runnable {
 		ArrayList<ArrayList<String>> bulks = new ArrayList<ArrayList<String>>();
 		ArrayList<String> currentBulk = new ArrayList<String>();
 
-		for (String uri : rdfUrls) {
+		for (String uri : syncUris) {
 			currentBulk.add(uri);
 
 			if (currentBulk.size() == EEASettings.DEFAULT_BULK_SIZE) {
@@ -709,21 +753,18 @@ public class Harvester implements Runnable {
 
 			try {
 				Query query = QueryFactory.create(syncQuery);
-				QueryExecution qexec = QueryExecutionFactory.sparqlService(
+				QueryExecution qExec = QueryExecutionFactory.sparqlService(
 						rdfEndpoint, query);
 				try {
 					Model constructModel = ModelFactory.createDefaultModel();
-					qexec.execConstruct(constructModel);
+					qExec.execConstruct(constructModel);
 					BulkRequestBuilder bulkRequest = client.prepareBulk();
 
 					/**
-					 *  When adding the model to ES save old state of toDescribeURIs
+					 *  When adding the model to ES do not use toDescribeURIs
 					 *  as the query already returned the correct labels.
 					 */
-					boolean oldToDescribeURIs = toDescribeURIs;
-					toDescribeURIs = false;
-					addModelToES(constructModel, bulkRequest);
-					toDescribeURIs = oldToDescribeURIs;
+					addModelToES(constructModel, bulkRequest, false);
 					count += bulk.size();
 				} catch (Exception e) {
 					logger.error(
@@ -731,7 +772,7 @@ public class Harvester implements Runnable {
 						e.getLocalizedMessage());
 					return false;
 				} finally {
-					qexec.close();
+					qExec.close();
 				}
 			} catch (QueryParseException  qpe) {
 				logger.warn(
@@ -742,7 +783,7 @@ public class Harvester implements Runnable {
 
 		}
 		logger.info("Finished synchronisation: Deleted {}, Updated {}/{}",
-					deleted, count, rdfUrls.size());
+				deleted, count, syncUris.size());
 		return true;
 	}
 
@@ -752,14 +793,14 @@ public class Harvester implements Runnable {
 	public boolean runIndexAll() {
 		logger.info(
 				"Starting RDF harvester: endpoint [{}], queries [{}]," +
-				"URLs [{}], index name [{}], typeName [{}]",
- 				rdfEndpoint, rdfQueries, rdfUrls, indexName, typeName);
+				"URIs [{}], index name [{}], typeName [{}]",
+ 				rdfEndpoint, rdfQueries, rdfUris, indexName, typeName);
 
 		while (true) {
-			if(this.closed){
+			if (this.closed){
 				logger.info("Ended harvest for endpoint [{}], queries [{}]," +
-						"URLs [{}], index name {}, type name {}",
-						rdfEndpoint, rdfQueries, rdfUrls, indexName, typeName);
+							"URIs [{}], index name {}, type name {}",
+							rdfEndpoint, rdfQueries, rdfUris, indexName, typeName);
 				return true;
 			}
 
@@ -781,31 +822,31 @@ public class Harvester implements Runnable {
 
 	/**
 	 * Query SPARQL endpoint with a CONSTRUCT query
-	 * @param qexec QueryExecution encapsulating the query
+	 * @param qExec QueryExecution encapsulating the query
 	 * @return model retrieved by querying the endpoint
 	 */
-	private Model getConstructModel(QueryExecution qexec) {
-		return qexec.execConstruct(ModelFactory.createDefaultModel());
+	private Model getConstructModel(QueryExecution qExec) {
+		return qExec.execConstruct(ModelFactory.createDefaultModel());
 	}
 
 	/**
 	 * Query SPARQL endpoint with a DESCRIBE query
-	 * @param qexec QueryExecution encapsulating the query
+	 * @param qExec QueryExecution encapsulating the query
 	 * @return model retrieved by querying the endpoint
 	 */
-	private Model getDescribeModel(QueryExecution qexec) {
-		return qexec.execDescribe(ModelFactory.createDefaultModel());
+	private Model getDescribeModel(QueryExecution qExec) {
+		return qExec.execDescribe(ModelFactory.createDefaultModel());
 	}
 
 	/**
 	 * Query SPARQL endpoint with a SELECT query
-	 * @param qexec QueryExecution encapsulating the query
+	 * @param qExec QueryExecution encapsulating the query
 	 * @return model retrieved by querying the endpoint
 	 */
-	private Model getSelectModel(QueryExecution qexec) {
+	private Model getSelectModel(QueryExecution qExec) {
 		Model model = ModelFactory.createDefaultModel();
 		Graph graph = model.getGraph();
-		ResultSet results = qexec.execSelect();
+		ResultSet results = qExec.execSelect();
 
 		while (results.hasNext()) {
 			QuerySolution sol = results.next();
@@ -817,7 +858,7 @@ public class Harvester implements Runnable {
 				subject = sol.getResource("s").toString();
 				predicate = sol.getResource("p").toString();
 				object = sol.get("o");
-			} catch (NoSuchElementException nsee) {
+			} catch (NoSuchElementException e) {
 				logger.error("SELECT query does not return a (?s ?p ?o) Triple");
 				continue;
 			}
@@ -842,36 +883,36 @@ public class Harvester implements Runnable {
 	/**
 	 * Query the SPARQL endpoint with a specified QueryExecution
 	 * and return the model
-	 * @param qexec QueryExecution encapsulating the query
+	 * @param qExec QueryExecution encapsulating the query
 	 * @return model retrieved by querying the endpoint
 	 */
-	private Model getModel(QueryExecution qexec) {
+	private Model getModel(QueryExecution qExec) {
 		switch (rdfQueryType) {
-			case CONSTRUCT: return getConstructModel(qexec);
-			case DESCRIBE: return getDescribeModel(qexec);
-			case SELECT: return getSelectModel(qexec);
+			case CONSTRUCT: return getConstructModel(qExec);
+			case DESCRIBE: return getDescribeModel(qExec);
+			case SELECT: return getSelectModel(qExec);
 		}
 		return null;
 	}
 
 	/**
 	 * Add data to ES given a query execution service
-	 * @param qexec query execution service
+	 * @param qExec query execution service
 	 */
-	private void harvest(QueryExecution qexec) {
+	private void harvest(QueryExecution qExec) {
 		boolean retry;
 		do {
 			retry = false;
 			try {
-				Model model = getModel(qexec);
-				addModelToES(model, client.prepareBulk());
-			} catch (QueryExceptionHTTP httpe) {
-				if (httpe.getResponseCode() >= 500) {
+				Model model = getModel(qExec);
+				addModelToES(model, client.prepareBulk(), true);
+			} catch (QueryExceptionHTTP e) {
+				if (e.getResponseCode() >= 500) {
 					retry = true;
 					logger.error("Encountered an internal server error "
 					             + "while harvesting. Retrying!");
 				} else {
-					throw httpe;
+					throw e;
 				}
 			}
 		} while (retry);
@@ -884,9 +925,11 @@ public class Harvester implements Runnable {
 	private void harvestFromEndpoint() {
 
 		Query query;
-		QueryExecution qexec;
+		QueryExecution qExec;
 
 		for (String rdfQuery : rdfQueries) {
+			if (closed) break;
+
 			logger.info(
 				"Harvesting with query: [{}] on index [{}] and type [{}]",
  				rdfQuery, indexName, typeName);
@@ -900,40 +943,40 @@ public class Harvester implements Runnable {
 				continue;
 			}
 
-			qexec = QueryExecutionFactory.sparqlService(rdfEndpoint, query);
+			qExec = QueryExecutionFactory.sparqlService(rdfEndpoint, query);
 
 			try {
-				harvest(qexec);
+				harvest(qExec);
 			} catch (Exception e) {
-				logger.error("Exception [{}] occured while harvesting",
+				logger.error("Exception [{}] occurred while harvesting",
 							 e.getLocalizedMessage());
 			} finally {
-				qexec.close();
+				qExec.close();
 			}
 		}
 	}
 
 	/**
-	 * Harvests all the triplets from each URI in the @rdfUrls list
+	 * Harvests all the triplets from each URI in the @rdfUris list
 	 */
 	private void harvestFromDumps() {
-		for(String url:rdfUrls) {
-			if(url.isEmpty()) continue;
+		for(String uri : rdfUris) {
+			if(uri.isEmpty()) continue;
 
-			logger.info("Harvesting url [{}]", url);
+			logger.info("Harvesting uri [{}]", uri);
 
 			Model model = ModelFactory.createDefaultModel();
 			try {
-				RDFDataMgr.read(model, url.trim(), RDFLanguages.RDFXML);
+				RDFDataMgr.read(model, uri.trim(), RDFLanguages.RDFXML);
 				BulkRequestBuilder bulkRequest = client.prepareBulk();
-				addModelToES(model, bulkRequest);
+				addModelToES(model, bulkRequest, true);
 			}
 			catch (RiotException re) {
 				logger.error("Illegal xml character [{}]", re.getLocalizedMessage());
 			}
 			catch (Exception e) {
 				logger.error("Exception when harvesting url: {}. Details: {}",
-					url, e.getLocalizedMessage());
+					uri, e.getLocalizedMessage());
 			}
 		}
 	}
@@ -943,9 +986,13 @@ public class Harvester implements Runnable {
 	 * @param rs resource being processed
 	 * @param properties properties to be indexed
 	 * @param model model returned by the indexing query
+	 * @param getPropLabel if set to true all URI property values will be indexed
+	 *                     as their label. The label is taken as the value of
+	 *                     one of the properties set in {@link #uriDescriptionList}.
 	 * @return map of properties to be indexed for res
 	 */
-	private Map<String, ArrayList<String>> getJsonMap(Resource rs, Set<Property> properties, Model model) {
+	private Map<String, ArrayList<String>> getJsonMap(Resource rs, Set<Property> properties, Model model,
+													  boolean getPropLabel) {
 		Map<String, ArrayList<String>> jsonMap = new HashMap<String, ArrayList<String>>();
 		ArrayList<String> results = new ArrayList<String>();
 
@@ -969,7 +1016,7 @@ public class Harvester implements Runnable {
 
 			while (niter.hasNext()) {
 				RDFNode node = niter.next();
-				currValue = getStringForResult(node);
+				currValue = getStringForResult(node, getPropLabel);
 				if (addLanguage) {
 					if (node.isLiteral()) {
 						lang = node.asLiteral().getLanguage();
@@ -981,26 +1028,24 @@ public class Harvester implements Runnable {
 
 				String shortValue = currValue;
 
-				int currlen = currValue.length();
+				int currLen = currValue.length();
 				// Unquote string
-				if (currlen > 1)
-					shortValue = currValue.substring(1, currlen - 1);
+				if (currLen > 1)
+					shortValue = currValue.substring(1, currLen - 1);
 
 				// If either whiteMap does contains shortValue
 				// or blackMap contains the value
 				// skip adding it to the index
-				boolean whiteMapCond = hasWhiteMap
-						&& whiteMap.containsKey(property)
+				boolean whiteMapCond = whiteMap.containsKey(property)
 						&& !whiteMap.get(property).contains(shortValue);
-				boolean blackMapCond = hasBlackMap
-						&& blackMap.containsKey(property)
+				boolean blackMapCond = blackMap.containsKey(property)
 						&& blackMap.get(property).contains(shortValue);
 
 				if (whiteMapCond || blackMapCond) {
 					continue;
 				}
 
-				if (willNormalizeObj && normalizeObj.containsKey(shortValue)) {
+				if (normalizeObj.containsKey(shortValue)) {
 					results.add("\"" + normalizeObj.get(shortValue) + "\"");
 				} else {
 					results.add(currValue);
@@ -1010,7 +1055,7 @@ public class Harvester implements Runnable {
 			// Do not index empty properties
 			if (results.isEmpty()) continue;
 
-			if (willNormalizeProp && normalizeProp.containsKey(property)) {
+			if (normalizeProp.containsKey(property)) {
 				property = normalizeProp.get(property);
 				if (jsonMap.containsKey(property)) {
 					jsonMap.get(property).addAll(results);
@@ -1030,13 +1075,11 @@ public class Harvester implements Runnable {
 						"language", new ArrayList<String>(rdfLanguages));
 		}
 
-		if (willNormalizeMissing) {
-			for (Map.Entry<String, String> it : normalizeMissing.entrySet()) {
-				if (!jsonMap.containsKey(it.getKey())) {
-					ArrayList<String> res = new ArrayList<String>();
-					res.add("\"" + it.getValue() + "\"");
-					jsonMap.put(it.getKey(), res);
-				}
+		for (Map.Entry<String, String> it : normalizeMissing.entrySet()) {
+			if (!jsonMap.containsKey(it.getKey())) {
+				ArrayList<String> res = new ArrayList<String>();
+				res.add("\"" + it.getValue() + "\"");
+				jsonMap.put(it.getKey(), res);
 			}
 		}
 
@@ -1048,31 +1091,34 @@ public class Harvester implements Runnable {
 	 *
 	 * @param model the model to index
 	 * @param bulkRequest a BulkRequestBuilder
+	 * @param getPropLabel if set to true all URI property values will be indexed
+	 *                     as their label. The label is taken as the value of
+	 *                     one of the properties set in {@link #uriDescriptionList}.
 	 */
-	private void addModelToES(Model model, BulkRequestBuilder bulkRequest) {       
+	private void addModelToES(Model model, BulkRequestBuilder bulkRequest, boolean getPropLabel) {
 		long startTime = System.currentTimeMillis();
 		long bulkLength = 0;
 		HashSet<Property> properties = new HashSet<Property>();
             
-		StmtIterator iter = model.listStatements();
-		while(iter.hasNext()) {
-			Statement st = iter.nextStatement();
+		StmtIterator it = model.listStatements();
+		while(it.hasNext()) {
+			Statement st = it.nextStatement();
 			Property prop = st.getPredicate();
 			String property = prop.toString();
 
-			if(!hasList
-				|| (rdfListType && rdfPropList.contains(property))
-				|| (!rdfListType && !rdfPropList.contains(property))
-				|| (willNormalizeProp && normalizeProp.containsKey(property))) {
+			if (rdfPropList.isEmpty()
+				|| (isWhitePropList && rdfPropList.contains(property))
+				|| (!isWhitePropList && !rdfPropList.contains(property))
+				|| (normalizeProp.containsKey(property))) {
 				properties.add(prop);
 			}
 		}
 
-		ResIterator rsiter = model.listSubjects();
+		ResIterator resIt = model.listSubjects();
 
-		while(rsiter.hasNext()) {
-			Resource rs = rsiter.nextResource();
-			Map<String, ArrayList<String>> jsonMap = getJsonMap(rs, properties, model);
+		while(resIt.hasNext()) {
+			Resource rs = resIt.nextResource();
+			Map<String, ArrayList<String>> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
 
 			bulkRequest.add(client.prepareIndex(indexName, typeName, rs.toString())
 					.setSource(mapToString(jsonMap)));
@@ -1118,7 +1164,7 @@ public class Harvester implements Runnable {
 
 		for(BulkItemResponse item: response.getItems()) {
 			if (item.isFailed()) {
-				logger.debug("Error {} occured on index {}, type {}, id {} for {} operation "
+				logger.debug("Error {} occurred on index {}, type {}, id {} for {} operation "
 							, item.getFailureMessage(), item.getIndex(), item.getType(), item.getId()
 							, item.getOpType());
 			}
@@ -1160,7 +1206,7 @@ public class Harvester implements Runnable {
 	 * surrounded by double quotes.</p>
 	 * Otherwise, the URI will be returned
 	 */
-	private String getStringForResult(RDFNode node) {
+	private String getStringForResult(RDFNode node, boolean getNodeLabel) {
 		String result = "";
 		boolean quote = false;
 
@@ -1188,7 +1234,7 @@ public class Harvester implements Runnable {
 
 		} else if(node.isResource()) {
 			result = node.asResource().getURI();
-			if(toDescribeURIs) {
+			if(getNodeLabel) {
 				result = getLabelForUri(result);
 			}
 			quote = true;
@@ -1217,23 +1263,25 @@ public class Harvester implements Runnable {
 	 */
 	private String getLabelForUri(String uri) {
 		String result;
+
 		if (uriLabelCache.containsKey(uri)) {
 			return uriLabelCache.get(uri);
 		}
+
 		for(String prop:uriDescriptionList) {
 			String innerQuery = "SELECT ?r WHERE {<" + uri + "> <" +
 				prop + "> ?r } LIMIT 1";
 
 			try {
 				Query query = QueryFactory.create(innerQuery);
-				QueryExecution qexec = QueryExecutionFactory.sparqlService(
+				QueryExecution qExec = QueryExecutionFactory.sparqlService(
 						rdfEndpoint,
 						query);
 				boolean keepTrying = true;
 				while(keepTrying) {
 					keepTrying = false;
 					try {
-						ResultSet results = qexec.execSelect();
+						ResultSet results = qExec.execSelect();
 
 						if(results.hasNext()) {
 							QuerySolution sol = results.nextSolution();
@@ -1248,7 +1296,7 @@ public class Harvester implements Runnable {
 						keepTrying = true;
 						logger.warn("Could not get label for uri {}. Retrying.",
 									uri);
-					} finally { qexec.close();}
+					} finally { qExec.close();}
 				}
 			} catch (QueryParseException qpe) {
 				logger.error("Exception for query {}. The label cannot be obtained",
