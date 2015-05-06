@@ -485,7 +485,11 @@ public class Harvester implements Runnable {
 
 		client.admin().indices()
 			  .prepareDeleteMapping("_river").setType(riverName)
-			  .execute().actionGet();
+			  .execute();
+		/* Any code after this step would not be executed as
+		   the master will interrupt the harvester thread after
+		   deleting the _river.
+		 */
 	}
 
 	public boolean runSync() {
