@@ -23,6 +23,8 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.river.eea_rdf.settings.EEASettings;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.ElasticsearchIllegalStateException;
+import java.lang.NullPointerException;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -453,15 +455,24 @@ public class Harvester implements Runnable {
 	private String getLastUpdate() {
 		String res;
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-		GetResponse response = client
+		try {
+                    GetResponse response = client
 				.prepareGet(indexName, "stats", "1")
 				.setFields("last_update")
 				.execute()
 				.actionGet();
-
-		if (!response.getFields().isEmpty()) {
+		    if (!response.getFields().isEmpty()) {
 			res = (String) response.getField("last_update").getValue();
-		} else {
+		    } else {
+			res = sdf.format(new Date(0));
+		    }
+		} catch (ElasticsearchIllegalStateException ex) {
+			logger.error("Could not get last_update, use Date(0)",
+					ex.getLocalizedMessage());
+			res = sdf.format(new Date(0));
+		} catch (NullPointerException ex) {
+			logger.error("Could not get last_update, use Date(0)",
+					ex.getLocalizedMessage());
 			res = sdf.format(new Date(0));
 		}
 		return res;
