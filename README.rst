@@ -17,7 +17,7 @@ Installation
 
 Prerequisites:
 
-* ElasticSearch 0.90.2 or later
+* ElasticSearch < 2.0. tested with 0.90.2 up to 1.7.3.
 
 * Java 7 Runtime Environment
 
