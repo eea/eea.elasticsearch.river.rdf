@@ -768,6 +768,7 @@ public class Harvester implements Runnable {
 		ArrayList<ArrayList<String>> bulksWithErrors = new ArrayList<ArrayList<String>>();
                 boolean isBulkWithErrors = false;
                 ArrayList<String> urisWithErrors = new ArrayList<String>();
+                ArrayList<String> urisUpdatedWithSuccess = new ArrayList<String>();
                 while (true){
 		    for (ArrayList<String> bulk : bulks) {
 			String syncQuery = getSyncQueryStr(bulk);
@@ -789,6 +790,9 @@ public class Harvester implements Runnable {
 					 */
 					addModelToES(constructModel, bulkRequest, false);
 					count += bulk.size();
+                                        for (String uri : bulk){
+                                            urisUpdatedWithSuccess.add(uri);
+                                        }
 				} catch (Exception e) {
 					logger.error(
 						"Error while querying for modified content. {}",
@@ -802,7 +806,6 @@ public class Harvester implements Runnable {
                                         }
                                         else{
                                             for (String uri : bulk){
-                                                ArrayList<String> currentErrorBulk = new ArrayList<String>();
                                                 urisWithErrors.add(String.format("%s %s", uri, e.getLocalizedMessage()));
                                             }
                                         }
@@ -849,6 +852,10 @@ public class Harvester implements Runnable {
                 }
 		logger.info("Finished synchronisation: Deleted {}, Updated {}/{}",
 				deleted, count, syncUris.size());
+                logger.info("Uris updated with success:");
+                for (String uri : urisUpdatedWithSuccess) {
+                    logger.info(uri);
+                }
                 if (urisWithErrors.size() > 0){
                     logger.error("There were {} uris with errors:", urisWithErrors.size());
                     for (String uri : urisWithErrors) {
