@@ -527,6 +527,9 @@ public class Harvester implements Runnable {
 	 * @return set of values for queryObjectName in the rdfQuery result
 	 */
 	HashSet<String> executeSyncQuery(String rdfQuery, String queryObjName) {
+                logger.info("Start executeSyncQuery");
+                logger.info("QUERY:");
+                logger.info(rdfQuery);
 		HashSet<String> rdfUrls = new HashSet<String>();
 
 		Query query;
@@ -765,6 +768,8 @@ public class Harvester implements Runnable {
 		/* Execute RDF queries for the resources in each bulk */
 		for (ArrayList<String> bulk : bulks) {
 			String syncQuery = getSyncQueryStr(bulk);
+                        logger.info("QUERY:");
+                        logger.info(syncQuery);
 
 			try {
 				Query query = QueryFactory.create(syncQuery);
@@ -939,6 +944,7 @@ public class Harvester implements Runnable {
 	 */
 	private void harvestFromEndpoint() {
 
+                logger.info("harvestFromEndpoint");
 		Query query;
 		QueryExecution qExec;
 
@@ -950,6 +956,8 @@ public class Harvester implements Runnable {
  				rdfQuery, indexName, typeName);
 
 			try {
+                                logger.info("QUERY:");
+                                logger.info(rdfQuery);
 				query = QueryFactory.create(rdfQuery);
 			} catch (QueryParseException qpe) {
 				logger.error(
