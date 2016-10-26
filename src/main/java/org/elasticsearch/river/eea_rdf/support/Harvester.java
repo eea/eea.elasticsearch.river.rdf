@@ -764,9 +764,12 @@ public class Harvester implements Runnable {
 		if (currentBulk.size() > 0) {
 			bulks.add(currentBulk);
 		}
-
 		/* Execute RDF queries for the resources in each bulk */
-		for (ArrayList<String> bulk : bulks) {
+		ArrayList<ArrayList<String>> bulksWithErrors = new ArrayList<ArrayList<String>>();
+                boolean isBulkWithErrors = false;
+                ArrayList<String> urisWithErrors = new ArrayList<String>();
+                while (true){
+		    for (ArrayList<String> bulk : bulks) {
 			String syncQuery = getSyncQueryStr(bulk);
                         logger.info("QUERY:");
                         logger.info(syncQuery);
@@ -790,7 +793,20 @@ public class Harvester implements Runnable {
 					logger.error(
 						"Error while querying for modified content. {}",
 						e.getLocalizedMessage());
-					return false;
+                                        if (! isBulkWithErrors){
+                                            for (String uri : bulk){
+                                                ArrayList<String> currentErrorBulk = new ArrayList<String>();
+                                                currentErrorBulk.add(uri);
+                                                bulksWithErrors.add(currentErrorBulk);
+                                            }
+                                        }
+                                        else{
+                                            for (String uri : bulk){
+                                                ArrayList<String> currentErrorBulk = new ArrayList<String>();
+                                                urisWithErrors.add(String.format("%s %s", uri, e.getLocalizedMessage()));
+                                            }
+                                        }
+					//return false;
 				} finally {
 					qExec.close();
 				}
@@ -798,12 +814,47 @@ public class Harvester implements Runnable {
 				logger.warn(
 					"Could not parse Sync query. Please provide a relevant query. {}",
 					qpe.getLocalizedMessage());
-				return false;
+                                if (! isBulkWithErrors){
+                                    for (String uri : bulk){
+                                        ArrayList<String> currentErrorBulk = new ArrayList<String>();
+                                        currentErrorBulk.add(uri);
+                                        bulksWithErrors.add(currentErrorBulk);
+                                    }
+                                }
+                                else{
+                                    for (String uri : bulk){
+                                        ArrayList<String> currentErrorBulk = new ArrayList<String>();
+                                        urisWithErrors.add(String.format("%s %s", uri, qpe.getLocalizedMessage()));
+                                    }
+                                }
+				//return false;
 			}
-
-		}
+		    }
+                    
+                    if (bulksWithErrors.size() == 0){
+                        break;
+                    }
+                    if (isBulkWithErrors){
+                        break;
+                    }
+                    logger.warn("There were bulks with errors. Try again each resource one by one.");
+                    logger.warn("Resources with possible errors:");
+                    for (ArrayList<String> bulk : bulksWithErrors){
+                        for (String uri : bulk) {
+                            logger.warn(uri);
+                        }
+                    }
+                    isBulkWithErrors = true;
+                    bulks = bulksWithErrors;
+                }
 		logger.info("Finished synchronisation: Deleted {}, Updated {}/{}",
 				deleted, count, syncUris.size());
+                if (urisWithErrors.size() > 0){
+                    logger.error("There were {} uris with errors:", urisWithErrors.size());
+                    for (String uri : urisWithErrors) {
+                        logger.error(uri);
+                    }
+                }
 		return true;
 	}
 
