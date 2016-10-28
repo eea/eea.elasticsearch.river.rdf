@@ -73,6 +73,9 @@ public class Harvester implements Runnable {
 	private Boolean addLanguage = false;
 	private String language;
 
+        /* Counting options */
+        private Boolean addCounting = false;
+
 	/* Resource augmenting options */
 	private List<String> uriDescriptionList = new ArrayList<String>();
 	private Boolean addUriForResource = false;
@@ -197,6 +200,10 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
+        public Harvester rdfAddCounting(Boolean rdfAddCounting) {
+                addCounting = rdfAddCounting;
+                return this;
+        }
 	/**
 	 * Sets the {@link Harvester}'s {@link #language} parameter. The default
 	 * value is 'en"
@@ -1062,6 +1069,19 @@ public class Harvester implements Runnable {
 		}
 	}
 
+        private Map<String, ArrayList<String>> addCountingToJsonMap(Map<String, ArrayList<String>> jsonMap){
+            Iterator it = jsonMap.entrySet().iterator();
+            Map<String, ArrayList<String>> countingMap = new HashMap<String, ArrayList<String>>();
+            ArrayList<String> itemsCount = new ArrayList<String>();
+            while (it.hasNext()) {
+                itemsCount = new ArrayList<String>();
+                Map.Entry<String, ArrayList<String>> pair = (Map.Entry<String, ArrayList<String>>)it.next();
+                itemsCount.add(Integer.toString(pair.getValue().size()));
+                countingMap.put("items_count_" + pair.getKey(), itemsCount);
+            }
+            jsonMap.putAll(countingMap);
+            return jsonMap;
+        }
 	/**
 	 * Get JSON map for a given resource by applying the river settings
 	 * @param rs resource being processed
@@ -1200,7 +1220,9 @@ public class Harvester implements Runnable {
 		while(resIt.hasNext()) {
 			Resource rs = resIt.nextResource();
 			Map<String, ArrayList<String>> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
-
+                        if (addCounting){
+                            jsonMap = addCountingToJsonMap(jsonMap);
+                        }
 			bulkRequest.add(client.prepareIndex(indexName, typeName, rs.toString())
 					.setSource(mapToString(jsonMap)));
 			bulkLength++;

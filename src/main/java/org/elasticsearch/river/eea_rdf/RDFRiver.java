@@ -88,6 +88,9 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 				.rdfAddLanguage(XContentMapValues.nodeBooleanValue(
 						rdfSettings.get("addLanguage"),
 						EEASettings.DEFAULT_ADD_LANGUAGE))
+				.rdfAddCounting(XContentMapValues.nodeBooleanValue(
+						rdfSettings.get("addCounting"),
+						EEASettings.DEFAULT_ADD_COUNTING))
 				.rdfLanguage(XContentMapValues.nodeStringValue(
 						rdfSettings.get("language"),
 						EEASettings.DEFAULT_LANGUAGE))

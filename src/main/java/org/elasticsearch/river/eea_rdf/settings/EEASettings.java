@@ -26,6 +26,7 @@ public abstract class EEASettings {
 		"\"language\", \"topic\"]";
 	public final static String DEFAULT_LIST_TYPE = "white";
 	public final static Boolean DEFAULT_ADD_LANGUAGE = true;
+	public final static Boolean DEFAULT_ADD_COUNTING = false;
 	public final static String DEFAULT_LANGUAGE = "\"en\"";
 	public final static Boolean DEFAULT_ADD_URI = true;
 	public final static String DEFAULT_URI_DESCRIPTION =
