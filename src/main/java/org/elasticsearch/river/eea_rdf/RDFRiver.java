@@ -79,6 +79,9 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 				.rdfEndpoint(XContentMapValues.nodeStringValue(
 						rdfSettings.get("endpoint"),
 						EEASettings.DEFAULT_ENDPOINT))
+				.rdfDomain(XContentMapValues.nodeStringValue(
+						rdfSettings.get("Domain"),
+						EEASettings.DEFAULT_DOMAIN))
 				.rdfQueryType(XContentMapValues.nodeStringValue(
 						rdfSettings.get("queryType"),
 						EEASettings.DEFAULT_QUERYTYPE))

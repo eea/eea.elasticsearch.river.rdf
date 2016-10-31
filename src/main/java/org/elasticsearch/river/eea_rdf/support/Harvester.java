@@ -49,6 +49,8 @@ public class Harvester implements Runnable {
 
 	private String rdfEndpoint = "";
 
+	private String rdfDomain = "";
+
 	/* Harvester operation info */
 	private Boolean indexAll = true;
 	private String startTime = "";
@@ -123,6 +125,11 @@ public class Harvester implements Runnable {
 	 */
 	public Harvester rdfEndpoint(String endpoint) {
 		rdfEndpoint = endpoint;
+		return this;
+	}
+
+	public Harvester rdfDomain(String domain) {
+		rdfDomain = domain;
 		return this;
 	}
 
@@ -668,10 +675,9 @@ public class Harvester implements Runnable {
 	 * @return true if the action completed, false if it failed during
 	 * the process.
 	 */
-	private int removeMissingUris(Set<String> uris) {
+	private int removeMissingUris(Set<String> uris, String domain) {
 		int searchKeepAlive = 60000;
 		int count = 0;
-
 		SearchResponse response = client.prepareSearch()
 				.setIndices(indexName)
 				.setTypes(typeName)
@@ -679,9 +685,13 @@ public class Harvester implements Runnable {
 				.setQuery(QueryBuilders.matchAllQuery())
 				.execute()
 				.actionGet();
-
 		while (response.getHits().getHits().length > 0) {
 			for (SearchHit hit : response.getHits()) {
+
+                String hitDomain = (String)hit.getSource().getOrDefault("domain", domain);
+                if (hitDomain != domain){
+                    continue;
+                }
 				if (uris.contains(hit.getId()))
 					continue;
 
@@ -750,8 +760,7 @@ public class Harvester implements Runnable {
 				logger.error("Errors occurred during modified content sync query. Aborting!");
 				return false;
 			}
-
-			deleted = removeMissingUris(allIndexURIs);
+			deleted = removeMissingUris(allIndexURIs, this.rdfDomain);
 		}
 
 		/* Prepare a series of bulk uris to be described so we can make
