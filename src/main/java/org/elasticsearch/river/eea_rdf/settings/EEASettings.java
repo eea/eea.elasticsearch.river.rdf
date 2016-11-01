@@ -15,7 +15,7 @@ public abstract class EEASettings {
 	public final static int DEFAULT_BULK_REQ = 30;
 	public final static List<String> DEFAULT_QUERIES = new ArrayList<String>();
 	public final static String DEFAULT_ENDPOINT =	"http://semantic.eea.europa.eu/sparql";
-	public final static String DEFAULT_DOMAIN =	"eea.europa.eu";
+	public final static String DEFAULT_CLUSTER_ID =	"eea.europa.eu";
 	public final static String DEFAULT_QUERYTYPE = "construct";
 	public final static String DEFAULT_PROPLIST = "[" +
 		"\"http://purl.org/dc/terms/spatial\", " +
