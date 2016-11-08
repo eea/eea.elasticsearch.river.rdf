@@ -469,7 +469,7 @@ The resource being indexed is always "?resource".
    "eeaRDF" : {
       "indexType" : "sync",
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
-      "syncConditions": "{{?resource a <http://www.eea.europa.eu/portal_types/DataFile#DataFile>} UNION {?resource a <http://www.eea.europa.eu/portal_types/Image#Image>}}"
+      "syncConditions": "{ { ?resource a <http://www.eea.europa.eu/portal_types/DataFile#DataFile>} UNION {?resource a <http://www.eea.europa.eu/portal_types/Image#Image> } }"
    }
  }'
 
@@ -488,7 +488,7 @@ The source graph of the resource being indexed is always "?graph".
    "eeaRDF" : {
       "indexType" : "sync",
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
-      "syncConditions": "{{?resource a <http://www.eea.europa.eu/portal_types/DataFile#DataFile>} UNION {?resource a <http://www.eea.europa.eu/portal_types/Image#Image>}}"
+      "syncConditions": "{ { ?resource a <http://www.eea.europa.eu/portal_types/DataFile#DataFile>} UNION {?resource a <http://www.eea.europa.eu/portal_types/Image#Image> } }"
       "graphSyncConditions": "FILTER (str(?graph) = concat(str(?resource), "/@@rdf"))"
    }
  }'
