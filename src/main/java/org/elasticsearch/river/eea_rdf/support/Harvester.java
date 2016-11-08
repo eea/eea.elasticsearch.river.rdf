@@ -1114,27 +1114,17 @@ public class Harvester implements Runnable {
 		}
 
 		Set<String> rdfLanguages = new HashSet<String>();
-
 		for(Property prop: properties) {
 			NodeIterator niter = model.listObjectsOfProperty(rs,prop);
 			String property = prop.toString();
 			results = new ArrayList<String>();
 
 
-			String lang;
 			String currValue;
 
 			while (niter.hasNext()) {
 				RDFNode node = niter.next();
 				currValue = getStringForResult(node, getPropLabel);
-				if (addLanguage) {
-					if (node.isLiteral()) {
-						lang = node.asLiteral().getLanguage();
-						if (!lang.isEmpty()) {
-							rdfLanguages.add("\"" + lang + "\"");
-						}
-					}
-				}
 
 				String shortValue = currValue;
 
@@ -1178,6 +1168,35 @@ public class Harvester implements Runnable {
 		}
 
 		if(addLanguage) {
+            HashSet<Property> allProperties = new HashSet<Property>();
+
+            StmtIterator it = model.listStatements();
+            while(it.hasNext()) {
+                Statement st = it.nextStatement();
+                Property prop = st.getPredicate();
+
+                allProperties.add(prop);
+            }
+
+
+            for(Property prop: allProperties) {
+                String property = prop.toString();
+                NodeIterator niter = model.listObjectsOfProperty(rs,prop);
+                String lang;
+
+                while (niter.hasNext()) {
+                    RDFNode node = niter.next();
+                    if (addLanguage) {
+                        if (node.isLiteral()) {
+                            lang = node.asLiteral().getLanguage();
+                            if (!lang.isEmpty()) {
+                                rdfLanguages.add("\"" + lang + "\"");
+                            }
+                        }
+                    }
+                }
+            }
+
 			if(rdfLanguages.isEmpty() && !language.isEmpty())
 				rdfLanguages.add(language);
 			if(!rdfLanguages.isEmpty())
