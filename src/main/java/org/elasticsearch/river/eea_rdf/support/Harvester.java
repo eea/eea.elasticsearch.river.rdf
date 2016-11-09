@@ -67,7 +67,7 @@ public class Harvester implements Runnable {
 	private Boolean isWhitePropList = false;
 
 	/* Normalization options */
-	private Map<String, String> normalizeProp = new HashMap<String, String>();
+	private Map<String, Object> normalizeProp = new HashMap<String, Object>();
 	private Map<String, String> normalizeObj = new HashMap<String, String>();
 	private Map<String, String> normalizeMissing = new HashMap<String, String>();
 
@@ -239,7 +239,7 @@ public class Harvester implements Runnable {
 	 * @return the same {@link Harvester} with the {@link #normalizeProp}
 	 * parameter set
 	 */
-	public Harvester rdfNormalizationProp(Map<String, String> normalizeProp) {
+	public Harvester rdfNormalizationProp(Map<String, Object> normalizeProp) {
 		if (normalizeProp != null && !normalizeProp.isEmpty()) {
 			this.normalizeProp = normalizeProp;
 		}
@@ -1156,12 +1156,26 @@ public class Harvester implements Runnable {
 			if (results.isEmpty()) continue;
 
 			if (normalizeProp.containsKey(property)) {
-				property = normalizeProp.get(property);
-				if (jsonMap.containsKey(property)) {
-					jsonMap.get(property).addAll(results);
-				} else {
-					jsonMap.put(property, results);
-				}
+				Object norm_property = normalizeProp.get(property);
+                if (norm_property instanceof String){
+                    property = norm_property.toString();
+				    if (jsonMap.containsKey(property)) {
+					    jsonMap.get(property).addAll(results);
+				    } else {
+					    jsonMap.put(property, results);
+				    }
+                }
+                else {
+                    if (norm_property instanceof List<?>){
+                        for (String norm_prop : ((List<String>) norm_property)) {
+                            if (jsonMap.containsKey(norm_prop)) {
+                                jsonMap.get(norm_prop).addAll(results);
+                            } else {
+                                jsonMap.put(norm_prop, results);
+                            }
+                        }
+                    }
+                }
 			} else {
 				jsonMap.put(property, results);
 			}

@@ -125,7 +125,7 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 		}
 
 		if(rdfSettings.containsKey("normProp")) {
-			harvester.rdfNormalizationProp(getStrStrMapFromSettings(rdfSettings, "normProp"));
+			harvester.rdfNormalizationProp(getStrObjMapFromSettings(rdfSettings, "normProp"));
 		}
 		if(rdfSettings.containsKey("normMissing")) {
 			harvester.rdfNormalizationMissing(getStrStrMapFromSettings(rdfSettings, "normMissing"));

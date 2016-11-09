@@ -358,7 +358,16 @@ of these are the same, even if their namespaces are different.
 Properties Normalization
 ++++++++++++++++++++++++
 
-'NormProp' contains pairs of property-replacement. The properties are replaced
+'NormProp' contains pairs of property-replacement. 
+The propertied can be replaced by one or by more properties.
+
+If you choose to replace with one value, the pair should look like: 
+
+::
+
+ property: new_property
+
+The properties are replaced
 with the given values and if one resource has both properties their values are
 grouped in a list.
 
@@ -383,6 +392,43 @@ http://purl.org/dc/elements/1.1/format, because it will be replaced with "format
 Moreover, all the values of the http://purl.org/dc/elements/1.1/type and
 http://example.org/pntology/typeOfData properties of each resource will be grouped
 under http://www.w3.org/1999/02/22-rdf-syntax-ns#type.
+
+If you choose to replace a property with more properties, the pair should look like: 
+
+::
+
+ property: [new_property1, new_property2]
+
+This is useful when you index from multiple sources, where you want to COPY a property.
+It is also useful when you want the same property analyzed in 2 different ways.
+
+Ex: you have a date property, and you want to be able to sort by this date, but also want to have a simple year property indexed.
+For this we will create a new analyzer:
+
+::
+
+    "date2year" : {
+      "type" : "pattern",
+      "pattern" : "[-](.*)"
+    }
+
+In the mapping we specify that the year property should use this analyzer:
+
+::
+
+    "year" : {
+      "type" : "string",
+      "analyzer" : "date2year"
+    }
+
+In the normProp we will have:
+
+::
+
+  "normProp": {
+    "date_field": ["date_field", "year"]
+  }
+
 
 Objects Normalization
 +++++++++++++++++++++
