@@ -825,7 +825,10 @@ public class Harvester implements Runnable {
                                                 urisWithErrors.add(String.format("%s %s", uri, e.getLocalizedMessage()));
                                             }
                                         }
-					//return false;
+                                        if (e.getMessage() == "Future got interrupted"){
+                                            return false;
+
+                                        }
 				} finally {
 					qExec.close();
 				}
