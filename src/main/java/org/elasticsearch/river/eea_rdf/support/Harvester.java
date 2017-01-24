@@ -1147,11 +1147,14 @@ public class Harvester implements Runnable {
 				if (whiteMapCond || blackMapCond) {
 					continue;
 				}
-
 				if (normalizeObj.containsKey(shortValue)) {
-					results.add("\"" + normalizeObj.get(shortValue) + "\"");
+                                        if (!results.contains("\"" + normalizeObj.get(shortValue) + "\"")){
+					    results.add("\"" + normalizeObj.get(shortValue) + "\"");
+                                        }
 				} else {
-					results.add(currValue);
+                                        if (!results.contains(currValue)){
+					    results.add(currValue);
+                                        }
 				}
 			}
 
