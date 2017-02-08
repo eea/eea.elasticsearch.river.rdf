@@ -468,11 +468,17 @@ this dict.
       "queryType" : "construct",
       "normMissing" : {
             "http://purl.org/dc/elements/1.1/spatial" : "Other",
+            "missing2": ["value1", "value2", ...]
       }
    }
  }'
+ 
+You have the possibility to set either a single string value for missing values, or a list of strings:
 
+:: 
 
+"missing1": "value1",
+"missing2": ["value1", "value2", ...]
  
  
 Synchronization with an endpoint
