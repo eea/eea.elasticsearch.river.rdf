@@ -79,6 +79,9 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 				.rdfEndpoint(XContentMapValues.nodeStringValue(
 						rdfSettings.get("endpoint"),
 						EEASettings.DEFAULT_ENDPOINT))
+				.rdfClusterId(XContentMapValues.nodeStringValue(
+						rdfSettings.get("cluster_id"),
+						EEASettings.DEFAULT_CLUSTER_ID))
 				.rdfQueryType(XContentMapValues.nodeStringValue(
 						rdfSettings.get("queryType"),
 						EEASettings.DEFAULT_QUERYTYPE))
@@ -88,6 +91,9 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 				.rdfAddLanguage(XContentMapValues.nodeBooleanValue(
 						rdfSettings.get("addLanguage"),
 						EEASettings.DEFAULT_ADD_LANGUAGE))
+				.rdfAddCounting(XContentMapValues.nodeBooleanValue(
+						rdfSettings.get("addCounting"),
+						EEASettings.DEFAULT_ADD_COUNTING))
 				.rdfLanguage(XContentMapValues.nodeStringValue(
 						rdfSettings.get("language"),
 						EEASettings.DEFAULT_LANGUAGE))
@@ -119,10 +125,10 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 		}
 
 		if(rdfSettings.containsKey("normProp")) {
-			harvester.rdfNormalizationProp(getStrStrMapFromSettings(rdfSettings, "normProp"));
+			harvester.rdfNormalizationProp(getStrObjMapFromSettings(rdfSettings, "normProp"));
 		}
 		if(rdfSettings.containsKey("normMissing")) {
-			harvester.rdfNormalizationMissing(getStrStrMapFromSettings(rdfSettings, "normMissing"));
+			harvester.rdfNormalizationMissing(getStrObjMapFromSettings(rdfSettings, "normMissing"));
 		}
 		if(rdfSettings.containsKey("normObj")) {
 			harvester.rdfNormalizationObj(getStrStrMapFromSettings(rdfSettings, "normObj"));

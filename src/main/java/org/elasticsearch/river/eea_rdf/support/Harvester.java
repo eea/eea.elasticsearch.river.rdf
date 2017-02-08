@@ -49,6 +49,8 @@ public class Harvester implements Runnable {
 
 	private String rdfEndpoint = "";
 
+	private String rdfClusterId = "";
+
 	/* Harvester operation info */
 	private Boolean indexAll = true;
 	private String startTime = "";
@@ -65,13 +67,16 @@ public class Harvester implements Runnable {
 	private Boolean isWhitePropList = false;
 
 	/* Normalization options */
-	private Map<String, String> normalizeProp = new HashMap<String, String>();
+	private Map<String, Object> normalizeProp = new HashMap<String, Object>();
 	private Map<String, String> normalizeObj = new HashMap<String, String>();
-	private Map<String, String> normalizeMissing = new HashMap<String, String>();
+	private Map<String, Object> normalizeMissing = new HashMap<String, Object>();
 
 	/* Language options */
 	private Boolean addLanguage = false;
 	private String language;
+
+        /* Counting options */
+        private Boolean addCounting = false;
 
 	/* Resource augmenting options */
 	private List<String> uriDescriptionList = new ArrayList<String>();
@@ -120,6 +125,11 @@ public class Harvester implements Runnable {
 	 */
 	public Harvester rdfEndpoint(String endpoint) {
 		rdfEndpoint = endpoint;
+		return this;
+	}
+
+	public Harvester rdfClusterId(String clusterId) {
+		rdfClusterId = clusterId;
 		return this;
 	}
 
@@ -197,6 +207,10 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
+        public Harvester rdfAddCounting(Boolean rdfAddCounting) {
+                addCounting = rdfAddCounting;
+                return this;
+        }
 	/**
 	 * Sets the {@link Harvester}'s {@link #language} parameter. The default
 	 * value is 'en"
@@ -225,7 +239,7 @@ public class Harvester implements Runnable {
 	 * @return the same {@link Harvester} with the {@link #normalizeProp}
 	 * parameter set
 	 */
-	public Harvester rdfNormalizationProp(Map<String, String> normalizeProp) {
+	public Harvester rdfNormalizationProp(Map<String, Object> normalizeProp) {
 		if (normalizeProp != null && !normalizeProp.isEmpty()) {
 			this.normalizeProp = normalizeProp;
 		}
@@ -258,7 +272,7 @@ public class Harvester implements Runnable {
 	 * @return the same {@link Harvester} with the {@link #normalizeMissing}
 	 * parameter set
 	 */
-	public Harvester rdfNormalizationMissing(Map<String, String> normalizeMissing) {
+	public Harvester rdfNormalizationMissing(Map<String, Object> normalizeMissing) {
 		if(normalizeMissing != null && !normalizeMissing.isEmpty()) {
 			this.normalizeMissing = normalizeMissing;
 		}
@@ -661,10 +675,9 @@ public class Harvester implements Runnable {
 	 * @return true if the action completed, false if it failed during
 	 * the process.
 	 */
-	private int removeMissingUris(Set<String> uris) {
+	private int removeMissingUris(Set<String> uris, String clusterId) {
 		int searchKeepAlive = 60000;
 		int count = 0;
-
 		SearchResponse response = client.prepareSearch()
 				.setIndices(indexName)
 				.setTypes(typeName)
@@ -672,9 +685,13 @@ public class Harvester implements Runnable {
 				.setQuery(QueryBuilders.matchAllQuery())
 				.execute()
 				.actionGet();
-
 		while (response.getHits().getHits().length > 0) {
 			for (SearchHit hit : response.getHits()) {
+
+                String hitClusterId = (String)hit.getSource().getOrDefault("cluster_id", clusterId);
+                if (hitClusterId != clusterId){
+                    continue;
+                }
 				if (uris.contains(hit.getId()))
 					continue;
 
@@ -743,8 +760,7 @@ public class Harvester implements Runnable {
 				logger.error("Errors occurred during modified content sync query. Aborting!");
 				return false;
 			}
-
-			deleted = removeMissingUris(allIndexURIs);
+			deleted = removeMissingUris(allIndexURIs, this.rdfClusterId);
 		}
 
 		/* Prepare a series of bulk uris to be described so we can make
@@ -809,7 +825,10 @@ public class Harvester implements Runnable {
                                                 urisWithErrors.add(String.format("%s %s", uri, e.getLocalizedMessage()));
                                             }
                                         }
-					//return false;
+                                        if (e.getMessage() == "Future got interrupted"){
+                                            return false;
+
+                                        }
 				} finally {
 					qExec.close();
 				}
@@ -1062,6 +1081,19 @@ public class Harvester implements Runnable {
 		}
 	}
 
+        private Map<String, ArrayList<String>> addCountingToJsonMap(Map<String, ArrayList<String>> jsonMap){
+            Iterator it = jsonMap.entrySet().iterator();
+            Map<String, ArrayList<String>> countingMap = new HashMap<String, ArrayList<String>>();
+            ArrayList<String> itemsCount = new ArrayList<String>();
+            while (it.hasNext()) {
+                itemsCount = new ArrayList<String>();
+                Map.Entry<String, ArrayList<String>> pair = (Map.Entry<String, ArrayList<String>>)it.next();
+                itemsCount.add(Integer.toString(pair.getValue().size()));
+                countingMap.put("items_count_" + pair.getKey(), itemsCount);
+            }
+            jsonMap.putAll(countingMap);
+            return jsonMap;
+        }
 	/**
 	 * Get JSON map for a given resource by applying the river settings
 	 * @param rs resource being processed
@@ -1085,27 +1117,17 @@ public class Harvester implements Runnable {
 		}
 
 		Set<String> rdfLanguages = new HashSet<String>();
-
 		for(Property prop: properties) {
 			NodeIterator niter = model.listObjectsOfProperty(rs,prop);
 			String property = prop.toString();
 			results = new ArrayList<String>();
 
 
-			String lang;
 			String currValue;
 
 			while (niter.hasNext()) {
 				RDFNode node = niter.next();
 				currValue = getStringForResult(node, getPropLabel);
-				if (addLanguage) {
-					if (node.isLiteral()) {
-						lang = node.asLiteral().getLanguage();
-						if (!lang.isEmpty()) {
-							rdfLanguages.add("\"" + lang + "\"");
-						}
-					}
-				}
 
 				String shortValue = currValue;
 
@@ -1125,11 +1147,14 @@ public class Harvester implements Runnable {
 				if (whiteMapCond || blackMapCond) {
 					continue;
 				}
-
 				if (normalizeObj.containsKey(shortValue)) {
-					results.add("\"" + normalizeObj.get(shortValue) + "\"");
+                                        if (!results.contains("\"" + normalizeObj.get(shortValue) + "\"")){
+					    results.add("\"" + normalizeObj.get(shortValue) + "\"");
+                                        }
 				} else {
-					results.add(currValue);
+                                        if (!results.contains(currValue)){
+					    results.add(currValue);
+                                        }
 				}
 			}
 
@@ -1137,29 +1162,82 @@ public class Harvester implements Runnable {
 			if (results.isEmpty()) continue;
 
 			if (normalizeProp.containsKey(property)) {
-				property = normalizeProp.get(property);
-				if (jsonMap.containsKey(property)) {
-					jsonMap.get(property).addAll(results);
-				} else {
-					jsonMap.put(property, results);
-				}
+				Object norm_property = normalizeProp.get(property);
+                                if (norm_property instanceof String){
+                                    property = norm_property.toString();
+				    if (jsonMap.containsKey(property)) {
+					    jsonMap.get(property).addAll(results);
+				    } else {
+					    jsonMap.put(property, results);
+				    }
+                                }
+                                else {
+                                    if (norm_property instanceof List<?>){
+                                        for (String norm_prop : ((List<String>) norm_property)) {
+                                            if (jsonMap.containsKey(norm_prop)) {
+                                                jsonMap.get(norm_prop).addAll(results);
+                                            } else {
+                                                jsonMap.put(norm_prop, results);
+                                            }
+                                        }
+                                    }
+                                }
 			} else {
 				jsonMap.put(property, results);
 			}
 		}
 
 		if(addLanguage) {
-			if(rdfLanguages.isEmpty() && !language.isEmpty())
-				rdfLanguages.add(language);
-			if(!rdfLanguages.isEmpty())
-				jsonMap.put(
-						"language", new ArrayList<String>(rdfLanguages));
-		}
+                    HashSet<Property> allProperties = new HashSet<Property>();
 
-		for (Map.Entry<String, String> it : normalizeMissing.entrySet()) {
+                    StmtIterator it = model.listStatements();
+                    while(it.hasNext()) {
+                        Statement st = it.nextStatement();
+                        Property prop = st.getPredicate();
+
+                        allProperties.add(prop);
+                    }
+
+
+                    for(Property prop: allProperties) {
+                        String property = prop.toString();
+                        NodeIterator niter = model.listObjectsOfProperty(rs,prop);
+                        String lang;
+
+                        while (niter.hasNext()) {
+                            RDFNode node = niter.next();
+                            if (addLanguage) {
+                                if (node.isLiteral()) {
+                                    lang = node.asLiteral().getLanguage();
+                                    if (!lang.isEmpty()) {
+                                        rdfLanguages.add("\"" + lang + "\"");
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+		    if(rdfLanguages.isEmpty() && !language.isEmpty())
+		        rdfLanguages.add(language);
+			if(!rdfLanguages.isEmpty())
+			    jsonMap.put(
+			        "language", new ArrayList<String>(rdfLanguages));
+	        }
+
+		for (Map.Entry<String, Object> it : normalizeMissing.entrySet()) {
 			if (!jsonMap.containsKey(it.getKey())) {
 				ArrayList<String> res = new ArrayList<String>();
-				res.add("\"" + it.getValue() + "\"");
+                                Object miss_values = it.getValue();
+                                if (miss_values instanceof String){
+				    res.add("\"" + (String)miss_values + "\"");
+                                }
+                                else {
+                                    if (miss_values instanceof List<?>){
+                                        for (String miss_value: ((List<String>)miss_values)){
+                                            res.add("\"" + miss_value + "\"");
+                                        }
+                                    }
+                                }
 				jsonMap.put(it.getKey(), res);
 			}
 		}
@@ -1200,7 +1278,9 @@ public class Harvester implements Runnable {
 		while(resIt.hasNext()) {
 			Resource rs = resIt.nextResource();
 			Map<String, ArrayList<String>> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
-
+                        if (addCounting){
+                            jsonMap = addCountingToJsonMap(jsonMap);
+                        }
 			bulkRequest.add(client.prepareIndex(indexName, typeName, rs.toString())
 					.setSource(mapToString(jsonMap)));
 			bulkLength++;
