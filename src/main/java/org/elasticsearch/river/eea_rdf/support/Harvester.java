@@ -69,7 +69,7 @@ public class Harvester implements Runnable {
 	/* Normalization options */
 	private Map<String, Object> normalizeProp = new HashMap<String, Object>();
 	private Map<String, String> normalizeObj = new HashMap<String, String>();
-	private Map<String, String> normalizeMissing = new HashMap<String, String>();
+	private Map<String, Object> normalizeMissing = new HashMap<String, Object>();
 
 	/* Language options */
 	private Boolean addLanguage = false;
@@ -272,7 +272,7 @@ public class Harvester implements Runnable {
 	 * @return the same {@link Harvester} with the {@link #normalizeMissing}
 	 * parameter set
 	 */
-	public Harvester rdfNormalizationMissing(Map<String, String> normalizeMissing) {
+	public Harvester rdfNormalizationMissing(Map<String, Object> normalizeMissing) {
 		if(normalizeMissing != null && !normalizeMissing.isEmpty()) {
 			this.normalizeMissing = normalizeMissing;
 		}
@@ -1163,71 +1163,81 @@ public class Harvester implements Runnable {
 
 			if (normalizeProp.containsKey(property)) {
 				Object norm_property = normalizeProp.get(property);
-                if (norm_property instanceof String){
-                    property = norm_property.toString();
+                                if (norm_property instanceof String){
+                                    property = norm_property.toString();
 				    if (jsonMap.containsKey(property)) {
 					    jsonMap.get(property).addAll(results);
 				    } else {
 					    jsonMap.put(property, results);
 				    }
-                }
-                else {
-                    if (norm_property instanceof List<?>){
-                        for (String norm_prop : ((List<String>) norm_property)) {
-                            if (jsonMap.containsKey(norm_prop)) {
-                                jsonMap.get(norm_prop).addAll(results);
-                            } else {
-                                jsonMap.put(norm_prop, results);
-                            }
-                        }
-                    }
-                }
+                                }
+                                else {
+                                    if (norm_property instanceof List<?>){
+                                        for (String norm_prop : ((List<String>) norm_property)) {
+                                            if (jsonMap.containsKey(norm_prop)) {
+                                                jsonMap.get(norm_prop).addAll(results);
+                                            } else {
+                                                jsonMap.put(norm_prop, results);
+                                            }
+                                        }
+                                    }
+                                }
 			} else {
 				jsonMap.put(property, results);
 			}
 		}
 
 		if(addLanguage) {
-            HashSet<Property> allProperties = new HashSet<Property>();
+                    HashSet<Property> allProperties = new HashSet<Property>();
 
-            StmtIterator it = model.listStatements();
-            while(it.hasNext()) {
-                Statement st = it.nextStatement();
-                Property prop = st.getPredicate();
+                    StmtIterator it = model.listStatements();
+                    while(it.hasNext()) {
+                        Statement st = it.nextStatement();
+                        Property prop = st.getPredicate();
 
-                allProperties.add(prop);
-            }
+                        allProperties.add(prop);
+                    }
 
 
-            for(Property prop: allProperties) {
-                String property = prop.toString();
-                NodeIterator niter = model.listObjectsOfProperty(rs,prop);
-                String lang;
+                    for(Property prop: allProperties) {
+                        String property = prop.toString();
+                        NodeIterator niter = model.listObjectsOfProperty(rs,prop);
+                        String lang;
 
-                while (niter.hasNext()) {
-                    RDFNode node = niter.next();
-                    if (addLanguage) {
-                        if (node.isLiteral()) {
-                            lang = node.asLiteral().getLanguage();
-                            if (!lang.isEmpty()) {
-                                rdfLanguages.add("\"" + lang + "\"");
+                        while (niter.hasNext()) {
+                            RDFNode node = niter.next();
+                            if (addLanguage) {
+                                if (node.isLiteral()) {
+                                    lang = node.asLiteral().getLanguage();
+                                    if (!lang.isEmpty()) {
+                                        rdfLanguages.add("\"" + lang + "\"");
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            }
 
-			if(rdfLanguages.isEmpty() && !language.isEmpty())
-				rdfLanguages.add(language);
+		    if(rdfLanguages.isEmpty() && !language.isEmpty())
+		        rdfLanguages.add(language);
 			if(!rdfLanguages.isEmpty())
-				jsonMap.put(
-						"language", new ArrayList<String>(rdfLanguages));
-		}
+			    jsonMap.put(
+			        "language", new ArrayList<String>(rdfLanguages));
+	        }
 
-		for (Map.Entry<String, String> it : normalizeMissing.entrySet()) {
+		for (Map.Entry<String, Object> it : normalizeMissing.entrySet()) {
 			if (!jsonMap.containsKey(it.getKey())) {
 				ArrayList<String> res = new ArrayList<String>();
-				res.add("\"" + it.getValue() + "\"");
+                                Object miss_values = it.getValue();
+                                if (miss_values instanceof String){
+				    res.add("\"" + (String)miss_values + "\"");
+                                }
+                                else {
+                                    if (miss_values instanceof List<?>){
+                                        for (String miss_value: ((List<String>)miss_values)){
+                                            res.add("\"" + miss_value + "\"");
+                                        }
+                                    }
+                                }
 				jsonMap.put(it.getKey(), res);
 			}
 		}
