@@ -123,8 +123,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.0</version>
         <configuration>
-          <source>1.5</source>
-          <target>1.5</target>
+          <source>1.8</source>
+          <target>1.8</target>
         </configuration>
       </plugin>
 
@@ -150,6 +150,14 @@
       <version>${elasticsearch.version}</version>
       <scope>compile</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.elasticsearch</groupId>
+      <artifactId>elasticsearch</artifactId>
+      <version>1.4.2</version>
+      <scope>compile</scope>
+    </dependency>
+
 
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
