@@ -6,6 +6,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.apache.log4j.Logger;
 import org.elasticsearch.action.main.MainResponse;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
@@ -24,6 +25,7 @@ import java.io.IOException;
 //import java.net.UnknownHostException;
 
 public class Indexer {
+    final static Logger logger = Logger.getLogger(Indexer.class);
     //private volatile Harvester harvester;
     //private volatile Thread harvesterThread;
 
@@ -64,7 +66,7 @@ public class Indexer {
 
         MainResponse response = client.info();
 
-        System.out.println(response.toString());
+        logger.warn(response.toString());
 
         /*Client client = new TransportClient()
                 .addTransportAddress(new InetSocketTransportAddress(addr, 9200));*/
