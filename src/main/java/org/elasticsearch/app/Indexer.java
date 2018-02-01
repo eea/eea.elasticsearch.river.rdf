@@ -11,6 +11,8 @@ import org.elasticsearch.action.main.MainResponse;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.Loggers;
 
 //import org.elasticsearch.common.inject.AbstractModule;
 
@@ -25,7 +27,7 @@ import java.io.IOException;
 //import java.net.UnknownHostException;
 
 public class Indexer {
-    final static Logger logger = Logger.getLogger(Indexer.class);
+    final static ESLogger logger = Loggers.getLogger(Indexer.class);
     //private volatile Harvester harvester;
     //private volatile Thread harvesterThread;
 
@@ -35,15 +37,12 @@ public class Indexer {
         //harvester.run();
         //Node node = nodeBuilder().client(true).node();
 
-
         //Client client = node.client();
 
         /*Settings settings = ImmutableSettings.settingsBuilder()
                 //.put(ClusterName.SETTING, "myClusterName")
                 //.put(, "9200")
                 .build();*/
-
-
 
         //RiverSettings settings =
         Indexer indexer = new Indexer();
@@ -64,9 +63,12 @@ public class Indexer {
                     }
                 }));
 
-        MainResponse response = client.info();
+        //MainResponse response = client.info();
 
-        logger.warn(response.toString());
+        Harvester harvester = new Harvester();
+        harvester.client(client).riverName("_river");
+
+        harvester.run();
 
         /*Client client = new TransportClient()
                 .addTransportAddress(new InetSocketTransportAddress(addr, 9200));*/
