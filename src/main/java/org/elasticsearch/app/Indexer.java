@@ -1,29 +1,33 @@
 package  org.elasticsearch.app;
-import static org.elasticsearch.node.NodeBuilder.*;
 
-import org.elasticsearch.bootstrap.Elasticsearch;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.cluster.ClusterName;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.common.transport.TransportAddress;
-import org.elasticsearch.node.Node;
-import org.elasticsearch.river.RiverName;
-import org.elasticsearch.river.RiverSettings;
-import org.elasticsearch.river.eea_rdf.RDFRiver;
+import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.elasticsearch.action.main.MainResponse;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.client.RestHighLevelClient;
+
+//import org.elasticsearch.common.inject.AbstractModule;
+
+
+/*import org.elasticsearch.river.eea_rdf.RDFRiver;
 import org.elasticsearch.river.eea_rdf.RDFRiverModule;
-import org.elasticsearch.river.eea_rdf.settings.EEASettings;
-import org.elasticsearch.river.eea_rdf.support.Harvester;
+import org.elasticsearch.river.eea_rdf.settings.EEASettings;*/
+//import org.elasticsearch.river.eea_rdf.support.Harvester;
 
-import java.net.UnknownHostException;
+import java.io.IOException;
+//import java.net.InetAddress;
+//import java.net.UnknownHostException;
 
 public class Indexer {
-    private volatile Harvester harvester;
-    private volatile Thread harvesterThread;
+    //private volatile Harvester harvester;
+    //private volatile Thread harvesterThread;
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws IOException {
 
         //Harvester harvester = new Harvester();
         //harvester.run();
@@ -32,19 +36,50 @@ public class Indexer {
 
         //Client client = node.client();
 
-        Client client = new TransportClient()
-                .addTransportAddress(new InetSocketTransportAddress("localhost", 9200));
-
-        RiverSettings settings = (RiverSettings) ImmutableSettings.settingsBuilder()
-                .put(ClusterName.SETTING, "myClusterName")
+        /*Settings settings = ImmutableSettings.settingsBuilder()
+                //.put(ClusterName.SETTING, "myClusterName")
                 //.put(, "9200")
-                .build();
+                .build();*/
 
-        RDFRiver rdfRiver = new RDFRiver(new RiverName("river", "_river"), settings, "indexTemp", client );
+
+
+        //RiverSettings settings =
+        Indexer indexer = new Indexer();
+
+        //InetAddress addr = InetAddress.getByName("127.0.0.1");
+
+        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(AuthScope.ANY,
+                new UsernamePasswordCredentials("user_rw", "rw_pass"));
+
+        RestHighLevelClient client = new RestHighLevelClient(
+                RestClient.builder(
+                        new HttpHost("localhost", 19200, "http")
+                ).setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
+                    @Override
+                    public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
+                        return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+                    }
+                }));
+
+        MainResponse response = client.info();
+
+        System.out.println(response.toString());
+
+        /*Client client = new TransportClient()
+                .addTransportAddress(new InetSocketTransportAddress(addr, 9200));*/
+
+
+        //RDFRiver rdfRiver = new RDFRiver( new RiverName("river", "_river"), (RiverSettings) settings, "indexTemp", client );
+
 
         client.close();
         //harvester.run();
 
 
     }
+
+   /* protected void configure() {
+        bind(River.class).to(RDFRiver.class).asEagerSingleton();
+    }*/
 }
