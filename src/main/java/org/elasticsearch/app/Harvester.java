@@ -487,7 +487,7 @@ public class Harvester implements Runnable {
                     .source(jsonBuilder()
                         .startObject()
                             .field("last_update", sdf.format(date))
-                            .endObject());
+                            .endObject()));
         } catch (IOException ioe) {
             logger.error("Could not add the stats to ES. {}",
                     ioe.getLocalizedMessage());
