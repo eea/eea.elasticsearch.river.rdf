@@ -6,28 +6,20 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
-import org.apache.log4j.Logger;
+
 import org.elasticsearch.action.main.MainResponse;
+import org.elasticsearch.app.logging.ESLogger;
+import org.elasticsearch.app.logging.Loggers;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
-
-//import org.elasticsearch.common.inject.AbstractModule;
-
-
-/*import org.elasticsearch.river.eea_rdf.RDFRiver;
-import org.elasticsearch.river.eea_rdf.RDFRiverModule;
-import org.elasticsearch.river.eea_rdf.settings.EEASettings;*/
-//import org.elasticsearch.river.eea_rdf.support.Harvester;
 
 import java.io.IOException;
-//import java.net.InetAddress;
-//import java.net.UnknownHostException;
+import java.net.InetAddress;
 
 public class Indexer {
-    final static ESLogger logger = Loggers.getLogger(Indexer.class);
+    private static final ESLogger logger = Loggers.getLogger(Harvester.class);
+
     //private volatile Harvester harvester;
     //private volatile Thread harvesterThread;
 
@@ -66,7 +58,9 @@ public class Indexer {
         //MainResponse response = client.info();
 
         Harvester harvester = new Harvester();
-        harvester.client(client).riverName("_river");
+        harvester.client(client).riverName("_river")
+                //TODO: getFromSettingsFile
+                .index("_river");
 
         harvester.run();
 
