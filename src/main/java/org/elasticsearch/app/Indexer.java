@@ -47,7 +47,7 @@ public class Indexer {
 
         RestHighLevelClient client = new RestHighLevelClient(
                 RestClient.builder(
-                        new HttpHost("localhost", 19200, "http")
+                        new HttpHost("localhost", 9200, "http")
                 ).setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
                     @Override
                     public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
@@ -58,9 +58,9 @@ public class Indexer {
         //MainResponse response = client.info();
 
         Harvester harvester = new Harvester();
-        harvester.client(client).riverName("_river")
+        harvester.client(client).riverName("eeariver")
                 //TODO: getFromSettingsFile
-                .index("_river");
+                .index("global-search");
 
         harvester.run();
 

@@ -7,7 +7,7 @@ import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 
 import org.elasticsearch.river.AbstractRiverComponent;
-import org.elasticsearch.river.eea_rdf.support.Harvester;
+import org.elasticsearch.app.Harvester;
 import org.elasticsearch.river.eea_rdf.settings.EEASettings;
 import org.elasticsearch.river.River;
 import org.elasticsearch.river.RiverIndexName;

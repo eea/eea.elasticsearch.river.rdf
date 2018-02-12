@@ -7,6 +7,7 @@ import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.sparql.engine.http.QueryExceptionHTTP;
+import com.hp.hpl.jena.tdb.store.Hash;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.RiotException;
@@ -21,6 +22,9 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.app.logging.ESLogger;
 
 import org.elasticsearch.app.logging.Loggers;
@@ -30,6 +34,8 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.river.eea_rdf.settings.EEASettings;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.lang.NullPointerException;
 
@@ -507,7 +513,6 @@ public class Harvester implements Runnable {
 		String res = "";
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
-		//TODO: DONE
 		/*try {
             GetResponse response = client
 				.prepareGet(indexName, "stats", "1")
@@ -530,9 +535,39 @@ public class Harvester implements Runnable {
 			res = sdf.format(new Date(0));
 		}*/
 
-        GetRequest getRequest = new GetRequest(
-                    indexName,"stats","1").storedFields("last_update");
-        try {
+		SearchRequest searchRequest = new SearchRequest("global-search_status");
+		searchRequest.types("last_update");
+		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+
+		ArrayList<Long> updates = new ArrayList<Long>();
+
+		try {
+			SearchResponse searchResponse = client.search(searchRequest);
+			SearchHits hits = searchResponse.getHits();
+
+			SearchHit[] searchHits = hits.getHits();
+			for (SearchHit hit : searchHits) {
+				// do something with the SearchHit
+				if(hit.hasSource()){
+					Map<String, Object> sourceAsMap = hit.getSourceAsMap();
+					Long updated_at = (Long) sourceAsMap.get("updated_at");
+					updates.add(updated_at);
+					//System.out.println(documentTitle.);
+				}
+			}
+			if(updates.size() > 0){
+				res = Collections.max(updates).toString();
+			} else {
+				res = sdf.format(new Date(0));
+			}
+
+		} catch (IOException e) {
+			logger.error("Could not get last_update, use Date(0)",
+					e);
+			res = sdf.format(new Date(0));
+		}
+
+        /*try {
             //TODO: move to async
             GetResponse response = client.get(getRequest);
             if(!response.getFields().isEmpty()){
@@ -550,7 +585,7 @@ public class Harvester implements Runnable {
             res = sdf.format(new Date(0));
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
         return res;
 	}
 
@@ -972,10 +1007,10 @@ public class Harvester implements Runnable {
 	 */
 	public boolean runIndexAll() {
 		//TODO: LOG
-		/*logger.info(
+		logger.info(
 				"Starting RDF harvester: endpoint [{}], queries [{}]," +
 				"URIs [{}], index name [{}], typeName [{}]",
- 				rdfEndpoint, rdfQueries, rdfUris, indexName, typeName);*/
+ 				rdfEndpoint, rdfQueries, rdfUris, indexName, typeName);
 
 		while (true) {
 			if (this.closed){
