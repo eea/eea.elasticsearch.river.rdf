@@ -1,5 +1,6 @@
 package org.elasticsearch.river.eea_rdf;
 
+import org.elasticsearch.app.river.RiverSettings;
 import org.elasticsearch.client.Client;
 
 import org.elasticsearch.common.inject.Inject;
@@ -12,7 +13,6 @@ import org.elasticsearch.river.eea_rdf.settings.EEASettings;
 import org.elasticsearch.river.River;
 import org.elasticsearch.river.RiverIndexName;
 import org.elasticsearch.river.RiverName;
-import org.elasticsearch.river.RiverSettings;
 
 import java.util.Map;
 import java.util.List;
@@ -28,7 +28,7 @@ public class RDFRiver extends AbstractRiverComponent implements River {
 
 	@Inject
 	public RDFRiver(RiverName riverName,
-					RiverSettings settings,
+					org.elasticsearch.app.river.RiverSettings settings,
 					@RiverIndexName String riverIndexName,
 					Client client) {
 		super(riverName, settings);

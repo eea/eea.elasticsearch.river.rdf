@@ -10,6 +10,7 @@ import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.elasticsearch.action.main.MainResponse;
 import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
+import org.elasticsearch.app.river.RiverName;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -39,6 +40,7 @@ public class Indexer {
         //RiverSettings settings =
         Indexer indexer = new Indexer();
 
+
         //InetAddress addr = InetAddress.getByName("127.0.0.1");
 
         final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -57,8 +59,13 @@ public class Indexer {
 
         //MainResponse response = client.info();
 
+
+
+        //TODO: for each river need to make a harvester
         Harvester harvester = new Harvester();
-        harvester.client(client).riverName("eeariver")
+
+        //TODO: add river settings to harvester
+        harvester.client(client).riverName("eeariver").type("river")
                 //TODO: getFromSettingsFile
                 .index("global-search");
 

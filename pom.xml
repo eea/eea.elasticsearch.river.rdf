@@ -151,6 +151,12 @@
       <scope>compile</scope>
     </dependency>
 
+    <!--<dependency>
+      <groupId>org.elasticsearch</groupId>
+      <artifactId>elasticsearch</artifactId>
+      <version>1.4.2</version>
+      <scope>compile</scope>
+    </dependency>-->
 
     <dependency>
       <groupId>com.google.guava</groupId>
