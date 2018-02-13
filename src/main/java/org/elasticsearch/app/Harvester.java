@@ -31,8 +31,10 @@ import org.elasticsearch.app.logging.Loggers;
 import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.client.RestHighLevelClient;
 
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.river.eea_rdf.settings.EEASettings;
+import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -111,6 +113,7 @@ public class Harvester implements Runnable {
 	private String indexName;
 	private String typeName;
 	private String riverName;
+	private String riverIndex;
 
 	private Boolean closed = false;
 
@@ -455,6 +458,11 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
+	public Harvester riverIndex(String riverIndex){
+		this.riverIndex = riverIndex;
+		return this;
+	}
+
 	public Harvester rdfIndexType(String indexType) {
 		if (indexType.equals("sync"))
 			this.indexAll = false;
@@ -535,14 +543,23 @@ public class Harvester implements Runnable {
 			res = sdf.format(new Date(0));
 		}*/
 
-		SearchRequest searchRequest = new SearchRequest("global-search_status");
+		//TODO : WIP
+		final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(1L));
+		SearchRequest searchRequest = new SearchRequest(indexName + "_status");
+
+
+
+		/*SearchRequest searchRequest = new SearchRequest(indexName + "_status");
 		searchRequest.types("last_update");
 		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+		searchRequest.scroll(TimeValue.timeValueMinutes(1L));
 
 		ArrayList<Long> updates = new ArrayList<Long>();
 
 		try {
 			SearchResponse searchResponse = client.search(searchRequest);
+			SearchHits hits = searchResponse.getHits();
+			String scrollId = searchResponse.getScrollId();
 			SearchHits hits = searchResponse.getHits();
 
 			SearchHit[] searchHits = hits.getHits();
@@ -552,7 +569,6 @@ public class Harvester implements Runnable {
 					Map<String, Object> sourceAsMap = hit.getSourceAsMap();
 					Long updated_at = (Long) sourceAsMap.get("updated_at");
 					updates.add(updated_at);
-					//System.out.println(documentTitle.);
 				}
 			}
 			if(updates.size() > 0){
@@ -565,7 +581,7 @@ public class Harvester implements Runnable {
 			logger.error("Could not get last_update, use Date(0)",
 					e);
 			res = sdf.format(new Date(0));
-		}
+		}*/
 
         /*try {
             //TODO: move to async

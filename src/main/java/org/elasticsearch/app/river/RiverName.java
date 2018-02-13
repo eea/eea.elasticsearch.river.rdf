@@ -16,6 +16,7 @@ public class RiverName implements Serializable {
         this.name = name;
     }
 
+
     public String type() {
         return this.type;
     }
