@@ -13,22 +13,25 @@ import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
 import org.elasticsearch.app.river.River;
 import org.elasticsearch.app.river.RiverName;
+import org.elasticsearch.app.river.RiverSettings;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.document.DocumentField;
+import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.settings.Settings.Builder;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.common.xcontent.support.XContentMapValues;
+import org.elasticsearch.river.eea_rdf.settings.EEASettings;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Indexer {
     private static final ESLogger logger = Loggers.getLogger(Harvester.class);
@@ -42,6 +45,7 @@ public class Indexer {
     private final static String RIVER_INDEX = "eeariver";
 
     private volatile Harvester harvester;
+    private volatile Thread harvesterThread;
 
     private static final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
@@ -63,20 +67,16 @@ public class Indexer {
 
         Indexer indexer = new Indexer();
 
+        for(River river : indexer.rivers){
+            //System.out.println(river.riverName());
+            indexer.harvester = new Harvester();
+            indexer.harvester.client(client).riverName( river.riverName());
+            indexer.addHarvesterSettings(river.getRiverSettings());
+            indexer.start();
+        }
+
         //InetAddress addr = InetAddress.getByName("127.0.0.1");
 
-        /*RestHighLevelClient client = new RestHighLevelClient(
-            RestClient.builder(
-                    new HttpHost("localhost", 9200, "http")
-            ).setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-                @Override
-                public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                    return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-                }
-            })
-        );*/
-
-        //MainResponse response = client.info();
 
         //TODO: for each river need to make a harvester
         /*Harvester harvester = new Harvester();
@@ -95,10 +95,8 @@ public class Indexer {
         //RDFRiver rdfRiver = new RDFRiver( new RiverName("river", "_river"), (RiverSettings) settings, "indexTemp", client );
 
 
-        client.close();
+        //client.close();
         //harvester.run();
-
-
     }
 
     public Indexer() {
@@ -106,6 +104,7 @@ public class Indexer {
                 new UsernamePasswordCredentials(USER, PASS));
 
         getAllRivers();
+
     }
 
     private void getAllRivers() {
@@ -118,9 +117,11 @@ public class Indexer {
         SearchResponse searchResponse = null;
         try {
             searchResponse = client.search(searchRequest);
-
             String scrollId = searchResponse.getScrollId();
             SearchHit[] searchHits = searchResponse.getHits().getHits();
+
+            //process the hits
+            searchHitsA.addAll(Arrays.asList(searchHits));
 
             while (searchHits != null && searchHits.length > 0) {
                 SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
@@ -131,7 +132,6 @@ public class Indexer {
 
                 //process the hits
                 searchHitsA.addAll(Arrays.asList(searchHits));
-
             }
 
             ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
@@ -142,18 +142,158 @@ public class Indexer {
             e.printStackTrace();
         }
 
+        //System.out.println("SearchHitsA: " +  searchHitsA.size() );
+
         for (SearchHit  sh: searchHitsA ){
             Map<String, Object> source = sh.getSourceAsMap();
-            Settings settings = getSettingsFromSource(source);
 
+            if (!((Map)source.get("syncReq")).containsKey("eeaRDF")) {
+                System.out.println( "not has river settings: " + sh.getId() );
+                throw new IllegalArgumentException(
+                        "There are no eeaRDF settings in the river settings");
+            } else {
+                RiverSettings riverSettings = new RiverSettings(source);
+                RiverName riverName = new RiverName("eeaRDF", sh.getId());
+                River river = new River()
+                        .setRiverName( riverName.name() )
+                        .setRiverSettings( riverSettings );
+                rivers.add(river);
+            }
+        }
+    }
+
+    private void addHarvesterSettings(RiverSettings settings) {
+        if (!((HashMap)settings.getSettings().get("syncReq")).containsKey("eeaRDF")) {
+            throw new IllegalArgumentException(
+                    "There are no eeaRDF settings in the river settings");
+        }
+
+        Map<String, Object> rdfSettings = extractSettings(settings, "eeaRDF");
+
+        harvester.rdfIndexType(XContentMapValues.nodeStringValue(
+                rdfSettings.get("indexType"), "full"))
+                .rdfStartTime(XContentMapValues.nodeStringValue(
+                        rdfSettings.get("startTime"),""))
+                .rdfUris(XContentMapValues.nodeStringValue(
+                        rdfSettings.get("uris"), "[]"))
+                .rdfEndpoint(XContentMapValues.nodeStringValue(
+                        rdfSettings.get("endpoint"),
+                        EEASettings.DEFAULT_ENDPOINT))
+                .rdfClusterId(XContentMapValues.nodeStringValue(
+                        rdfSettings.get("cluster_id"),
+                        EEASettings.DEFAULT_CLUSTER_ID))
+                .rdfQueryType(XContentMapValues.nodeStringValue(
+                        rdfSettings.get("queryType"),
+                        EEASettings.DEFAULT_QUERYTYPE))
+                .rdfListType(XContentMapValues.nodeStringValue(
+                        rdfSettings.get("listtype"),
+                        EEASettings.DEFAULT_LIST_TYPE))
+                .rdfAddLanguage(XContentMapValues.nodeBooleanValue(
+                        rdfSettings.get("addLanguage"),
+                        EEASettings.DEFAULT_ADD_LANGUAGE))
+                .rdfAddCounting(XContentMapValues.nodeBooleanValue(
+                        rdfSettings.get("addCounting"),
+                        EEASettings.DEFAULT_ADD_COUNTING))
+                .rdfLanguage(XContentMapValues.nodeStringValue(
+                        rdfSettings.get("language"),
+                        EEASettings.DEFAULT_LANGUAGE))
+                .rdfAddUriForResource(XContentMapValues.nodeBooleanValue(
+                        rdfSettings.get("includeResourceURI"),
+                        EEASettings.DEFAULT_ADD_URI))
+                .rdfURIDescription(XContentMapValues.nodeStringValue(
+                        rdfSettings.get("uriDescription"),
+                        EEASettings.DEFAULT_URI_DESCRIPTION))
+                .rdfSyncConditions(XContentMapValues.nodeStringValue(
+                        rdfSettings.get("syncConditions"),
+                        EEASettings.DEFAULT_SYNC_COND))
+                .rdfGraphSyncConditions(XContentMapValues.nodeStringValue(
+                        rdfSettings.get("graphSyncConditions"), ""))
+                .rdfSyncTimeProp(XContentMapValues.nodeStringValue(
+                        rdfSettings.get("syncTimeProp"),
+                        EEASettings.DEFAULT_SYNC_TIME_PROP))
+                .rdfSyncOldData(XContentMapValues.nodeBooleanValue(
+                        rdfSettings.get("syncOldData"),
+                        EEASettings.DEFAULT_SYNC_OLD_DATA));
+
+        if (rdfSettings.containsKey("proplist")) {
+            harvester.rdfPropList(getStrListFromSettings(rdfSettings, "proplist"));
+        }
+        if(rdfSettings.containsKey("query")) {
+            harvester.rdfQuery(getStrListFromSettings(rdfSettings, "query"));
+        } else {
+            harvester.rdfQuery(EEASettings.DEFAULT_QUERIES);
+        }
+
+        if(rdfSettings.containsKey("normProp")) {
+            harvester.rdfNormalizationProp(getStrObjMapFromSettings(rdfSettings, "normProp"));
+        }
+        if(rdfSettings.containsKey("normMissing")) {
+            harvester.rdfNormalizationMissing(getStrObjMapFromSettings(rdfSettings, "normMissing"));
+        }
+        if(rdfSettings.containsKey("normObj")) {
+            harvester.rdfNormalizationObj(getStrStrMapFromSettings(rdfSettings, "normObj"));
+        }
+        if(rdfSettings.containsKey("blackMap")) {
+            harvester.rdfBlackMap(getStrObjMapFromSettings(rdfSettings, "blackMap"));
+        }
+        if(rdfSettings.containsKey("whiteMap")) {
+            harvester.rdfWhiteMap(getStrObjMapFromSettings(rdfSettings, "whiteMap"));
+        }
+
+        if(settings.getSettings().containsKey("index")){
+            Map<String, Object> indexSettings = extractSettings(settings, "index");
+            harvester.index(XContentMapValues.nodeStringValue(
+                    indexSettings.get("index"),
+                    EEASettings.DEFAULT_INDEX_NAME))
+                    .type(XContentMapValues.nodeStringValue(
+                            indexSettings.get("type"),
+                            EEASettings.DEFAULT_TYPE_NAME));
+        }
+        else {
+            harvester.index(EEASettings.DEFAULT_INDEX_NAME)
+                    .type(EEASettings.DEFAULT_TYPE_NAME);
         }
 
     }
 
-    private Settings getSettingsFromSource(Map<String, Object> source) {
-
+    /** Type casting accessors for river settings **/
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> extractSettings(RiverSettings settings,
+                                                       String key) {
+        return (Map<String, Object>) ( (Map<String, Object>)settings.getSettings().get("syncReq")).get(key);
     }
 
+    @SuppressWarnings("unchecked")
+    private static Map<String, String> getStrStrMapFromSettings(Map<String, Object> settings,
+                                                                String key) {
+        return (Map<String, String>)settings.get(key);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> getStrObjMapFromSettings(Map<String, Object> settings,
+                                                                String key) {
+        return (Map<String, Object>)settings.get(key);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> getStrListFromSettings(Map<String, Object> settings,
+                                                       String key) {
+        return (List<String>)settings.get(key);
+    }
+
+    public void start() {
+        harvesterThread = EsExecutors.daemonThreadFactory(
+                Builder.EMPTY_SETTINGS,
+                "eea_rdf_river(" + RIVER_INDEX +	")")
+                .newThread(harvester);
+        harvesterThread.start();
+    }
+
+    public void close() {
+        harvester.log("Closing EEA RDF river [" + RIVER_INDEX + "]");
+        harvester.close();
+        harvesterThread.interrupt();
+    }
 
    /* protected void configure() {
         bind(River.class).to(RDFRiver.class).asEagerSingleton();

@@ -1,23 +1,27 @@
 package org.elasticsearch.app.river;
 
 import org.elasticsearch.common.settings.Settings;
-
 import java.util.Map;
 
 public class RiverSettings {
-    private final Settings globalSettings;
-    private final Map<String, Object> settings;
+    private final Settings globalSettings = null;
+    private Map<String, Object> settings;
 
-    public RiverSettings(Settings globalSettings, Map<String, Object> settings) {
-        this.globalSettings = globalSettings;
-        this.settings = settings;
+    public RiverSettings(Map<String, Object> source) {
+        //this.globalSettings = globalSettings;
+        this.settings = source;
     }
 
     public Settings globalSettings() {
         return this.globalSettings;
     }
 
-    public Map<String, Object> settings() {
+    public RiverSettings settings(Map<String, Object> settings) {
+        this.settings = settings;
+        return this;
+    }
+
+    public Map<String, Object> getSettings(){
         return this.settings;
     }
 }

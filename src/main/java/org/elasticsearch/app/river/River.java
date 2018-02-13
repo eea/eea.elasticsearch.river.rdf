@@ -4,7 +4,7 @@ import org.elasticsearch.search.SearchHit;
 
 public class River {
     private RiverName riverName;
-    private Object riverSettings;
+    private RiverSettings riverSettings;
 
     public River() {
     }
@@ -13,13 +13,21 @@ public class River {
 
     }
 
-    public River riverName(String riverName){
+    public String riverName(){
+        return this.riverName.name();
+    }
+
+    public River setRiverName(String riverName){
         this.riverName = new RiverName("",riverName);
         return this;
     }
 
-    public River riverSettings(Object settings){
+    public River setRiverSettings(RiverSettings settings){
         this.riverSettings =  settings;
         return this;
+    }
+
+    public RiverSettings getRiverSettings(){
+        return this.riverSettings;
     }
 }

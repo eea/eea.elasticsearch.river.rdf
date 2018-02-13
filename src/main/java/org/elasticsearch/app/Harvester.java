@@ -666,10 +666,9 @@ public class Harvester implements Runnable {
 		try {
 			query = QueryFactory.create(rdfQuery);
 		} catch (QueryParseException qpe) {
-			//TODO: LOG
-			/*logger.warn(
+			logger.warn(
 					"Could not parse [{}]. Please provide a relevant query. {}",
-					rdfQuery, qpe.getLocalizedMessage());*/
+					rdfQuery, qpe.getLocalizedMessage());
 			return null;
 		}
 
@@ -685,17 +684,17 @@ public class Harvester implements Runnable {
 					rdfUrls.add(value);
 				} catch (NoSuchElementException e) {
 					//TODO: LOG
-					/*logger.error(
+					logger.error(
 							"Encountered a NoSuchElementException: "
-							+ e.getLocalizedMessage());*/
+							+ e.getLocalizedMessage());
 					return null;
 				}
 			}
 		} catch (Exception e) {
 			//TODO: LOG
-			/*logger.error(
+			logger.error(
 					"Encountered a [{}] while querying the endpoint for sync",
-					e.getLocalizedMessage());*/
+					e.getLocalizedMessage());
 			return null;
 		} finally {
 			qExec.close();
