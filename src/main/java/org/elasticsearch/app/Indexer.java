@@ -65,35 +65,24 @@ public class Indexer {
 
     public static void main(String[] args) throws IOException {
 
-        Indexer indexer = new Indexer();
 
-        for(River river : indexer.rivers){
-            //System.out.println(river.riverName());
+        Indexer indexer = new Indexer();
+        /*for(River river : indexer.rivers){
             indexer.harvester = new Harvester();
             indexer.harvester.client(client).riverName( river.riverName());
             indexer.addHarvesterSettings(river.getRiverSettings());
             indexer.start();
-        }
+        }*/
+        River river = indexer.rivers.get(0);
+        indexer.harvester = new Harvester();
+        indexer.harvester.client(client).riverName( river.riverName() );
+        indexer.addHarvesterSettings(river.getRiverSettings());
+        indexer.start();
 
         //InetAddress addr = InetAddress.getByName("127.0.0.1");
 
-
-        //TODO: for each river need to make a harvester
-        /*Harvester harvester = new Harvester();
-
-        //TODO: add river settings to harvester
-        harvester.client(client).type("river").riverIndex("eeariver")
-                //TODO: getFromSettingsFile
-                .index("global-search");
-
-        harvester.run();*/
-
         /*Client client = new TransportClient()
                 .addTransportAddress(new InetSocketTransportAddress(addr, 9200));*/
-
-
-        //RDFRiver rdfRiver = new RDFRiver( new RiverName("river", "_river"), (RiverSettings) settings, "indexTemp", client );
-
 
         //client.close();
         //harvester.run();
@@ -142,8 +131,6 @@ public class Indexer {
             e.printStackTrace();
         }
 
-        //System.out.println("SearchHitsA: " +  searchHitsA.size() );
-
         for (SearchHit  sh: searchHitsA ){
             Map<String, Object> source = sh.getSourceAsMap();
 
@@ -169,6 +156,9 @@ public class Indexer {
         }
 
         Map<String, Object> rdfSettings = extractSettings(settings, "eeaRDF");
+
+        harvester.index(  ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("index").toString() );
+        harvester.type( ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("type").toString() );
 
         harvester.rdfIndexType(XContentMapValues.nodeStringValue(
                 rdfSettings.get("indexType"), "full"))
