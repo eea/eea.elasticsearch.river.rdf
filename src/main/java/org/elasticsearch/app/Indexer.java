@@ -229,7 +229,7 @@ public class Indexer {
         if(rdfSettings.containsKey("whiteMap")) {
             harvester.rdfWhiteMap(getStrObjMapFromSettings(rdfSettings, "whiteMap"));
         }
-
+        //TODO : change to index
         if(settings.getSettings().containsKey("index")){
             Map<String, Object> indexSettings = extractSettings(settings, "index");
             harvester.index(XContentMapValues.nodeStringValue(
@@ -240,8 +240,8 @@ public class Indexer {
                             EEASettings.DEFAULT_TYPE_NAME));
         }
         else {
-            harvester.index(EEASettings.DEFAULT_INDEX_NAME)
-                    .type(EEASettings.DEFAULT_TYPE_NAME);
+            //TODO: don't know if is correct
+            //harvester.index(EEASettings.DEFAULT_INDEX_NAME).type(EEASettings.DEFAULT_TYPE_NAME);
         }
 
     }
@@ -274,13 +274,15 @@ public class Indexer {
     public void start() {
         harvesterThread = EsExecutors.daemonThreadFactory(
                 Builder.EMPTY_SETTINGS,
-                "eea_rdf_river(" + RIVER_INDEX +	")")
+                "eea_rdf_river(" + harvester.getRiverName() +	")")
                 .newThread(harvester);
+
         harvesterThread.start();
+        logger.info( "Inside thread : " + harvesterThread.getName());
     }
 
     public void close() {
-        harvester.log("Closing EEA RDF river [" + RIVER_INDEX + "]");
+        harvester.log("Closing EEA RDF river [" + harvester.getRiverName() + "]");
         harvester.close();
         harvesterThread.interrupt();
     }
