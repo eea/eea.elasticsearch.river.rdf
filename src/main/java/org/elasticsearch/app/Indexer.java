@@ -157,8 +157,7 @@ public class Indexer {
 
         Map<String, Object> rdfSettings = extractSettings(settings, "eeaRDF");
 
-        harvester.index(  ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("index").toString() );
-        harvester.type( ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("type").toString() );
+
 
         harvester.rdfIndexType(XContentMapValues.nodeStringValue(
                 rdfSettings.get("indexType"), "full"))
@@ -241,6 +240,9 @@ public class Indexer {
         }
         else {
             //TODO: don't know if is correct
+            harvester.index(  ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("index").toString() );
+            harvester.type( ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("type").toString() );
+
             //harvester.index(EEASettings.DEFAULT_INDEX_NAME).type(EEASettings.DEFAULT_TYPE_NAME);
         }
 

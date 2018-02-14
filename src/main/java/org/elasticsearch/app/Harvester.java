@@ -7,6 +7,7 @@ import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.sparql.engine.http.QueryExceptionHTTP;
+import com.hp.hpl.jena.sparql.util.Closure;
 import com.hp.hpl.jena.tdb.store.Hash;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFLanguages;
@@ -28,6 +29,7 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.*;
 import org.elasticsearch.action.support.replication.ReplicationResponse;
+import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.app.logging.ESLogger;
 
 import org.elasticsearch.app.logging.Loggers;
@@ -46,6 +48,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import java.lang.NullPointerException;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -118,6 +121,7 @@ public class Harvester implements Runnable {
 	private String typeName;
 	private String riverName;
 	private String riverIndex;
+
 
 	private Boolean closed = false;
 
@@ -488,7 +492,46 @@ public class Harvester implements Runnable {
 
 		BulkRequest bulkRequest = new BulkRequest();
 
-		//TODO: prepareBulk, setSource - DONE
+		try {
+			String statusIndex = indexName + "_status";
+
+
+			bulkRequest.add(new IndexRequest( statusIndex , "last_update", riverName )
+                .source(
+                    jsonBuilder().startObject()
+							.field("updated_at", date.getTime() )
+							.field("name", riverName )
+							.endObject()
+				)
+            );
+			logger.info(bulkRequest.getDescription());
+
+        } catch (IOException e) {
+			logger.error("Could not add the stats to ES. {}",
+					e.getMessage());
+        }
+
+        try {
+            BulkResponse bulkResponse = client.bulk(bulkRequest);
+
+            if(!bulkResponse.hasFailures() ){
+				for (BulkItemResponse bulkItemResponse : bulkResponse) {
+					logger.debug("bulkR: [{},{},{}]", bulkItemResponse.getIndex(), bulkItemResponse.getType(), bulkItemResponse.getId() );
+				}
+			} else {
+				for (BulkItemResponse bulkItemResponse : bulkResponse) {
+					BulkItemResponse.Failure failure = bulkItemResponse.getFailure();
+					logger.debug("bulkR FAILURE: [{}]", failure.getCause() );
+				}
+			}
+        } catch (IOException e) {
+			logger.error("Bulk error: [{}]", e.getMessage());
+			e.printStackTrace();
+        }
+
+
+
+        //TODO: prepareBulk, setSource - DONE
 		/*BulkRequestBuilder bulkRequest = client.prepareBulk();
 		try {
 			bulkRequest.add(new IndexRequest(indexName, "stats", "1")
@@ -503,7 +546,7 @@ public class Harvester implements Runnable {
 
 		bulkRequest.execute().actionGet();*/
 
-        try {
+        /*try {
             //TODO: why Bulk?
             bulkRequest.add(new IndexRequest(indexName, "stats", "1")
                     .source(jsonBuilder()
@@ -513,15 +556,15 @@ public class Harvester implements Runnable {
         } catch (IOException ioe) {
             logger.error("Could not add the stats to ES. {}",
                     ioe.getLocalizedMessage());
-        }
+        }*/
 
-        try {
+        /*try {
             //TODO: async
             client.bulk(bulkRequest);
         } catch (IOException ex) {
             logger.error("Could not do bulk request {}",
                     ex.getLocalizedMessage());
-        }
+        }*/
 
     }
 
@@ -616,14 +659,18 @@ public class Harvester implements Runnable {
 
 	public void run() {
 		long currentTime = System.currentTimeMillis();
-		boolean success;
+		boolean success = false;
 
 		if (startTime.isEmpty()) startTime = getLastUpdate();
 
-		if (indexAll)
+		/*if (indexAll)
 			success = runIndexAll();
 		else
-			success = runSync();
+			success = runSync();*/
+
+		//TODO: remove
+		success = true;
+
 
 		if (success) {
 			setLastUpdate(new Date(currentTime));
@@ -642,17 +689,17 @@ public class Harvester implements Runnable {
 
 	public boolean runSync() {
 		//TODO: LOG
-		/*logger.info("Starting RDF synchronization: endpoint [{}], " +
+		logger.info("Starting RDF synchronization: endpoint [{}], " +
 				    "index name [{}], type name [{}]",
-					rdfEndpoint, indexName, typeName);*/
+					rdfEndpoint, indexName, typeName);
 
 		boolean success = sync();
 		closed = true;
 
-		/*logger.info("Ended synchronization from [{}], for endpoint [{}]," +
+		logger.info("Ended synchronization from [{}], for endpoint [{}]," +
 					"index name [{}], type name [{}] with status {}",
 					startTime, rdfEndpoint, indexName, typeName,
-					success ? "Success": "Failure");*/
+					success ? "Success": "Failure");
 		return success;
 	}
 
@@ -1312,7 +1359,7 @@ public class Harvester implements Runnable {
 			if(uri.isEmpty()) continue;
 
 			//TODO:LOG
-			/*logger.info("Harvesting uri [{}]", uri);*/
+			logger.info("Harvesting uri [{}]", uri);
 
 			Model model = ModelFactory.createDefaultModel();
 			try {
