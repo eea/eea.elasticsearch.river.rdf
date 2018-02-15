@@ -16,6 +16,7 @@ import org.apache.jena.riot.RiotException;
 import org.apache.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -49,6 +50,7 @@ import java.lang.NullPointerException;
 
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -67,7 +69,7 @@ public class Harvester implements Runnable {
 		DESCRIBE
 	}
 
-	//TODO: LOGGER
+	//TODO: LOGGER - DONE
     private final ESLogger logger = Loggers.getLogger(Harvester.class);
 
 	private String rdfEndpoint = "";
@@ -127,7 +129,10 @@ public class Harvester implements Runnable {
 
 	public void log(String message) { logger.info(message); }
 
-	public void close() { closed = true; }
+	public void close() {
+		closed = true;
+
+	}
 
 	private HashMap<String, String> uriLabelCache = new HashMap<String, String>();
 
@@ -183,10 +188,8 @@ public class Harvester implements Runnable {
 		try {
 			rdfQueryType = QueryType.valueOf(queryType.toUpperCase());
 		} catch (IllegalArgumentException e) {
-			//TODO: LOG
-			//logger.info("Bad query type: {}", queryType);
-
-
+			//TODO: LOG - DONE
+			logger.info("Bad query type: {}", queryType);
 
 			/* River process can't continue */
 			throw e;
@@ -239,10 +242,10 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
-        public Harvester rdfAddCounting(Boolean rdfAddCounting) {
-                addCounting = rdfAddCounting;
-                return this;
-        }
+	public Harvester rdfAddCounting(Boolean rdfAddCounting) {
+			addCounting = rdfAddCounting;
+			return this;
+	}
 	/**
 	 * Sets the {@link Harvester}'s {@link #language} parameter. The default
 	 * value is 'en"
@@ -486,31 +489,27 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
-
 	private void setLastUpdate(Date date) {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-
 		BulkRequest bulkRequest = new BulkRequest();
 
 		try {
 			String statusIndex = indexName + "_status";
 
-
 			bulkRequest.add(new IndexRequest( statusIndex , "last_update", riverName )
                 .source(
                     jsonBuilder().startObject()
-							.field("updated_at", date.getTime() )
+							.field("updated_at", date.getTime() / 1000 )
 							.field("name", riverName )
 							.endObject()
 				)
             );
-			logger.info(bulkRequest.getDescription());
-
         } catch (IOException e) {
 			logger.error("Could not add the stats to ES. {}",
 					e.getMessage());
         }
 
+        //TODO: move to async
         try {
             BulkResponse bulkResponse = client.bulk(bulkRequest);
 
@@ -529,157 +528,71 @@ public class Harvester implements Runnable {
 			e.printStackTrace();
         }
 
-
-
-        //TODO: prepareBulk, setSource - DONE
-		/*BulkRequestBuilder bulkRequest = client.prepareBulk();
-		try {
-			bulkRequest.add(new IndexRequest(indexName, "stats", "1")
-					.setSource(jsonBuilder()
-							.startObject()
-							.field("last_update", sdf.format(date))
-							.endObject()));
-		} catch (IOException ioe) {
-			logger.error("Could not add the stats to ES. {}",
-					ioe.getLocalizedMessage());
-		}
-
-		bulkRequest.execute().actionGet();*/
-
-        /*try {
-            //TODO: why Bulk?
-            bulkRequest.add(new IndexRequest(indexName, "stats", "1")
-                    .source(jsonBuilder()
-                        .startObject()
-                            .field("last_update", sdf.format(date))
-                            .endObject()));
-        } catch (IOException ioe) {
-            logger.error("Could not add the stats to ES. {}",
-                    ioe.getLocalizedMessage());
-        }*/
-
-        /*try {
-            //TODO: async
-            client.bulk(bulkRequest);
-        } catch (IOException ex) {
-            logger.error("Could not do bulk request {}",
-                    ex.getLocalizedMessage());
-        }*/
-
     }
 
 	private String getLastUpdate() {
 		String res = "";
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
-		/*try {
-            GetResponse response = client
-				.prepareGet(indexName, "stats", "1")
-				.setFields("last_update")
-				.execute()
-				.actionGet();
-		    if (!response.getFields().isEmpty()) {
-			    res = (String) response.getField("last_update").getValue();
-		    } else {
-			    res = sdf.format(new Date(0));
-		    }
-		} catch ( ElasticsearchIllegalStateException ex) {
+		GetRequest getRequest = new GetRequest(indexName + "_status", "last_update", riverName );
 
-			logger.error("Could not get last_update, use Date(0)",
-					ex.());
-			res = sdf.format(new Date(0));
-		} catch (NullPointerException ex) {
-            logger.error("Could not get last_update, use Date(0)",
-					ex.getLocalizedMessage());
-			res = sdf.format(new Date(0));
-		}*/
-
-		//TODO : WIP
-		final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(1L));
-		SearchRequest searchRequest = new SearchRequest(indexName + "_status");
-
-
-
-		/*SearchRequest searchRequest = new SearchRequest(indexName + "_status");
-		searchRequest.types("last_update");
-		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-		searchRequest.scroll(TimeValue.timeValueMinutes(1L));
-
-		ArrayList<Long> updates = new ArrayList<Long>();
-
+		//TODO: move to async ?
 		try {
-			SearchResponse searchResponse = client.search(searchRequest);
-			SearchHits hits = searchResponse.getHits();
-			String scrollId = searchResponse.getScrollId();
-			SearchHits hits = searchResponse.getHits();
+			GetResponse getResponse = client.get(getRequest);
 
-			SearchHit[] searchHits = hits.getHits();
-			for (SearchHit hit : searchHits) {
-				// do something with the SearchHit
-				if(hit.hasSource()){
-					Map<String, Object> sourceAsMap = hit.getSourceAsMap();
-					Long updated_at = (Long) sourceAsMap.get("updated_at");
-					updates.add(updated_at);
-				}
-			}
-			if(updates.size() > 0){
-				res = Collections.max(updates).toString();
-			} else {
-				res = sdf.format(new Date(0));
+			if(!getResponse.isSourceEmpty()){
+				Long updated = (Long) getResponse.getSource().get("updated_at");
+				res = sdf.format(updated);
 			}
 
 		} catch (IOException e) {
-			logger.error("Could not get last_update, use Date(0)",
-					e);
+			logger.error("Could not get last_update, use Date(0)", e);
 			res = sdf.format(new Date(0));
-		}*/
-
-        /*try {
-            //TODO: move to async
-            GetResponse response = client.get(getRequest);
-            if(!response.getFields().isEmpty()){
-                res = response.getField("last_update").getValue();
-            } else {
-                res = sdf.format(new Date(0));
-            }
-        } catch (ElasticsearchException e) {
-            logger.error("Could not get last_update, use Date(0)",
-                    e);
-            res = sdf.format(new Date(0));
-        } catch (NullPointerException ex){
-            logger.error("Could not get last_update, use Date(0)",
-                    ex.getLocalizedMessage());
-            res = sdf.format(new Date(0));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
+		}
         return res;
 	}
-
 
 	public void run() {
 		long currentTime = System.currentTimeMillis();
 		boolean success = false;
 
-		if (startTime.isEmpty()) startTime = getLastUpdate();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+		Long ts = Long.valueOf(0);
+		try {
+			 ts = sdf.parse(startTime).getTime() / 1000;
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
 
-		/*if (indexAll)
+		if ( startTime.isEmpty() ) startTime = getLastUpdate();
+
+		if (indexAll)
 			success = runIndexAll();
 		else
-			success = runSync();*/
+			success = runSync();
 
 		//TODO: remove
-		success = true;
+		//success = true;
 
-
+		//TODO: async ?
 		if (success) {
 			setLastUpdate(new Date(currentTime));
 		}
 
-		//TODO: admin
-		/*client.admin().indices()
-			  .prepareDeleteMapping("_river").setType(riverName)
-			  .execute();*/
+		// deleting river cluster from riverIndex
+		DeleteRequest deleteRequest = new DeleteRequest(riverIndex, "river", riverName);
+		client.deleteAsync(deleteRequest, new ActionListener<DeleteResponse>() {
+			@Override
+			public void onResponse(DeleteResponse deleteResponse) {
+				logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
+			}
+
+			@Override
+			public void onFailure(Exception e) {
+				logger.error("Could not delete river :" +  riverIndex + "/" +  riverName);
+				logger.error("Reason: [{}]", e.getMessage());
+			}
+		});
 
 		/* Any code after this step would not be executed as
 		   the master will interrupt the harvester thread after
@@ -688,7 +601,7 @@ public class Harvester implements Runnable {
 	}
 
 	public boolean runSync() {
-		//TODO: LOG
+		//TODO: LOG - DONE
 		logger.info("Starting RDF synchronization: endpoint [{}], " +
 				    "index name [{}], type name [{}]",
 					rdfEndpoint, indexName, typeName);
@@ -712,9 +625,9 @@ public class Harvester implements Runnable {
 	 * @return set of values for queryObjectName in the rdfQuery result
 	 */
 	HashSet<String> executeSyncQuery(String rdfQuery, String queryObjName) {
-                logger.info("Start executeSyncQuery");
-                logger.info("QUERY:");
-                logger.info(rdfQuery);
+		logger.info("Start executeSyncQuery");
+		logger.info("QUERY:");
+		logger.info(rdfQuery);
 		HashSet<String> rdfUrls = new HashSet<String>();
 
 		Query query;
@@ -738,7 +651,7 @@ public class Harvester implements Runnable {
 					String value = sol.getResource(queryObjName).toString();
 					rdfUrls.add(value);
 				} catch (NoSuchElementException e) {
-					//TODO: LOG
+					//TODO: LOG - DONE
 					logger.error(
 							"Encountered a NoSuchElementException: "
 							+ e.getLocalizedMessage());
@@ -746,7 +659,7 @@ public class Harvester implements Runnable {
 				}
 			}
 		} catch (Exception e) {
-			//TODO: LOG
+			//TODO: LOG - DONE
 			logger.error(
 					"Encountered a [{}] while querying the endpoint for sync",
 					e.getLocalizedMessage());
@@ -852,6 +765,8 @@ public class Harvester implements Runnable {
 		int searchKeepAlive = 60000;
 		int count = 0;
 
+
+		// TODO: async?
 		final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(1L));
 		SearchRequest searchRequest = new SearchRequest();
 		searchRequest.indices(indexName).types(typeName);
@@ -867,7 +782,14 @@ public class Harvester implements Runnable {
 			//process the hits
 			//noinspection Duplicates
 			for(SearchHit hit : searchHits){
-				String hitClusterId = (String)hit.getSourceAsMap().getOrDefault("cluster_id", clusterId);
+				String hitClusterId;
+				if( hit.getSourceAsMap().getOrDefault("cluster_id", clusterId).getClass() == ArrayList.class ){
+					 ArrayList<String> arr = (ArrayList<String>) hit.getSourceAsMap().getOrDefault("cluster_id", clusterId);
+					 hitClusterId = arr.get(0);
+
+				} else {
+					hitClusterId = (String)hit.getSourceAsMap().getOrDefault("cluster_id", clusterId);
+				}
 
 				if (hitClusterId != clusterId){
 					continue;
@@ -891,8 +813,6 @@ public class Harvester implements Runnable {
 				if (deleteResponse.getResult() == DocWriteResponse.Result.DELETED) {
 					count++;
 				}
-				//if (deleteResponse.isFound()) count++;
-
 			}
 
 			while (searchHits != null && searchHits.length > 0) {
@@ -929,8 +849,6 @@ public class Harvester implements Runnable {
 					if (deleteResponse.getResult() == DocWriteResponse.Result.DELETED) {
 						count++;
 					}
-					//if (deleteResponse.isFound()) count++;
-
 				}
 			}
 
@@ -949,36 +867,7 @@ public class Harvester implements Runnable {
 				exception.printStackTrace();
 			}
 		}
-		//TODO: prepareSearch, prepareDelete, prepareSearchScroll
-		/*SearchResponse response = client.prepareSearch()
-				.setIndices(indexName)
-				.setTypes(typeName)
-				.setScroll(new TimeValue(searchKeepAlive))
-				.setQuery(QueryBuilders.matchAllQuery())
-				.execute()
-				.actionGet();
-		while (response.getHits().getHits().length > 0) {
-			for (SearchHit hit : response.getHits()) {
 
-                String hitClusterId = (String)hit.getSource().getOrDefault("cluster_id", clusterId);
-                if (hitClusterId != clusterId){
-                    continue;
-                }
-				if (uris.contains(hit.getId()))
-					continue;
-
-				DeleteResponse deleteResponse =
-						client.prepareDelete(indexName, typeName, hit.getId())
-								.execute()
-								.actionGet();
-				if (deleteResponse.isFound()) count++;
-			}
-
-			response = client.prepareSearchScroll(response.getScrollId())
-					.setScroll(new TimeValue(searchKeepAlive))
-					.execute()
-					.actionGet();
-		}*/
 		return count;
 	}
 
@@ -988,7 +877,7 @@ public class Harvester implements Runnable {
 	 */
 	public boolean sync() {
 		//TODO: LOG
-		/*logger.info("Sync resources newer than {}", startTime);*/
+		logger.info("Sync resources newer than {}", startTime);
 
 		String rdfQueryTemplate =
 				"PREFIX xsd:<http://www.w3.org/2001/XMLSchema#> "
@@ -1091,7 +980,7 @@ public class Harvester implements Runnable {
 						}
 
 					} catch (Exception e) {
-						//TODO: LOG
+						//TODO: LOG - DONE
 						logger.error("Error while querying for modified content. {}", e.getLocalizedMessage());
 						e.printStackTrace();
 
@@ -1114,7 +1003,7 @@ public class Harvester implements Runnable {
 							qExec.close();
 						}
 				} catch (QueryParseException  qpe) {
-					//TODO: LOG
+					//TODO: LOG - DONE
 					logger.warn("Could not parse Sync query. Please provide a relevant query. {}", qpe.getLocalizedMessage());
 					if (! isBulkWithErrors){
 						for (String uri : bulk){
@@ -1153,7 +1042,7 @@ public class Harvester implements Runnable {
 			bulks = bulksWithErrors;
 		}
 
-		//TODO: LOG
+		//TODO: LOG - DONE
 		logger.info("Finished synchronisation: Deleted {}, Updated {}/{}",
 				deleted, count, syncUris.size());
 
@@ -1164,7 +1053,8 @@ public class Harvester implements Runnable {
 		}
 
         if (urisWithErrors.size() > 0){
-		//TODO: LOG
+
+		//TODO: LOG - DONE
         logger.error("There were {} uris with errors:", urisWithErrors.size());
 			for (String uri : urisWithErrors) {
 				logger.error(uri);
@@ -1177,7 +1067,7 @@ public class Harvester implements Runnable {
 	 * Starts the harvester for queries and/or URLs
 	 */
 	public boolean runIndexAll() {
-		//TODO: LOG
+		//TODO: LOG - DONE
 		logger.info(
 				"Starting RDF harvester: endpoint [{}], queries [{}]," +
 				"URIs [{}], index name [{}], typeName [{}]",
@@ -1185,7 +1075,7 @@ public class Harvester implements Runnable {
 
 		while (true) {
 			if (this.closed){
-				//TODO: LOG
+				//TODO: LOG - DONE
 				logger.info("Ended harvest for endpoint [{}], queries [{}]," +
 							"URIs [{}], index name {}, type name {}",
 							rdfEndpoint, rdfQueries, rdfUris, indexName, typeName);
@@ -1293,8 +1183,12 @@ public class Harvester implements Runnable {
 			retry = false;
 			try {
 				Model model = getModel(qExec);
-				//TODO: prepareBulk
-				/*addModelToES(model, client.prepareBulk(), true);*/
+
+				//TODO: prepareBulk - DONE
+				BulkRequest bulkRequest = new BulkRequest();
+				if(model != null) {
+					addModelToES(model, bulkRequest, true);
+				}
 			} catch (QueryExceptionHTTP e) {
 				if (e.getResponseCode() >= 500) {
 					retry = true;
@@ -1313,27 +1207,27 @@ public class Harvester implements Runnable {
 	 */
 	private void harvestFromEndpoint() {
 
-                logger.info("harvestFromEndpoint");
+		logger.info("harvestFromEndpoint");
 		Query query;
 		QueryExecution qExec;
 
 		for (String rdfQuery : rdfQueries) {
 			if (closed) break;
 
-			//TODO:LOG
-			/*logger.info(
+			//TODO:LOG - DONE
+			logger.info(
 				"Harvesting with query: [{}] on index [{}] and type [{}]",
- 				rdfQuery, indexName, typeName);*/
+ 				rdfQuery, indexName, typeName);
 
 			try {
-                                logger.info("QUERY:");
-                                logger.info(rdfQuery);
+				logger.info("QUERY:");
+				logger.info(rdfQuery);
 				query = QueryFactory.create(rdfQuery);
 			} catch (QueryParseException qpe) {
-				//TODO:LOG
-				/*logger.error(
+				//TODO:LOG - DONE
+				logger.error(
 						"Could not parse [{}]. Please provide a relevant query. {}",
-						rdfQuery, qpe);*/
+						rdfQuery, qpe);
 				continue;
 			}
 
@@ -1342,9 +1236,8 @@ public class Harvester implements Runnable {
 			try {
 				harvest(qExec);
 			} catch (Exception e) {
-				//TODO:LOG
-				/*logger.error("Exception [{}] occurred while harvesting",
-							 e.getLocalizedMessage());*/
+				//TODO:LOG - DONE
+				logger.error("Exception [{}] occurred while harvesting", e.getLocalizedMessage());
 			} finally {
 				qExec.close();
 			}
@@ -1358,25 +1251,25 @@ public class Harvester implements Runnable {
 		for(String uri : rdfUris) {
 			if(uri.isEmpty()) continue;
 
-			//TODO:LOG
+			//TODO:LOG - DONE
 			logger.info("Harvesting uri [{}]", uri);
 
 			Model model = ModelFactory.createDefaultModel();
 			try {
 				RDFDataMgr.read(model, uri.trim(), RDFLanguages.RDFXML);
-				//TODO: prepareBulk
-				/*BulkRequestBuilder bulkRequest = client.prepareBulk();
-				addModelToES(model, bulkRequest, true);*/
+				//TODO: prepareBulk - DONE
+				BulkRequest bulkRequest = new BulkRequest();
+
+				addModelToES(model, bulkRequest, true);
 			}
 			catch (RiotException re) {
-                //TODO:LOG
-				/*logger.error("Illegal xml character [{}]", re.getLocalizedMessage());*/
-
+                //TODO:LOG - DONE
+				logger.error("Illegal xml character [{}]", re.getLocalizedMessage());
 			}
 			catch (Exception e) {
-                //TODO:LOG
-				/*logger.error("Exception when harvesting url: {}. Details: {}",
-					uri, e.getLocalizedMessage());*/
+                //TODO:LOG - DONE
+				logger.error("Exception when harvesting url: {}. Details: {}",
+					uri, e.getLocalizedMessage());
 			}
 		}
 	}
@@ -1582,7 +1475,7 @@ public class Harvester implements Runnable {
 				jsonMap = addCountingToJsonMap(jsonMap);
 			}
 
-			//TODO: prepareIndex - DONE
+			//TODO: prepareIndex - DONE ; make request async?
 			bulkRequest.add( new IndexRequest(indexName, typeName, rs.toString())
 					//.source(mapToString(jsonMap)));
 					.source(jsonMap));
@@ -1605,8 +1498,7 @@ public class Harvester implements Runnable {
 				}
 
 				// After executing, flush the BulkRequestBuilder.
-				//TODO: prepareBulk
-				/*bulkRequest = client.prepareBulk();*/
+				//TODO: prepareBulk - DONE
 				bulkRequest = new BulkRequest();
 			}
 		}
@@ -1620,14 +1512,15 @@ public class Harvester implements Runnable {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+
 			// Handle failure by iterating through each bulk response item
-			if(response.hasFailures()) {
+			if(response != null && response.hasFailures()) {
 				processBulkResponseFailure(response);
 			}
 		}
 
         // Show time taken to index the documents
-        //TODO:LOG
+        //TODO:LOG - DONE
 		logger.info("Indexed {} documents on {}/{} in {} seconds",
 					bulkLength, indexName, typeName,
 					(System.currentTimeMillis() - startTime)/ 1000.0);
@@ -1645,7 +1538,7 @@ public class Harvester implements Runnable {
 
 		for(BulkItemResponse item: response.getItems()) {
 			if (item.isFailed()) {
-                //TODO:LOG
+                //TODO:LOG - DONE
 				logger.debug("Error {} occurred on index {}, type {}, id {} for {} operation "
 							, item.getFailureMessage(), item.getIndex(), item.getType(), item.getId()
 							, item.getOpType());
@@ -1762,6 +1655,8 @@ public class Harvester implements Runnable {
 				boolean keepTrying = true;
 				while(keepTrying) {
 					keepTrying = false;
+
+					//TODO : try finally?
 					try {
 						ResultSet results = qExec.execSelect();
 
@@ -1776,15 +1671,15 @@ public class Harvester implements Runnable {
 						}
 					} catch(Exception e) {
 						keepTrying = true;
-                        //TODO:LOG
-						/*logger.warn("Could not get label for uri {}. Retrying.",
-									uri);*/
+                        //TODO:LOG - DONE
+						logger.warn("Could not get label for uri {}. Retrying.",
+									uri);
 					} finally { qExec.close();}
 				}
 			} catch (QueryParseException qpe) {
-                //TODO:LOG
-				/*logger.error("Exception for query {}. The label cannot be obtained",
-							 innerQuery);*/
+                //TODO:LOG - DONE
+				logger.error("Exception for query {}. The label cannot be obtained",
+							 innerQuery);
 			}
 		}
 		return uri;

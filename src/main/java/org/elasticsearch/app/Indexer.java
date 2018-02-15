@@ -35,9 +35,7 @@ import java.util.*;
 
 public class Indexer {
     private static final ESLogger logger = Loggers.getLogger(Harvester.class);
-
     private ArrayList<River> rivers = new ArrayList<>();
-
     private final static String USER = "user_rw";
     private final static String PASS = "rw_pass";
     private final static String HOST = "localhost";
@@ -50,32 +48,37 @@ public class Indexer {
     private static final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
     private static RestHighLevelClient client = new RestHighLevelClient(
-            RestClient.builder(
-                    new HttpHost(HOST, PORT, "http")
-            ).setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-                @Override
-                public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                    return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-                }
-            })
+        RestClient.builder(
+                new HttpHost(HOST, PORT, "http")
+        ).setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
+            @Override
+            public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
+                return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+            }
+        })
+        .setFailureListener(new RestClient.FailureListener(){
+            @Override
+            public void onFailure(HttpHost host) {
+                super.onFailure(host);
+                logger.error("Connection failure");
+            }
+        })
     );
 
-    //private volatile Harvester harvester;
-    //private volatile Thread harvesterThread;
-
     public static void main(String[] args) throws IOException {
-
-
         Indexer indexer = new Indexer();
         /*for(River river : indexer.rivers){
             indexer.harvester = new Harvester();
-            indexer.harvester.client(client).riverName( river.riverName());
+            indexer.harvester.client(client).riverName( river.riverName())
+                    .riverIndex(RIVER_INDEX);
             indexer.addHarvesterSettings(river.getRiverSettings());
             indexer.start();
         }*/
+
         River river = indexer.rivers.get(0);
+
         indexer.harvester = new Harvester();
-        indexer.harvester.client(client).riverName( river.riverName() );
+        indexer.harvester.client(client).riverName( river.riverName() ).riverIndex(RIVER_INDEX);
         indexer.addHarvesterSettings(river.getRiverSettings());
         indexer.start();
 
@@ -281,6 +284,13 @@ public class Indexer {
 
         harvesterThread.start();
         logger.info( "Inside thread : " + harvesterThread.getName());
+        harvesterThread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                logger.error("Thread FAILED: [{}] " , (Object) e.getStackTrace());
+
+            }
+        });
     }
 
     public void close() {

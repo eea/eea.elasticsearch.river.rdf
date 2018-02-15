@@ -84,8 +84,7 @@ public class LogConfigurator {
         }
         loaded = true;
 
-        //TODO:
-        /* Error:(86, 35) java: constructor Environment in class org.elasticsearch.env.Environment cannot be applied to given types;
+        /*TODO: Error:(86, 35) java: constructor Environment in class org.elasticsearch.env.Environment cannot be applied to given types;
         required: org.elasticsearch.common.settings.Settings,java.nio.file.Path
         found: org.elasticsearch.common.settings.Settings
         reason: actual and formal argument lists differ in length */
