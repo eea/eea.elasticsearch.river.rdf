@@ -593,7 +593,6 @@ public class Harvester implements Runnable {
 				logger.error("Reason: [{}]", e.getMessage());
 			}
 		});
-
 		/* Any code after this step would not be executed as
 		   the master will interrupt the harvester thread after
 		   deleting the _river.
