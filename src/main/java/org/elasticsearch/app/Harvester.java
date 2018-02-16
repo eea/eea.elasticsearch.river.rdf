@@ -638,7 +638,7 @@ public class Harvester implements Runnable {
 					rdfQuery, qpe.getLocalizedMessage());
 			return null;
 		}
-
+		//TODO: async?
 		QueryExecution qExec = QueryExecutionFactory.sparqlService(
 				rdfEndpoint, query);
 		try {
@@ -824,7 +824,13 @@ public class Harvester implements Runnable {
 				//process the hits
 				//noinspection Duplicates
 				for(SearchHit hit : searchHits){
-					String hitClusterId = (String)hit.getSourceAsMap().getOrDefault("cluster_id", clusterId);
+					String hitClusterId;
+					if( hit.getSourceAsMap().getOrDefault("cluster_id", clusterId).getClass() == ArrayList.class ){
+						ArrayList<String> arr = (ArrayList<String>) hit.getSourceAsMap().getOrDefault("cluster_id", clusterId);
+						hitClusterId = arr.get(0);
+					} else {
+						hitClusterId = (String)hit.getSourceAsMap().getOrDefault("cluster_id", clusterId);
+					}
 
 					if (hitClusterId != clusterId){
 						continue;

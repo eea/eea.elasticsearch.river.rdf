@@ -42,6 +42,8 @@ public class Indexer {
     private final static int PORT = 9200;
     private final static String RIVER_INDEX = "eeariver";
 
+    private final static boolean MULTITHREADING_ACTIVE = false;
+
     private volatile Harvester harvester;
     private volatile Thread harvesterThread;
 
@@ -60,20 +62,23 @@ public class Indexer {
             @Override
             public void onFailure(HttpHost host) {
                 super.onFailure(host);
-                logger.error("Connection failure");
+                logger.error("Connection failure: [{}]", host);
             }
         })
     );
 
     public static void main(String[] args) throws IOException {
         Indexer indexer = new Indexer();
-        /*for(River river : indexer.rivers){
-            indexer.harvester = new Harvester();
-            indexer.harvester.client(client).riverName( river.riverName())
+
+        if( MULTITHREADING_ACTIVE ){
+            for(River river : indexer.rivers){
+                indexer.harvester = new Harvester();
+                indexer.harvester.client(client).riverName( river.riverName())
                     .riverIndex(RIVER_INDEX);
-            indexer.addHarvesterSettings(river.getRiverSettings());
-            indexer.start();
-        }*/
+                indexer.addHarvesterSettings(river.getRiverSettings());
+                indexer.start();
+            }
+        }
 
         River river = indexer.rivers.get(0);
 
@@ -131,7 +136,7 @@ public class Indexer {
             ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest);
             boolean succeeded = clearScrollResponse.isSucceeded();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.info("River index not found");
         }
 
         for (SearchHit  sh: searchHitsA ){
