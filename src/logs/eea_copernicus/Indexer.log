@@ -1,0 +1,890 @@
+2018-02-20 15:04:21 DEBUG MainClientExec:121 - [exchange: 1] start execution
+2018-02-20 15:04:21 DEBUG RequestAddCookies:122 - CookieSpec selected: default
+2018-02-20 15:04:21 DEBUG RequestAuthCache:130 - Re-using cached 'basic' auth scheme for http://localhost:9200
+2018-02-20 15:04:21 DEBUG InternalHttpAsyncClient:352 - [exchange: 1] Request connection for {}->http://localhost:9200
+2018-02-20 15:04:21 DEBUG PoolingNHttpClientConnectionManager:250 - Connection request: [route: {}->http://localhost:9200][total kept alive: 0; route allocated: 0 of 10; total allocated: 0 of 30]
+2018-02-20 15:04:21 DEBUG PoolingNHttpClientConnectionManager:491 - Connection leased: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 0; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:04:21 DEBUG InternalHttpAsyncClient:307 - [exchange: 1] Connection allocated: CPoolProxy{http-outgoing-0 [ACTIVE]}
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:182 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:]: Set attribute http.nio.exchange-handler
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:108 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:]: Event set [w]
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:]: Set timeout 0
+2018-02-20 15:04:21 DEBUG InternalIODispatch:54 - http-outgoing-0 [ACTIVE]: Connected
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:182 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:]: Set attribute http.nio.http-exchange-state
+2018-02-20 15:04:21 DEBUG InternalHttpAsyncClient:166 - Start connection routing
+2018-02-20 15:04:21 DEBUG MainClientExec:188 - Connection route established
+2018-02-20 15:04:21 DEBUG MainClientExec:215 - [exchange: 1] Attempt 1 to execute request
+2018-02-20 15:04:21 DEBUG MainClientExec:222 - Target auth state: CHALLENGED
+2018-02-20 15:04:21 DEBUG MainClientExec:229 - Proxy auth state: UNCHALLENGED
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:]: Set timeout 30000
+2018-02-20 15:04:21 DEBUG headers:136 - http-outgoing-0 >> GET /eeariver/_search?typed_keys=true&ignore_unavailable=false&expand_wildcards=open&allow_no_indices=true&scroll=1m&search_type=query_then_fetch&batched_reduce_size=512 HTTP/1.1
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> Content-Length: 2
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> Content-Type: application/json
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> Host: localhost:9200
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> Connection: Keep-Alive
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> User-Agent: Apache-HttpAsyncClient/4.1.2 (Java/1.8.0_161)
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> Authorization: Basic dXNlcl9ydzpyd19wYXNz
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:108 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:]: Event set [w]
+2018-02-20 15:04:21 DEBUG InternalIODispatch:94 - http-outgoing-0 [ACTIVE] Output ready
+2018-02-20 15:04:21 DEBUG MainClientExec:258 - [exchange: 1] produce content
+2018-02-20 15:04:21 DEBUG MainClientExec:273 - [exchange: 1] Request completed
+2018-02-20 15:04:21 DEBUG InternalIODispatch:98 - http-outgoing-0 [ACTIVE] [content length: 2; pos: 2; completed: true]
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:222 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: 383 bytes written
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "GET /eeariver/_search?typed_keys=true&ignore_unavailable=false&expand_wildcards=open&allow_no_indices=true&scroll=1m&search_type=query_then_fetch&batched_reduce_size=512 HTTP/1.1[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "Content-Length: 2[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "Content-Type: application/json[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "Host: localhost:9200[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "Connection: Keep-Alive[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "User-Agent: Apache-HttpAsyncClient/4.1.2 (Java/1.8.0_161)[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "Authorization: Basic dXNlcl9ydzpyd19wYXNz[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:68 - http-outgoing-0 >> "{}"
+2018-02-20 15:04:21 DEBUG InternalIODispatch:71 - http-outgoing-0 [ACTIVE] Request ready
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:116 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:w]: Event cleared [w]
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:206 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: 8192 bytes read
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 << "HTTP/1.1 200 OK[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 << "X-RR-User: user_rw[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 << "content-type: application/json; charset=UTF-8[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 << "content-length: 9200[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 << "[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:68 - http-outgoing-0 << "{"_scroll_id":"DnF1ZXJ5VGhlbkZldGNoBQAAAAAAAACBFnpxa09ndjFTVHFpTjhrV3d5R3JEWHcAAAAAAAAAgxZ6cWtPZ3YxU1RxaU44a1d3eUdyRFh3AAAAAAAAAIIWenFrT2d2MVNUcWlOOGtXd3lHckRYdwAAAAAAAACQFmtzcW9SYUtnUW9TR09IbmxQSnR0M2cAAAAAAAAAjxZrc3FvUmFLZ1FvU0dPSG5sUEp0dDNn","took":8,"timed_out":false,"_shards":{"total":5,"successful":5,"skipped":0,"failed":0},"hits":{"total":1,"max_score":1.0,"hits":[{"_index":"eeariver","_type":"river","_id":"eea_copernicus","_score":1.0,"_source":{"river_meta":"eeariver/eea_copernicus/_meta","syncReq":{"type":"eeaRDF","eeaRDF":{"endpoint":"http://semantic.eea.europa.eu/sparql","indexType":"sync","syncConditions":"{?resource a <http://land.copernicus.eu/portal_types/LandItem#LandItem>}","graphSyncConditions":"FILTER (str(?graph) = concat(str(?resource), '/@@rdf')). FILTER (?time > xsd:dateTime('1990-01-01T00:00:00')). FILTER (?time < xsd:dateTime('2100-01-01T00:00:00'))","syncTimeProp":"http://cr.eionet.europa.eu/ontologies/contreg.rdf#lastRefreshed","startTime":"1970-01-01T00:00:00","queryType":"construct","proplist":["http://purl.org/dc/terms/spatial","http://purl.org/dc/terms/creator","http://www.w3.org/1999/02/22-rdf-syntax-ns#type","http://purl.org/dc/terms/issued","http://purl.org/dc/terms/expires","http://purl.org/dc/terms/modified","http://purl.org/dc/terms/title","http://www.w3.org/1999/02/22-rdf-syntax-ns#about","language","http://www.eea.europa.eu/portal_types#topic","http://purl.org/dc/terms/subject","http://purl.org/dc/terms/description","http://www.eea.europa.eu/ontologies.rdf#hasWorkflowState","http://www.eea.europa.eu/ontologies.rdf#objectProvides","http://www.eea.europa.eu/ontologies.rdf#fleschReadingEaseScore","http://www.eea.europa.eu/ontologies.rdf#readingTime","cluster_id","cluster_name"],"listtype":"white","normProp":{"http://purl.org/dc/terms/issued":["http://purl.org/dc/terms/issued","year"],"http://purl.org/dc/terms/title":["http://purl.org/dc/terms/title","label"],"http://purl.org/dc/terms/creator":["creator_cms"],"http://purl.org/dc/terms/description":["description"],"http://land.copernicus.eu/portal_types/LandItem#dataResourceAbstract":["http://purl.org/dc/terms/description","text"],"http://purl.org/dc/terms/spatial":["http://purl.org/dc/terms/spatial","places"],"http://land.copernicus.eu/portal_types/LandItem#geographicCoverage":["http://purl.org/dc/terms/spatial","places"],"http://land.copernicus.eu/portal_types/LandItem#temporalCoverage":["time_coverage"]},"normMissing":{"http://purl.org/dc/terms/spatial":"Other","http://www.eea.europa.eu/portal_types#topic":"Land use","http://www.eea.europa.eu/ontologies.rdf#hasWorkflowState":"published","http://purl.org/dc/terms/issued":"2000-01-01","http://purl.org/dc/terms/title":"Title n/a","http://purl.org/dc/terms/format":["text/html","application/octec-stream (Esri shapefile: .shp .shx .dbf)"],"http://www.eea.europa.eu/ontologies.rdf#objectProvides":"Data (at EEA)","places":"unknown","http://www.eea.europa.eu/ontologies.rdf#fleschReadingEaseScore":0,"http://www.eea.europa.eu/ontologies.rdf#readingTime":-1,"http://purl.org/dc/terms/references":[],"http://www.eea.europa.eu/portal_types#dataProvider":["European Environment Agency (EEA)","Joint Research Centre (JRC)"],"cluster_id":"eea_copernicus","cluster_name":"Copernicus Land at EEA (land.copernicus.eu)"},"blackMap":{"http://www.w3.org/1999/02/22-rdf-syntax-ns#type":["Webpage","Tracked file","http://www.w3.org/ns/dcat#Dataset","http://www.w3.org/ns/dcat#Distribution"]},"normObj":{"Organization":"Organisation","Czechia":"Czech Republic","Russian Federation":"Russia","Kosovo":"Kosovo (UNSCR 1244/99)","Kosova (Kosovo)":"Kosovo (UNSCR 1244/99)","Kosovo under UNSCR 1244/99":"Kosovo (UNSCR 1244/99)","Macedonia":"Former Yugoslav Republic of Macedonia, the","Macedonia (FYR)":"Former Yugoslav Republic of Macedonia, the","Macedonia (ARYM)":"Former Yugoslav Republic of Macedonia, the","The Former Yugoslav Republic of Macedonia":"Former Yugoslav Republic of Macedonia, the","The former Yugoslav Republic of Macedonia":"Former Yugoslav Republic of Macedonia, the","Macedonia, the Former Yugoslav Republic of":"Former Yugoslav Republic of Macedonia, the","Bosnia-Herzegovina":"Bosnia and Herzegovina","Republic of the Congo":"Congo","DR Congo":"Democratic Republic of the Congo","Schweiz":"Switzerland","Dnemark":"Denmark","Bulgarien":"Bulgaria","The Netherlands":"Netherlands","al":"Albania","at":"Austria","ba":"Bosnia and Herzegovina","be":"Belgium","bg":"Bulgaria","ch":"Switzerland","cy":"Cyprus","cz":"Czech Republic","de":"Germany","dk":"Denmark","ee":"Estonia","es":"Spain","fi":"Finland","fr":"France","gb":"United Kingdom","gr":"Greece","hr":"Croatia","hu":"Hungary","ie":"Ireland","is":"Iceland","it":"Italy","li":"Liechtenstein","lt":"Lithuania","lu":"Luxembourg","lv":"Latvia","me":"Montenegro","mk":"Former Yugoslav Republic of Macedonia, the","mt":"Malta","nl":"Netherlands","no":"Norway","pl":"Poland","pt":"Portugal","ro":"Romania","rs":"Serbia","se":"Sweden","si":"Slovenia","sk":"Slovakia","tr":"Turkey","xk":"Kosovo (UNSCR 1244/99)","Default":"Various other issues","Collection - old style":"Collection","http://rod.eionet.europa.eu/spatial/76":"value not available","http://www.eea.europa.eu/portal_vocabularies/themes/acidification":"Air pollution","http://www.eea.europa.eu/portal_vocabularies/themes/air_quality":"Air pollution","http://www.eea.europa.eu/portal_vocabularies/themes/nature":"Biodiversity","http://www.eea.europa.eu/portal_vocabularies/themes/ozone":"Climate change","http://www.eea.europa.eu/portal_vocabularies/themes/management":"Policy instruments","http://www.eea.europa.eu/portal_vocabularies/themes/information":"Policy instruments","http://www.eea.europa.eu/portal_vocabularies/themes/reporting":"Policy instruments","http://www.eea.europa.eu/portal_vocabularies/themes/population":"Green economy","http://www.eea.europa.eu/portal_vocabularies/themes/health":"Environment and health","http://land.copernicus.eu/portal_workflow/folder_workflow/states/published":"published","Products.ATContentTypes.interfaces.image.IATImage":"Image","Products.ATContentTypes.interfaces.image.IImageContent":"Image","plone.app.blob.interfaces.IATBlobImage":"Image","Products.EEAContentTypes.content.interfaces.IArticle":"Article","Products.EEAContentTypes.content.interfaces.ICloudVideo":"Video","eea.mediacentre.interfaces.IVideo":"Video","Products.ATContentTypes.interfaces.document.IATDocument":"Web page","Products.EEAContentTypes.content.interfaces.IExternalHighlight":"News","Products.ATContentTypes.interfaces.news.IATNewsItem":"News","Products.ATContentTypes.interfaces.event.IATEvent":"News (event)","Products.EEAContentTypes.content.interfaces.IGISMapApplication":"Map (interactive)","Products.EEAContentTypes.content.interfaces.IInfographic":"Infographic","Products.EEAContentTypes.content.interfaces.IInteractiveData":"Data visualisation","Products.EEAContentTypes.content.interfaces.IInteractiveMap":"Map (interactive)","eea.aoamap.browser.interfaces.IMapViewParent":"Map (interactive)","Products.eeawebapplication.interface.IEEAWebApplication":"Topic/subtopic site","eea.app.visualization.subtypes.interfaces.IVisualizationEnabled":"Data visualisation","eea.dataservice.interfaces.IDataset":"Data (at EEA)","eea.dataservice.interfaces.IEEAFigureGraph":"Graph (image)","eea.dataservice.interfaces.IEEAFigureMap":"Map (image)","eea.dataservice.interfaces.IEEAFigureFile":"Microdata (file)","eea.dataservice.interfaces.IOrganisation":"Data provider (organisation)","eea.daviz.content.interfaces.IDavizVisualization":"Data visualisation","eea.facetednavigation.subtypes.interfaces.IFacetedNavigable":"Catalogue (search application)","eea.indicators.content.interfaces.IIndicatorAssessment":"Indicator assessment","eea.indicators.content.interfaces.IExternalDataSpec":"Data (external links)","eea.indicators.content.interfaces.IKeyMessage":"Key message","eea.indicators.content.interfaces.IIndicatorsDatabase":"Catalogue (search application)","eea.indicators.content.interfaces.IMethodologyReference":"References and links","eea.indicators.content.interfaces.IPo"
+2018-02-20 15:04:21 DEBUG headers:125 - http-outgoing-0 << HTTP/1.1 200 OK
+2018-02-20 15:04:21 DEBUG headers:128 - http-outgoing-0 << X-RR-User: user_rw
+2018-02-20 15:04:21 DEBUG headers:128 - http-outgoing-0 << content-type: application/json; charset=UTF-8
+2018-02-20 15:04:21 DEBUG headers:128 - http-outgoing-0 << content-length: 9200
+2018-02-20 15:04:21 DEBUG InternalIODispatch:106 - http-outgoing-0 [ACTIVE(8084)] Response received
+2018-02-20 15:04:21 DEBUG MainClientExec:286 - [exchange: 1] Response received HTTP/1.1 200 OK
+2018-02-20 15:04:21 DEBUG MainClientExec:86 - Authentication succeeded
+2018-02-20 15:04:21 DEBUG InternalIODispatch:81 - http-outgoing-0 [ACTIVE(8084)] Input ready
+2018-02-20 15:04:21 DEBUG MainClientExec:325 - [exchange: 1] Consume content
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:206 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: 1116 bytes read
+2018-02-20 15:04:21 DEBUG wire:68 - http-outgoing-0 << "licyDocumentReference":"Policy document","eea.indicators.content.interfaces.IPolicyQuestion":"Environmental question","eea.indicators.content.interfaces.IRationaleReference":"References and links","Products.ATContentTypes.interfaces.link.IATLink":"References and links","eea.progressbar.interfaces.ICollection":"Collections and lists","plone.app.collection.interfaces.ICollection":"Collections and lists","Products.ATContentTypes.interfaces.topic.IATTopic":"Collections and lists","eea.reports.interfaces.IReportContainerEnhanced":"Publication / Report","eea.soercontent.content.interfaces.ICountryFiche":"Briefing (Country)","eea.soercontent.content.interfaces.IFiche":"Briefing (all)","eea.soercontent.content.interfaces.ISoerContent":"Briefing (SOER)","eea.sparql.interfaces.ISparql":"Data table (via SPARQL)","eea.themecentre.interfaces.IThemeCentre":"Topic site","plone.app.layout.navigation.interfaces.INavigationRoot":"Website main section","land.copernicus.content.content.interfaces.ILandItem":"Data (at EEA)"},"syncOldData":true,"addCounting":true},"index":{"index":"global-search","type":"resource"}}}}]}}"
+2018-02-20 15:04:21 DEBUG InternalHttpAsyncClient:292 - [exchange: 1] Connection can be kept alive indefinitely
+2018-02-20 15:04:21 DEBUG MainClientExec:385 - [exchange: 1] Response processed
+2018-02-20 15:04:21 DEBUG InternalHttpAsyncClient:233 - [exchange: 1] releasing connection
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:190 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Remove attribute http.nio.exchange-handler
+2018-02-20 15:04:21 DEBUG PoolingNHttpClientConnectionManager:285 - Releasing connection: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 0; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:04:21 DEBUG PoolingNHttpClientConnectionManager:299 - Connection [id: http-outgoing-0][route: {}->http://localhost:9200] can be kept alive indefinitely
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set timeout 0
+2018-02-20 15:04:21 DEBUG PoolingNHttpClientConnectionManager:305 - Connection released: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 1; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:04:21 DEBUG RestClient:59 - request [GET http://localhost:9200/eeariver/_search?typed_keys=true&ignore_unavailable=false&expand_wildcards=open&allow_no_indices=true&scroll=1m&search_type=query_then_fetch&batched_reduce_size=512] returned [HTTP/1.1 200 OK]
+2018-02-20 15:04:21 DEBUG InternalIODispatch:85 - http-outgoing-0 [ACTIVE] [content length: 9200; pos: 9200; completed: true]
+2018-02-20 15:04:21 DEBUG MainClientExec:121 - [exchange: 2] start execution
+2018-02-20 15:04:21 DEBUG RequestAddCookies:122 - CookieSpec selected: default
+2018-02-20 15:04:21 DEBUG RequestAuthCache:130 - Re-using cached 'basic' auth scheme for http://localhost:9200
+2018-02-20 15:04:21 DEBUG InternalHttpAsyncClient:352 - [exchange: 2] Request connection for {}->http://localhost:9200
+2018-02-20 15:04:21 DEBUG PoolingNHttpClientConnectionManager:250 - Connection request: [route: {}->http://localhost:9200][total kept alive: 1; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set timeout 0
+2018-02-20 15:04:21 DEBUG PoolingNHttpClientConnectionManager:491 - Connection leased: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 0; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:04:21 DEBUG InternalHttpAsyncClient:307 - [exchange: 2] Connection allocated: CPoolProxy{http-outgoing-0 [ACTIVE]}
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:182 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set attribute http.nio.exchange-handler
+2018-02-20 15:04:21 DEBUG InternalIODispatch:71 - http-outgoing-0 [ACTIVE] Request ready
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:108 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: Event set [w]
+2018-02-20 15:04:21 DEBUG InternalHttpAsyncClient:170 - Connection route already established
+2018-02-20 15:04:21 DEBUG MainClientExec:215 - [exchange: 2] Attempt 1 to execute request
+2018-02-20 15:04:21 DEBUG MainClientExec:222 - Target auth state: CHALLENGED
+2018-02-20 15:04:21 DEBUG MainClientExec:229 - Proxy auth state: UNCHALLENGED
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: Set timeout 30000
+2018-02-20 15:04:21 DEBUG headers:136 - http-outgoing-0 >> GET /_search/scroll HTTP/1.1
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> Content-Length: 258
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> Content-Type: application/json
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> Host: localhost:9200
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> Connection: Keep-Alive
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> User-Agent: Apache-HttpAsyncClient/4.1.2 (Java/1.8.0_161)
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> Authorization: Basic dXNlcl9ydzpyd19wYXNz
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:108 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: Event set [w]
+2018-02-20 15:04:21 DEBUG InternalIODispatch:94 - http-outgoing-0 [ACTIVE] Output ready
+2018-02-20 15:04:21 DEBUG MainClientExec:258 - [exchange: 2] produce content
+2018-02-20 15:04:21 DEBUG MainClientExec:273 - [exchange: 2] Request completed
+2018-02-20 15:04:21 DEBUG InternalIODispatch:98 - http-outgoing-0 [ACTIVE] [content length: 258; pos: 258; completed: true]
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:222 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: 491 bytes written
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "GET /_search/scroll HTTP/1.1[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "Content-Length: 258[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "Content-Type: application/json[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "Host: localhost:9200[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "Connection: Keep-Alive[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "User-Agent: Apache-HttpAsyncClient/4.1.2 (Java/1.8.0_161)[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "Authorization: Basic dXNlcl9ydzpyd19wYXNz[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:68 - http-outgoing-0 >> "{"scroll_id":"DnF1ZXJ5VGhlbkZldGNoBQAAAAAAAACBFnpxa09ndjFTVHFpTjhrV3d5R3JEWHcAAAAAAAAAgxZ6cWtPZ3YxU1RxaU44a1d3eUdyRFh3AAAAAAAAAIIWenFrT2d2MVNUcWlOOGtXd3lHckRYdwAAAAAAAACQFmtzcW9SYUtnUW9TR09IbmxQSnR0M2cAAAAAAAAAjxZrc3FvUmFLZ1FvU0dPSG5sUEp0dDNn","scroll":"1m"}"
+2018-02-20 15:04:21 DEBUG InternalIODispatch:71 - http-outgoing-0 [ACTIVE] Request ready
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:116 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:w]: Event cleared [w]
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:206 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: 484 bytes read
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 << "HTTP/1.1 200 OK[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 << "X-RR-User: user_rw[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 << "content-type: application/json; charset=UTF-8[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 << "content-length: 377[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 << "[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:68 - http-outgoing-0 << "{"_scroll_id":"DnF1ZXJ5VGhlbkZldGNoBQAAAAAAAACBFnpxa09ndjFTVHFpTjhrV3d5R3JEWHcAAAAAAAAAgxZ6cWtPZ3YxU1RxaU44a1d3eUdyRFh3AAAAAAAAAIIWenFrT2d2MVNUcWlOOGtXd3lHckRYdwAAAAAAAACQFmtzcW9SYUtnUW9TR09IbmxQSnR0M2cAAAAAAAAAjxZrc3FvUmFLZ1FvU0dPSG5sUEp0dDNn","took":5,"timed_out":false,"_shards":{"total":5,"successful":5,"skipped":0,"failed":0},"hits":{"total":1,"max_score":1.0,"hits":[]}}"
+2018-02-20 15:04:21 DEBUG headers:125 - http-outgoing-0 << HTTP/1.1 200 OK
+2018-02-20 15:04:21 DEBUG headers:128 - http-outgoing-0 << X-RR-User: user_rw
+2018-02-20 15:04:21 DEBUG headers:128 - http-outgoing-0 << content-type: application/json; charset=UTF-8
+2018-02-20 15:04:21 DEBUG headers:128 - http-outgoing-0 << content-length: 377
+2018-02-20 15:04:21 DEBUG InternalIODispatch:106 - http-outgoing-0 [ACTIVE(377)] Response received
+2018-02-20 15:04:21 DEBUG MainClientExec:286 - [exchange: 2] Response received HTTP/1.1 200 OK
+2018-02-20 15:04:21 DEBUG MainClientExec:86 - Authentication succeeded
+2018-02-20 15:04:21 DEBUG InternalIODispatch:81 - http-outgoing-0 [ACTIVE(377)] Input ready
+2018-02-20 15:04:21 DEBUG MainClientExec:325 - [exchange: 2] Consume content
+2018-02-20 15:04:21 DEBUG InternalHttpAsyncClient:292 - [exchange: 2] Connection can be kept alive indefinitely
+2018-02-20 15:04:21 DEBUG MainClientExec:385 - [exchange: 2] Response processed
+2018-02-20 15:04:21 DEBUG InternalHttpAsyncClient:233 - [exchange: 2] releasing connection
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:190 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Remove attribute http.nio.exchange-handler
+2018-02-20 15:04:21 DEBUG PoolingNHttpClientConnectionManager:285 - Releasing connection: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 0; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:04:21 DEBUG PoolingNHttpClientConnectionManager:299 - Connection [id: http-outgoing-0][route: {}->http://localhost:9200] can be kept alive indefinitely
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set timeout 0
+2018-02-20 15:04:21 DEBUG PoolingNHttpClientConnectionManager:305 - Connection released: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 1; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:04:21 DEBUG RestClient:59 - request [GET http://localhost:9200/_search/scroll] returned [HTTP/1.1 200 OK]
+2018-02-20 15:04:21 DEBUG InternalIODispatch:85 - http-outgoing-0 [ACTIVE] [content length: 377; pos: 377; completed: true]
+2018-02-20 15:04:21 DEBUG MainClientExec:121 - [exchange: 3] start execution
+2018-02-20 15:04:21 DEBUG RequestAddCookies:122 - CookieSpec selected: default
+2018-02-20 15:04:21 DEBUG RequestAuthCache:130 - Re-using cached 'basic' auth scheme for http://localhost:9200
+2018-02-20 15:04:21 DEBUG InternalHttpAsyncClient:352 - [exchange: 3] Request connection for {}->http://localhost:9200
+2018-02-20 15:04:21 DEBUG PoolingNHttpClientConnectionManager:250 - Connection request: [route: {}->http://localhost:9200][total kept alive: 1; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set timeout 0
+2018-02-20 15:04:21 DEBUG PoolingNHttpClientConnectionManager:491 - Connection leased: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 0; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:04:21 DEBUG InternalHttpAsyncClient:307 - [exchange: 3] Connection allocated: CPoolProxy{http-outgoing-0 [ACTIVE]}
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:182 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set attribute http.nio.exchange-handler
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:108 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:r]: Event set [w]
+2018-02-20 15:04:21 DEBUG InternalIODispatch:71 - http-outgoing-0 [ACTIVE] Request ready
+2018-02-20 15:04:21 DEBUG InternalHttpAsyncClient:170 - Connection route already established
+2018-02-20 15:04:21 DEBUG MainClientExec:215 - [exchange: 3] Attempt 1 to execute request
+2018-02-20 15:04:21 DEBUG MainClientExec:222 - Target auth state: CHALLENGED
+2018-02-20 15:04:21 DEBUG MainClientExec:229 - Proxy auth state: UNCHALLENGED
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: Set timeout 30000
+2018-02-20 15:04:21 DEBUG headers:136 - http-outgoing-0 >> DELETE /_search/scroll HTTP/1.1
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> Content-Length: 246
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> Content-Type: application/json
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> Host: localhost:9200
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> Connection: Keep-Alive
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> User-Agent: Apache-HttpAsyncClient/4.1.2 (Java/1.8.0_161)
+2018-02-20 15:04:21 DEBUG headers:139 - http-outgoing-0 >> Authorization: Basic dXNlcl9ydzpyd19wYXNz
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:108 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: Event set [w]
+2018-02-20 15:04:21 DEBUG InternalIODispatch:94 - http-outgoing-0 [ACTIVE] Output ready
+2018-02-20 15:04:21 DEBUG MainClientExec:258 - [exchange: 3] produce content
+2018-02-20 15:04:21 DEBUG MainClientExec:273 - [exchange: 3] Request completed
+2018-02-20 15:04:21 DEBUG InternalIODispatch:98 - http-outgoing-0 [ACTIVE] [content length: 246; pos: 246; completed: true]
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:222 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: 482 bytes written
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "DELETE /_search/scroll HTTP/1.1[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "Content-Length: 246[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "Content-Type: application/json[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "Host: localhost:9200[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "Connection: Keep-Alive[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "User-Agent: Apache-HttpAsyncClient/4.1.2 (Java/1.8.0_161)[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "Authorization: Basic dXNlcl9ydzpyd19wYXNz[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 >> "[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:68 - http-outgoing-0 >> "{"scroll_id":["DnF1ZXJ5VGhlbkZldGNoBQAAAAAAAACBFnpxa09ndjFTVHFpTjhrV3d5R3JEWHcAAAAAAAAAgxZ6cWtPZ3YxU1RxaU44a1d3eUdyRFh3AAAAAAAAAIIWenFrT2d2MVNUcWlOOGtXd3lHckRYdwAAAAAAAACQFmtzcW9SYUtnUW9TR09IbmxQSnR0M2cAAAAAAAAAjxZrc3FvUmFLZ1FvU0dPSG5sUEp0dDNn"]}"
+2018-02-20 15:04:21 DEBUG InternalIODispatch:71 - http-outgoing-0 [ACTIVE] Request ready
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:116 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:w]: Event cleared [w]
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:206 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: 138 bytes read
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 << "HTTP/1.1 200 OK[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 << "X-RR-User: user_rw[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 << "content-type: application/json; charset=UTF-8[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 << "content-length: 32[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:54 - http-outgoing-0 << "[\r][\n]"
+2018-02-20 15:04:21 DEBUG wire:68 - http-outgoing-0 << "{"succeeded":true,"num_freed":5}"
+2018-02-20 15:04:21 DEBUG headers:125 - http-outgoing-0 << HTTP/1.1 200 OK
+2018-02-20 15:04:21 DEBUG headers:128 - http-outgoing-0 << X-RR-User: user_rw
+2018-02-20 15:04:21 DEBUG headers:128 - http-outgoing-0 << content-type: application/json; charset=UTF-8
+2018-02-20 15:04:21 DEBUG headers:128 - http-outgoing-0 << content-length: 32
+2018-02-20 15:04:21 DEBUG InternalIODispatch:106 - http-outgoing-0 [ACTIVE(32)] Response received
+2018-02-20 15:04:21 DEBUG MainClientExec:286 - [exchange: 3] Response received HTTP/1.1 200 OK
+2018-02-20 15:04:21 DEBUG MainClientExec:86 - Authentication succeeded
+2018-02-20 15:04:21 DEBUG InternalIODispatch:81 - http-outgoing-0 [ACTIVE(32)] Input ready
+2018-02-20 15:04:21 DEBUG MainClientExec:325 - [exchange: 3] Consume content
+2018-02-20 15:04:21 DEBUG InternalHttpAsyncClient:292 - [exchange: 3] Connection can be kept alive indefinitely
+2018-02-20 15:04:21 DEBUG MainClientExec:385 - [exchange: 3] Response processed
+2018-02-20 15:04:21 DEBUG InternalHttpAsyncClient:233 - [exchange: 3] releasing connection
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:190 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Remove attribute http.nio.exchange-handler
+2018-02-20 15:04:21 DEBUG PoolingNHttpClientConnectionManager:285 - Releasing connection: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 0; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:04:21 DEBUG PoolingNHttpClientConnectionManager:299 - Connection [id: http-outgoing-0][route: {}->http://localhost:9200] can be kept alive indefinitely
+2018-02-20 15:04:21 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set timeout 0
+2018-02-20 15:04:21 DEBUG PoolingNHttpClientConnectionManager:305 - Connection released: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 1; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:04:21 DEBUG RestClient:59 - request [DELETE http://localhost:9200/_search/scroll] returned [HTTP/1.1 200 OK]
+2018-02-20 15:04:21 DEBUG InternalIODispatch:85 - http-outgoing-0 [ACTIVE] [content length: 32; pos: 32; completed: true]
+2018-02-20 15:04:30 INFO  app:291 - Inside thread : elasticsearch[eea_rdf_river(eea_copernicus)][T#1]
+2018-02-20 15:04:30 INFO  app:605 - Starting RDF synchronization: endpoint [http://semantic.eea.europa.eu/sparql], index name [global-search], type name [resource]
+2018-02-20 15:04:30 INFO  app:886 - Sync resources newer than 1970-01-01T00:00:00
+2018-02-20 15:04:55 INFO  app:628 - Start executeSyncQuery
+2018-02-20 15:04:55 INFO  app:629 - QUERY:
+2018-02-20 15:04:55 INFO  app:630 - PREFIX xsd:<http://www.w3.org/2001/XMLSchema#> SELECT DISTINCT ?resource WHERE {  GRAPH ?graph { {?resource a <http://land.copernicus.eu/portal_types/LandItem#LandItem>} .  } ?graph <http://cr.eionet.europa.eu/ontologies/contreg.rdf#lastRefreshed> ?time .  FILTER (str(?graph) = concat(str(?resource), '/@@rdf')). FILTER (?time > xsd:dateTime('1990-01-01T00:00:00')). FILTER (?time < xsd:dateTime('2100-01-01T00:00:00')) .   FILTER (?time > xsd:dateTime("1970-01-01T00:00:00")) }
+2018-02-20 15:04:55 DEBUG JenaIOEnvironment:181 - Failed to find configuration: location-mapping.ttl;location-mapping.rdf;location-mapping.n3;etc/location-mapping.rdf;etc/location-mapping.n3;etc/location-mapping.ttl
+2018-02-20 15:06:25 DEBUG HttpOp:1097 - [1] GET http://semantic.eea.europa.eu/sparql?query=PREFIX++xsd%3A++%3Chttp%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema%23%3E%0A%0ASELECT+DISTINCT++%3Fresource%0AWHERE%0A++%7B+GRAPH+%3Fgraph%0A++++++%7B+%7B+%3Fresource+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Chttp%3A%2F%2Fland.copernicus.eu%2Fportal_types%2FLandItem%23LandItem%3E%7D%7D%0A++++%3Fgraph+%3Chttp%3A%2F%2Fcr.eionet.europa.eu%2Fontologies%2Fcontreg.rdf%23lastRefreshed%3E+%3Ftime%0A++++FILTER+%28+str%28%3Fgraph%29+%3D+concat%28str%28%3Fresource%29%2C+%22%2F%40%40rdf%22%29+%29%0A++++FILTER+%28+%3Ftime+%3E+xsd%3AdateTime%28%221990-01-01T00%3A00%3A00%22%29+%29%0A++++FILTER+%28+%3Ftime+%3C+xsd%3AdateTime%28%222100-01-01T00%3A00%3A00%22%29+%29%0A++++FILTER+%28+%3Ftime+%3E+xsd%3AdateTime%28%221970-01-01T00%3A00%3A00%22%29+%29%0A++%7D%0A
+2018-02-20 15:06:26 DEBUG PoolingClientConnectionManager:184 - Connection request: [route: {}->http://semantic.eea.europa.eu:80][total kept alive: 0; route allocated: 0 of 5; total allocated: 0 of 10]
+2018-02-20 15:06:26 DEBUG PoolingClientConnectionManager:218 - Connection leased: [id: 0][route: {}->http://semantic.eea.europa.eu:80][total kept alive: 0; route allocated: 1 of 5; total allocated: 1 of 10]
+2018-02-20 15:06:26 DEBUG DefaultClientConnectionOperator:176 - Connecting to semantic.eea.europa.eu:80
+2018-02-20 15:06:26 DEBUG RequestAddCookies:122 - CookieSpec selected: default
+2018-02-20 15:06:26 DEBUG RequestAuthCache:76 - Auth cache not set in the context
+2018-02-20 15:06:26 DEBUG RequestTargetAuthentication:79 - Target auth state: UNCHALLENGED
+2018-02-20 15:06:26 DEBUG RequestProxyAuthentication:88 - Proxy auth state: UNCHALLENGED
+2018-02-20 15:06:26 DEBUG SystemDefaultHttpClient:684 - Attempt 1 to execute request
+2018-02-20 15:06:26 DEBUG DefaultClientConnection:276 - Sending request: GET /sparql?query=PREFIX++xsd%3A++%3Chttp%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema%23%3E%0A%0ASELECT+DISTINCT++%3Fresource%0AWHERE%0A++%7B+GRAPH+%3Fgraph%0A++++++%7B+%7B+%3Fresource+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Chttp%3A%2F%2Fland.copernicus.eu%2Fportal_types%2FLandItem%23LandItem%3E%7D%7D%0A++++%3Fgraph+%3Chttp%3A%2F%2Fcr.eionet.europa.eu%2Fontologies%2Fcontreg.rdf%23lastRefreshed%3E+%3Ftime%0A++++FILTER+%28+str%28%3Fgraph%29+%3D+concat%28str%28%3Fresource%29%2C+%22%2F%40%40rdf%22%29+%29%0A++++FILTER+%28+%3Ftime+%3E+xsd%3AdateTime%28%221990-01-01T00%3A00%3A00%22%29+%29%0A++++FILTER+%28+%3Ftime+%3C+xsd%3AdateTime%28%222100-01-01T00%3A00%3A00%22%29+%29%0A++++FILTER+%28+%3Ftime+%3E+xsd%3AdateTime%28%221970-01-01T00%3A00%3A00%22%29+%29%0A++%7D%0A HTTP/1.1
+2018-02-20 15:06:26 DEBUG wire:72 -  >> "GET /sparql?query=PREFIX++xsd%3A++%3Chttp%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema%23%3E%0A%0ASELECT+DISTINCT++%3Fresource%0AWHERE%0A++%7B+GRAPH+%3Fgraph%0A++++++%7B+%7B+%3Fresource+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Chttp%3A%2F%2Fland.copernicus.eu%2Fportal_types%2FLandItem%23LandItem%3E%7D%7D%0A++++%3Fgraph+%3Chttp%3A%2F%2Fcr.eionet.europa.eu%2Fontologies%2Fcontreg.rdf%23lastRefreshed%3E+%3Ftime%0A++++FILTER+%28+str%28%3Fgraph%29+%3D+concat%28str%28%3Fresource%29%2C+%22%2F%40%40rdf%22%29+%29%0A++++FILTER+%28+%3Ftime+%3E+xsd%3AdateTime%28%221990-01-01T00%3A00%3A00%22%29+%29%0A++++FILTER+%28+%3Ftime+%3C+xsd%3AdateTime%28%222100-01-01T00%3A00%3A00%22%29+%29%0A++++FILTER+%28+%3Ftime+%3E+xsd%3AdateTime%28%221970-01-01T00%3A00%3A00%22%29+%29%0A++%7D%0A HTTP/1.1[\r][\n]"
+2018-02-20 15:06:26 DEBUG wire:72 -  >> "Accept: application/sparql-results+json, application/sparql-results+xml;q=0.9, text/tab-separated-values;q=0.7, text/csv;q=0.5, application/json;q=0.2, application/xml;q=0.2, */*;q=0.1[\r][\n]"
+2018-02-20 15:06:26 DEBUG wire:72 -  >> "User-Agent: Apache-Jena-ARQ/2.12.1[\r][\n]"
+2018-02-20 15:06:26 DEBUG wire:72 -  >> "Accept-Encoding: gzip,deflate[\r][\n]"
+2018-02-20 15:06:26 DEBUG wire:72 -  >> "Host: semantic.eea.europa.eu[\r][\n]"
+2018-02-20 15:06:26 DEBUG wire:72 -  >> "Connection: Keep-Alive[\r][\n]"
+2018-02-20 15:06:26 DEBUG wire:72 -  >> "[\r][\n]"
+2018-02-20 15:06:26 DEBUG headers:280 - >> GET /sparql?query=PREFIX++xsd%3A++%3Chttp%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema%23%3E%0A%0ASELECT+DISTINCT++%3Fresource%0AWHERE%0A++%7B+GRAPH+%3Fgraph%0A++++++%7B+%7B+%3Fresource+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Chttp%3A%2F%2Fland.copernicus.eu%2Fportal_types%2FLandItem%23LandItem%3E%7D%7D%0A++++%3Fgraph+%3Chttp%3A%2F%2Fcr.eionet.europa.eu%2Fontologies%2Fcontreg.rdf%23lastRefreshed%3E+%3Ftime%0A++++FILTER+%28+str%28%3Fgraph%29+%3D+concat%28str%28%3Fresource%29%2C+%22%2F%40%40rdf%22%29+%29%0A++++FILTER+%28+%3Ftime+%3E+xsd%3AdateTime%28%221990-01-01T00%3A00%3A00%22%29+%29%0A++++FILTER+%28+%3Ftime+%3C+xsd%3AdateTime%28%222100-01-01T00%3A00%3A00%22%29+%29%0A++++FILTER+%28+%3Ftime+%3E+xsd%3AdateTime%28%221970-01-01T00%3A00%3A00%22%29+%29%0A++%7D%0A HTTP/1.1
+2018-02-20 15:06:26 DEBUG headers:283 - >> Accept: application/sparql-results+json, application/sparql-results+xml;q=0.9, text/tab-separated-values;q=0.7, text/csv;q=0.5, application/json;q=0.2, application/xml;q=0.2, */*;q=0.1
+2018-02-20 15:06:26 DEBUG headers:283 - >> User-Agent: Apache-Jena-ARQ/2.12.1
+2018-02-20 15:06:26 DEBUG headers:283 - >> Accept-Encoding: gzip,deflate
+2018-02-20 15:06:26 DEBUG headers:283 - >> Host: semantic.eea.europa.eu
+2018-02-20 15:06:26 DEBUG headers:283 - >> Connection: Keep-Alive
+2018-02-20 15:06:27 DEBUG wire:72 -  << "HTTP/1.1 200 OK[\r][\n]"
+2018-02-20 15:06:27 DEBUG wire:72 -  << "Server: Apache-Coyote/1.1[\r][\n]"
+2018-02-20 15:06:27 DEBUG wire:72 -  << "Set-Cookie: JSESSIONID=A271EBE60F578641756D3D53DB42A677; Path=/; HttpOnly[\r][\n]"
+2018-02-20 15:06:27 DEBUG wire:72 -  << "Content-Disposition: attachment; filename="sparql-result.json"[\r][\n]"
+2018-02-20 15:06:27 DEBUG wire:72 -  << "Content-Type: application/sparql-results+json;charset=UTF-8[\r][\n]"
+2018-02-20 15:06:27 DEBUG wire:72 -  << "Content-Language: en[\r][\n]"
+2018-02-20 15:06:27 DEBUG wire:72 -  << "Transfer-Encoding: chunked[\r][\n]"
+2018-02-20 15:06:27 DEBUG wire:72 -  << "Date: Tue, 20 Feb 2018 13:06:27 GMT[\r][\n]"
+2018-02-20 15:06:27 DEBUG wire:72 -  << "[\r][\n]"
+2018-02-20 15:06:27 DEBUG DefaultClientConnection:261 - Receiving response: HTTP/1.1 200 OK
+2018-02-20 15:06:27 DEBUG headers:264 - << HTTP/1.1 200 OK
+2018-02-20 15:06:27 DEBUG headers:267 - << Server: Apache-Coyote/1.1
+2018-02-20 15:06:27 DEBUG headers:267 - << Set-Cookie: JSESSIONID=A271EBE60F578641756D3D53DB42A677; Path=/; HttpOnly
+2018-02-20 15:06:27 DEBUG headers:267 - << Content-Disposition: attachment; filename="sparql-result.json"
+2018-02-20 15:06:27 DEBUG headers:267 - << Content-Type: application/sparql-results+json;charset=UTF-8
+2018-02-20 15:06:27 DEBUG headers:267 - << Content-Language: en
+2018-02-20 15:06:27 DEBUG headers:267 - << Transfer-Encoding: chunked
+2018-02-20 15:06:27 DEBUG headers:267 - << Date: Tue, 20 Feb 2018 13:06:27 GMT
+2018-02-20 15:06:27 DEBUG ResponseProcessCookies:118 - Cookie accepted [JSESSIONID="A271EBE60F578641756D3D53DB42A677", version:0, domain:semantic.eea.europa.eu, path:/, expiry:null]
+2018-02-20 15:06:27 DEBUG SystemDefaultHttpClient:511 - Connection can be kept alive indefinitely
+2018-02-20 15:06:28 DEBUG wire:72 -  << "f0[\r][\n]"
+2018-02-20 15:06:28 DEBUG wire:72 -  << "{[\n]"
+2018-02-20 15:06:28 DEBUG wire:72 -  << "[0x9]"head": {[\n]"
+2018-02-20 15:06:28 DEBUG wire:72 -  << "[0x9][0x9]"vars": [ "resource" ][\n]"
+2018-02-20 15:06:28 DEBUG wire:72 -  << "[0x9]}, [\n]"
+2018-02-20 15:06:28 DEBUG wire:72 -  << "[0x9]"results": {[\n]"
+2018-02-20 15:06:28 DEBUG wire:72 -  << "[0x9][0x9]"bindings": [[\n]"
+2018-02-20 15:06:28 DEBUG wire:72 -  << "[0x9][0x9][0x9]{[\n]"
+2018-02-20 15:06:28 DEBUG wire:72 -  << "[0x9][0x9][0x9][0x9]"resource": { "type": "uri", "value": "http:\/\/land.copernicus.eu\/local\/urban-atlas\/ancillary-data-on-population-estimates-by-urban-atlas-polygons" }[\n]"
+2018-02-20 15:06:28 DEBUG wire:86 -  << "[0x9][0x9][0x9]}"
+2018-02-20 15:06:28 DEBUG wire:72 -  << "[\r][\n]"
+2018-02-20 15:06:28 DEBUG wire:72 -  << "9[\r][\n]"
+2018-02-20 15:06:28 DEBUG wire:72 -  << "[\n]"
+2018-02-20 15:06:28 DEBUG wire:72 -  << "[0x9][0x9]][\n]"
+2018-02-20 15:06:28 DEBUG wire:72 -  << "[0x9]}[\n]"
+2018-02-20 15:06:28 DEBUG wire:86 -  << "}"
+2018-02-20 15:06:28 DEBUG wire:72 -  << "[\r][\n]"
+2018-02-20 15:06:28 DEBUG wire:72 -  << "0[\r][\n]"
+2018-02-20 15:06:28 DEBUG wire:72 -  << "[\r][\n]"
+2018-02-20 15:06:28 DEBUG PoolingClientConnectionManager:267 - Connection [id: 0][route: {}->http://semantic.eea.europa.eu:80] can be kept alive indefinitely
+2018-02-20 15:06:28 DEBUG PoolingClientConnectionManager:274 - Connection released: [id: 0][route: {}->http://semantic.eea.europa.eu:80][total kept alive: 1; route allocated: 1 of 5; total allocated: 1 of 10]
+2018-02-20 15:07:03 DEBUG PoolingClientConnectionManager:281 - Connection manager is shutting down
+2018-02-20 15:07:03 DEBUG DefaultClientConnection:182 - Connection 0.0.0.0:34992<->87.54.7.52:80 closed
+2018-02-20 15:07:03 DEBUG DefaultClientConnection:182 - Connection 0.0.0.0:34992<->87.54.7.52:80 closed
+2018-02-20 15:07:03 DEBUG PoolingClientConnectionManager:287 - Connection manager shut down
+2018-02-20 15:11:12 INFO  app:628 - Start executeSyncQuery
+2018-02-20 15:11:12 INFO  app:629 - QUERY:
+2018-02-20 15:11:12 INFO  app:630 - PREFIX xsd:<http://www.w3.org/2001/XMLSchema#> SELECT DISTINCT ?resource WHERE {  GRAPH ?graph { {?resource a <http://land.copernicus.eu/portal_types/LandItem#LandItem>} .  } ?graph <http://cr.eionet.europa.eu/ontologies/contreg.rdf#lastRefreshed> ?time .  FILTER (str(?graph) = concat(str(?resource), '/@@rdf')). FILTER (?time > xsd:dateTime('1990-01-01T00:00:00')). FILTER (?time < xsd:dateTime('2100-01-01T00:00:00')) .   FILTER (?time > xsd:dateTime("1970-01-01T02:00:00")) }
+2018-02-20 15:11:14 DEBUG HttpOp:1097 - [2] GET http://semantic.eea.europa.eu/sparql?query=PREFIX++xsd%3A++%3Chttp%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema%23%3E%0A%0ASELECT+DISTINCT++%3Fresource%0AWHERE%0A++%7B+GRAPH+%3Fgraph%0A++++++%7B+%7B+%3Fresource+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Chttp%3A%2F%2Fland.copernicus.eu%2Fportal_types%2FLandItem%23LandItem%3E%7D%7D%0A++++%3Fgraph+%3Chttp%3A%2F%2Fcr.eionet.europa.eu%2Fontologies%2Fcontreg.rdf%23lastRefreshed%3E+%3Ftime%0A++++FILTER+%28+str%28%3Fgraph%29+%3D+concat%28str%28%3Fresource%29%2C+%22%2F%40%40rdf%22%29+%29%0A++++FILTER+%28+%3Ftime+%3E+xsd%3AdateTime%28%221990-01-01T00%3A00%3A00%22%29+%29%0A++++FILTER+%28+%3Ftime+%3C+xsd%3AdateTime%28%222100-01-01T00%3A00%3A00%22%29+%29%0A++++FILTER+%28+%3Ftime+%3E+xsd%3AdateTime%28%221970-01-01T02%3A00%3A00%22%29+%29%0A++%7D%0A
+2018-02-20 15:11:14 DEBUG PoolingClientConnectionManager:184 - Connection request: [route: {}->http://semantic.eea.europa.eu:80][total kept alive: 0; route allocated: 0 of 5; total allocated: 0 of 10]
+2018-02-20 15:11:14 DEBUG PoolingClientConnectionManager:218 - Connection leased: [id: 1][route: {}->http://semantic.eea.europa.eu:80][total kept alive: 0; route allocated: 1 of 5; total allocated: 1 of 10]
+2018-02-20 15:11:14 DEBUG DefaultClientConnectionOperator:176 - Connecting to semantic.eea.europa.eu:80
+2018-02-20 15:11:14 DEBUG RequestAddCookies:122 - CookieSpec selected: default
+2018-02-20 15:11:14 DEBUG RequestAuthCache:76 - Auth cache not set in the context
+2018-02-20 15:11:14 DEBUG RequestTargetAuthentication:79 - Target auth state: UNCHALLENGED
+2018-02-20 15:11:14 DEBUG RequestProxyAuthentication:88 - Proxy auth state: UNCHALLENGED
+2018-02-20 15:11:14 DEBUG SystemDefaultHttpClient:684 - Attempt 1 to execute request
+2018-02-20 15:11:14 DEBUG DefaultClientConnection:276 - Sending request: GET /sparql?query=PREFIX++xsd%3A++%3Chttp%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema%23%3E%0A%0ASELECT+DISTINCT++%3Fresource%0AWHERE%0A++%7B+GRAPH+%3Fgraph%0A++++++%7B+%7B+%3Fresource+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Chttp%3A%2F%2Fland.copernicus.eu%2Fportal_types%2FLandItem%23LandItem%3E%7D%7D%0A++++%3Fgraph+%3Chttp%3A%2F%2Fcr.eionet.europa.eu%2Fontologies%2Fcontreg.rdf%23lastRefreshed%3E+%3Ftime%0A++++FILTER+%28+str%28%3Fgraph%29+%3D+concat%28str%28%3Fresource%29%2C+%22%2F%40%40rdf%22%29+%29%0A++++FILTER+%28+%3Ftime+%3E+xsd%3AdateTime%28%221990-01-01T00%3A00%3A00%22%29+%29%0A++++FILTER+%28+%3Ftime+%3C+xsd%3AdateTime%28%222100-01-01T00%3A00%3A00%22%29+%29%0A++++FILTER+%28+%3Ftime+%3E+xsd%3AdateTime%28%221970-01-01T02%3A00%3A00%22%29+%29%0A++%7D%0A HTTP/1.1
+2018-02-20 15:11:14 DEBUG wire:72 -  >> "GET /sparql?query=PREFIX++xsd%3A++%3Chttp%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema%23%3E%0A%0ASELECT+DISTINCT++%3Fresource%0AWHERE%0A++%7B+GRAPH+%3Fgraph%0A++++++%7B+%7B+%3Fresource+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Chttp%3A%2F%2Fland.copernicus.eu%2Fportal_types%2FLandItem%23LandItem%3E%7D%7D%0A++++%3Fgraph+%3Chttp%3A%2F%2Fcr.eionet.europa.eu%2Fontologies%2Fcontreg.rdf%23lastRefreshed%3E+%3Ftime%0A++++FILTER+%28+str%28%3Fgraph%29+%3D+concat%28str%28%3Fresource%29%2C+%22%2F%40%40rdf%22%29+%29%0A++++FILTER+%28+%3Ftime+%3E+xsd%3AdateTime%28%221990-01-01T00%3A00%3A00%22%29+%29%0A++++FILTER+%28+%3Ftime+%3C+xsd%3AdateTime%28%222100-01-01T00%3A00%3A00%22%29+%29%0A++++FILTER+%28+%3Ftime+%3E+xsd%3AdateTime%28%221970-01-01T02%3A00%3A00%22%29+%29%0A++%7D%0A HTTP/1.1[\r][\n]"
+2018-02-20 15:11:14 DEBUG wire:72 -  >> "Accept: application/sparql-results+json, application/sparql-results+xml;q=0.9, text/tab-separated-values;q=0.7, text/csv;q=0.5, application/json;q=0.2, application/xml;q=0.2, */*;q=0.1[\r][\n]"
+2018-02-20 15:11:14 DEBUG wire:72 -  >> "User-Agent: Apache-Jena-ARQ/2.12.1[\r][\n]"
+2018-02-20 15:11:14 DEBUG wire:72 -  >> "Accept-Encoding: gzip,deflate[\r][\n]"
+2018-02-20 15:11:14 DEBUG wire:72 -  >> "Host: semantic.eea.europa.eu[\r][\n]"
+2018-02-20 15:11:14 DEBUG wire:72 -  >> "Connection: Keep-Alive[\r][\n]"
+2018-02-20 15:11:14 DEBUG wire:72 -  >> "[\r][\n]"
+2018-02-20 15:11:14 DEBUG headers:280 - >> GET /sparql?query=PREFIX++xsd%3A++%3Chttp%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema%23%3E%0A%0ASELECT+DISTINCT++%3Fresource%0AWHERE%0A++%7B+GRAPH+%3Fgraph%0A++++++%7B+%7B+%3Fresource+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Chttp%3A%2F%2Fland.copernicus.eu%2Fportal_types%2FLandItem%23LandItem%3E%7D%7D%0A++++%3Fgraph+%3Chttp%3A%2F%2Fcr.eionet.europa.eu%2Fontologies%2Fcontreg.rdf%23lastRefreshed%3E+%3Ftime%0A++++FILTER+%28+str%28%3Fgraph%29+%3D+concat%28str%28%3Fresource%29%2C+%22%2F%40%40rdf%22%29+%29%0A++++FILTER+%28+%3Ftime+%3E+xsd%3AdateTime%28%221990-01-01T00%3A00%3A00%22%29+%29%0A++++FILTER+%28+%3Ftime+%3C+xsd%3AdateTime%28%222100-01-01T00%3A00%3A00%22%29+%29%0A++++FILTER+%28+%3Ftime+%3E+xsd%3AdateTime%28%221970-01-01T02%3A00%3A00%22%29+%29%0A++%7D%0A HTTP/1.1
+2018-02-20 15:11:14 DEBUG headers:283 - >> Accept: application/sparql-results+json, application/sparql-results+xml;q=0.9, text/tab-separated-values;q=0.7, text/csv;q=0.5, application/json;q=0.2, application/xml;q=0.2, */*;q=0.1
+2018-02-20 15:11:14 DEBUG headers:283 - >> User-Agent: Apache-Jena-ARQ/2.12.1
+2018-02-20 15:11:14 DEBUG headers:283 - >> Accept-Encoding: gzip,deflate
+2018-02-20 15:11:14 DEBUG headers:283 - >> Host: semantic.eea.europa.eu
+2018-02-20 15:11:14 DEBUG headers:283 - >> Connection: Keep-Alive
+2018-02-20 15:11:15 DEBUG wire:72 -  << "HTTP/1.1 200 OK[\r][\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "Server: Apache-Coyote/1.1[\r][\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "Set-Cookie: JSESSIONID=FF18C8355DDED37C69E21D21BB805899; Path=/; HttpOnly[\r][\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "Content-Disposition: attachment; filename="sparql-result.json"[\r][\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "Content-Type: application/sparql-results+json;charset=UTF-8[\r][\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "Content-Language: en[\r][\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "Transfer-Encoding: chunked[\r][\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "Date: Tue, 20 Feb 2018 13:11:14 GMT[\r][\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "[\r][\n]"
+2018-02-20 15:11:15 DEBUG DefaultClientConnection:261 - Receiving response: HTTP/1.1 200 OK
+2018-02-20 15:11:15 DEBUG headers:264 - << HTTP/1.1 200 OK
+2018-02-20 15:11:15 DEBUG headers:267 - << Server: Apache-Coyote/1.1
+2018-02-20 15:11:15 DEBUG headers:267 - << Set-Cookie: JSESSIONID=FF18C8355DDED37C69E21D21BB805899; Path=/; HttpOnly
+2018-02-20 15:11:15 DEBUG headers:267 - << Content-Disposition: attachment; filename="sparql-result.json"
+2018-02-20 15:11:15 DEBUG headers:267 - << Content-Type: application/sparql-results+json;charset=UTF-8
+2018-02-20 15:11:15 DEBUG headers:267 - << Content-Language: en
+2018-02-20 15:11:15 DEBUG headers:267 - << Transfer-Encoding: chunked
+2018-02-20 15:11:15 DEBUG headers:267 - << Date: Tue, 20 Feb 2018 13:11:14 GMT
+2018-02-20 15:11:15 DEBUG ResponseProcessCookies:118 - Cookie accepted [JSESSIONID="FF18C8355DDED37C69E21D21BB805899", version:0, domain:semantic.eea.europa.eu, path:/, expiry:null]
+2018-02-20 15:11:15 DEBUG SystemDefaultHttpClient:511 - Connection can be kept alive indefinitely
+2018-02-20 15:11:15 DEBUG wire:72 -  << "f0[\r][\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "{[\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "[0x9]"head": {[\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "[0x9][0x9]"vars": [ "resource" ][\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "[0x9]}, [\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "[0x9]"results": {[\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "[0x9][0x9]"bindings": [[\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "[0x9][0x9][0x9]{[\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "[0x9][0x9][0x9][0x9]"resource": { "type": "uri", "value": "http:\/\/land.copernicus.eu\/local\/urban-atlas\/ancillary-data-on-population-estimates-by-urban-atlas-polygons" }[\n]"
+2018-02-20 15:11:15 DEBUG wire:86 -  << "[0x9][0x9][0x9]}"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "[\r][\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "9[\r][\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "[\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "[0x9][0x9]][\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "[0x9]}[\n]"
+2018-02-20 15:11:15 DEBUG wire:86 -  << "}"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "[\r][\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "0[\r][\n]"
+2018-02-20 15:11:15 DEBUG wire:72 -  << "[\r][\n]"
+2018-02-20 15:11:15 DEBUG PoolingClientConnectionManager:267 - Connection [id: 1][route: {}->http://semantic.eea.europa.eu:80] can be kept alive indefinitely
+2018-02-20 15:11:15 DEBUG PoolingClientConnectionManager:274 - Connection released: [id: 1][route: {}->http://semantic.eea.europa.eu:80][total kept alive: 1; route allocated: 1 of 5; total allocated: 1 of 10]
+2018-02-20 15:11:23 DEBUG PoolingClientConnectionManager:281 - Connection manager is shutting down
+2018-02-20 15:11:23 DEBUG DefaultClientConnection:182 - Connection 0.0.0.0:35348<->87.54.7.52:80 closed
+2018-02-20 15:11:23 DEBUG DefaultClientConnection:182 - Connection 0.0.0.0:35348<->87.54.7.52:80 closed
+2018-02-20 15:11:23 DEBUG PoolingClientConnectionManager:287 - Connection manager shut down
+2018-02-20 15:11:31 DEBUG MainClientExec:121 - [exchange: 4] start execution
+2018-02-20 15:11:31 DEBUG RequestAddCookies:122 - CookieSpec selected: default
+2018-02-20 15:11:31 DEBUG RequestAuthCache:130 - Re-using cached 'basic' auth scheme for http://localhost:9200
+2018-02-20 15:11:31 DEBUG InternalHttpAsyncClient:352 - [exchange: 4] Request connection for {}->http://localhost:9200
+2018-02-20 15:11:31 DEBUG PoolingNHttpClientConnectionManager:250 - Connection request: [route: {}->http://localhost:9200][total kept alive: 1; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set timeout 0
+2018-02-20 15:11:31 DEBUG PoolingNHttpClientConnectionManager:491 - Connection leased: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 0; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:31 DEBUG InternalHttpAsyncClient:307 - [exchange: 4] Connection allocated: CPoolProxy{http-outgoing-0 [ACTIVE]}
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:182 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set attribute http.nio.exchange-handler
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:108 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:r]: Event set [w]
+2018-02-20 15:11:31 DEBUG InternalIODispatch:71 - http-outgoing-0 [ACTIVE] Request ready
+2018-02-20 15:11:31 DEBUG InternalHttpAsyncClient:170 - Connection route already established
+2018-02-20 15:11:31 DEBUG MainClientExec:215 - [exchange: 4] Attempt 1 to execute request
+2018-02-20 15:11:31 DEBUG MainClientExec:222 - Target auth state: CHALLENGED
+2018-02-20 15:11:31 DEBUG MainClientExec:229 - Proxy auth state: UNCHALLENGED
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: Set timeout 30000
+2018-02-20 15:11:31 DEBUG headers:136 - http-outgoing-0 >> GET /global-search/resource/_search?typed_keys=true&ignore_unavailable=false&expand_wildcards=open&allow_no_indices=true&scroll=1m&search_type=query_then_fetch&batched_reduce_size=512 HTTP/1.1
+2018-02-20 15:11:31 DEBUG headers:139 - http-outgoing-0 >> Content-Length: 0
+2018-02-20 15:11:31 DEBUG headers:139 - http-outgoing-0 >> Host: localhost:9200
+2018-02-20 15:11:31 DEBUG headers:139 - http-outgoing-0 >> Connection: Keep-Alive
+2018-02-20 15:11:31 DEBUG headers:139 - http-outgoing-0 >> User-Agent: Apache-HttpAsyncClient/4.1.2 (Java/1.8.0_161)
+2018-02-20 15:11:31 DEBUG headers:139 - http-outgoing-0 >> Authorization: Basic dXNlcl9ydzpyd19wYXNz
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:108 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: Event set [w]
+2018-02-20 15:11:31 DEBUG MainClientExec:273 - [exchange: 4] Request completed
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:222 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: 363 bytes written
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 >> "GET /global-search/resource/_search?typed_keys=true&ignore_unavailable=false&expand_wildcards=open&allow_no_indices=true&scroll=1m&search_type=query_then_fetch&batched_reduce_size=512 HTTP/1.1[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 >> "Content-Length: 0[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 >> "Host: localhost:9200[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 >> "Connection: Keep-Alive[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 >> "User-Agent: Apache-HttpAsyncClient/4.1.2 (Java/1.8.0_161)[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 >> "Authorization: Basic dXNlcl9ydzpyd19wYXNz[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 >> "[\r][\n]"
+2018-02-20 15:11:31 DEBUG InternalIODispatch:71 - http-outgoing-0 [ACTIVE] Request ready
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:116 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:w]: Event cleared [w]
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:206 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: 485 bytes read
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 << "HTTP/1.1 200 OK[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 << "X-RR-User: user_rw[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 << "content-type: application/json; charset=UTF-8[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 << "content-length: 378[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 << "[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:68 - http-outgoing-0 << "{"_scroll_id":"DnF1ZXJ5VGhlbkZldGNoBQAAAAAAAACTFmtzcW9SYUtnUW9TR09IbmxQSnR0M2cAAAAAAAAAkhZrc3FvUmFLZ1FvU0dPSG5sUEp0dDNnAAAAAAAAAJEWa3Nxb1JhS2dRb1NHT0hubFBKdHQzZwAAAAAAAACEFnpxa09ndjFTVHFpTjhrV3d5R3JEWHcAAAAAAAAAhRZ6cWtPZ3YxU1RxaU44a1d3eUdyRFh3","took":5,"timed_out":false,"_shards":{"total":5,"successful":5,"skipped":0,"failed":0},"hits":{"total":0,"max_score":null,"hits":[]}}"
+2018-02-20 15:11:31 DEBUG headers:125 - http-outgoing-0 << HTTP/1.1 200 OK
+2018-02-20 15:11:31 DEBUG headers:128 - http-outgoing-0 << X-RR-User: user_rw
+2018-02-20 15:11:31 DEBUG headers:128 - http-outgoing-0 << content-type: application/json; charset=UTF-8
+2018-02-20 15:11:31 DEBUG headers:128 - http-outgoing-0 << content-length: 378
+2018-02-20 15:11:31 DEBUG InternalIODispatch:106 - http-outgoing-0 [ACTIVE(378)] Response received
+2018-02-20 15:11:31 DEBUG MainClientExec:286 - [exchange: 4] Response received HTTP/1.1 200 OK
+2018-02-20 15:11:31 DEBUG MainClientExec:86 - Authentication succeeded
+2018-02-20 15:11:31 DEBUG InternalIODispatch:81 - http-outgoing-0 [ACTIVE(378)] Input ready
+2018-02-20 15:11:31 DEBUG MainClientExec:325 - [exchange: 4] Consume content
+2018-02-20 15:11:31 DEBUG InternalHttpAsyncClient:292 - [exchange: 4] Connection can be kept alive indefinitely
+2018-02-20 15:11:31 DEBUG MainClientExec:385 - [exchange: 4] Response processed
+2018-02-20 15:11:31 DEBUG InternalHttpAsyncClient:233 - [exchange: 4] releasing connection
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:190 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Remove attribute http.nio.exchange-handler
+2018-02-20 15:11:31 DEBUG PoolingNHttpClientConnectionManager:285 - Releasing connection: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 0; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:31 DEBUG PoolingNHttpClientConnectionManager:299 - Connection [id: http-outgoing-0][route: {}->http://localhost:9200] can be kept alive indefinitely
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set timeout 0
+2018-02-20 15:11:31 DEBUG PoolingNHttpClientConnectionManager:305 - Connection released: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 1; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:31 DEBUG RestClient:59 - request [GET http://localhost:9200/global-search/resource/_search?typed_keys=true&ignore_unavailable=false&expand_wildcards=open&allow_no_indices=true&scroll=1m&search_type=query_then_fetch&batched_reduce_size=512] returned [HTTP/1.1 200 OK]
+2018-02-20 15:11:31 DEBUG MainClientExec:121 - [exchange: 5] start execution
+2018-02-20 15:11:31 DEBUG RequestAddCookies:122 - CookieSpec selected: default
+2018-02-20 15:11:31 DEBUG RequestAuthCache:130 - Re-using cached 'basic' auth scheme for http://localhost:9200
+2018-02-20 15:11:31 DEBUG InternalHttpAsyncClient:352 - [exchange: 5] Request connection for {}->http://localhost:9200
+2018-02-20 15:11:31 DEBUG PoolingNHttpClientConnectionManager:250 - Connection request: [route: {}->http://localhost:9200][total kept alive: 1; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set timeout 0
+2018-02-20 15:11:31 DEBUG PoolingNHttpClientConnectionManager:491 - Connection leased: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 0; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:31 DEBUG InternalHttpAsyncClient:307 - [exchange: 5] Connection allocated: CPoolProxy{http-outgoing-0 [ACTIVE]}
+2018-02-20 15:11:31 DEBUG InternalIODispatch:85 - http-outgoing-0 [ACTIVE] [content length: 378; pos: 378; completed: true]
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:182 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set attribute http.nio.exchange-handler
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:108 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:r]: Event set [w]
+2018-02-20 15:11:31 DEBUG InternalIODispatch:71 - http-outgoing-0 [ACTIVE] Request ready
+2018-02-20 15:11:31 DEBUG InternalHttpAsyncClient:170 - Connection route already established
+2018-02-20 15:11:31 DEBUG MainClientExec:215 - [exchange: 5] Attempt 1 to execute request
+2018-02-20 15:11:31 DEBUG MainClientExec:222 - Target auth state: CHALLENGED
+2018-02-20 15:11:31 DEBUG MainClientExec:229 - Proxy auth state: UNCHALLENGED
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: Set timeout 30000
+2018-02-20 15:11:31 DEBUG headers:136 - http-outgoing-0 >> DELETE /_search/scroll HTTP/1.1
+2018-02-20 15:11:31 DEBUG headers:139 - http-outgoing-0 >> Content-Length: 246
+2018-02-20 15:11:31 DEBUG headers:139 - http-outgoing-0 >> Content-Type: application/json
+2018-02-20 15:11:31 DEBUG headers:139 - http-outgoing-0 >> Host: localhost:9200
+2018-02-20 15:11:31 DEBUG headers:139 - http-outgoing-0 >> Connection: Keep-Alive
+2018-02-20 15:11:31 DEBUG headers:139 - http-outgoing-0 >> User-Agent: Apache-HttpAsyncClient/4.1.2 (Java/1.8.0_161)
+2018-02-20 15:11:31 DEBUG headers:139 - http-outgoing-0 >> Authorization: Basic dXNlcl9ydzpyd19wYXNz
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:108 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: Event set [w]
+2018-02-20 15:11:31 DEBUG InternalIODispatch:94 - http-outgoing-0 [ACTIVE] Output ready
+2018-02-20 15:11:31 DEBUG MainClientExec:258 - [exchange: 5] produce content
+2018-02-20 15:11:31 DEBUG MainClientExec:273 - [exchange: 5] Request completed
+2018-02-20 15:11:31 DEBUG InternalIODispatch:98 - http-outgoing-0 [ACTIVE] [content length: 246; pos: 246; completed: true]
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:222 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: 482 bytes written
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 >> "DELETE /_search/scroll HTTP/1.1[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 >> "Content-Length: 246[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 >> "Content-Type: application/json[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 >> "Host: localhost:9200[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 >> "Connection: Keep-Alive[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 >> "User-Agent: Apache-HttpAsyncClient/4.1.2 (Java/1.8.0_161)[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 >> "Authorization: Basic dXNlcl9ydzpyd19wYXNz[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 >> "[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:68 - http-outgoing-0 >> "{"scroll_id":["DnF1ZXJ5VGhlbkZldGNoBQAAAAAAAACTFmtzcW9SYUtnUW9TR09IbmxQSnR0M2cAAAAAAAAAkhZrc3FvUmFLZ1FvU0dPSG5sUEp0dDNnAAAAAAAAAJEWa3Nxb1JhS2dRb1NHT0hubFBKdHQzZwAAAAAAAACEFnpxa09ndjFTVHFpTjhrV3d5R3JEWHcAAAAAAAAAhRZ6cWtPZ3YxU1RxaU44a1d3eUdyRFh3"]}"
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:206 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:rw]: 138 bytes read
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 << "HTTP/1.1 200 OK[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 << "X-RR-User: user_rw[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 << "content-type: application/json; charset=UTF-8[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 << "content-length: 32[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:54 - http-outgoing-0 << "[\r][\n]"
+2018-02-20 15:11:31 DEBUG wire:68 - http-outgoing-0 << "{"succeeded":true,"num_freed":5}"
+2018-02-20 15:11:31 DEBUG headers:125 - http-outgoing-0 << HTTP/1.1 200 OK
+2018-02-20 15:11:31 DEBUG headers:128 - http-outgoing-0 << X-RR-User: user_rw
+2018-02-20 15:11:31 DEBUG headers:128 - http-outgoing-0 << content-type: application/json; charset=UTF-8
+2018-02-20 15:11:31 DEBUG headers:128 - http-outgoing-0 << content-length: 32
+2018-02-20 15:11:31 DEBUG InternalIODispatch:106 - http-outgoing-0 [ACTIVE(32)] Response received
+2018-02-20 15:11:31 DEBUG MainClientExec:286 - [exchange: 5] Response received HTTP/1.1 200 OK
+2018-02-20 15:11:31 DEBUG MainClientExec:86 - Authentication succeeded
+2018-02-20 15:11:31 DEBUG InternalIODispatch:81 - http-outgoing-0 [ACTIVE(32)] Input ready
+2018-02-20 15:11:31 DEBUG MainClientExec:325 - [exchange: 5] Consume content
+2018-02-20 15:11:31 DEBUG InternalHttpAsyncClient:292 - [exchange: 5] Connection can be kept alive indefinitely
+2018-02-20 15:11:31 DEBUG MainClientExec:385 - [exchange: 5] Response processed
+2018-02-20 15:11:31 DEBUG InternalHttpAsyncClient:233 - [exchange: 5] releasing connection
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:190 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:rw]: Remove attribute http.nio.exchange-handler
+2018-02-20 15:11:31 DEBUG PoolingNHttpClientConnectionManager:285 - Releasing connection: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 0; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:31 DEBUG PoolingNHttpClientConnectionManager:299 - Connection [id: http-outgoing-0][route: {}->http://localhost:9200] can be kept alive indefinitely
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:rw]: Set timeout 0
+2018-02-20 15:11:31 DEBUG PoolingNHttpClientConnectionManager:305 - Connection released: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 1; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:31 DEBUG RestClient:59 - request [DELETE http://localhost:9200/_search/scroll] returned [HTTP/1.1 200 OK]
+2018-02-20 15:11:31 DEBUG InternalIODispatch:85 - http-outgoing-0 [ACTIVE] [content length: 32; pos: 32; completed: true]
+2018-02-20 15:11:31 INFO  app:960 - QUERY:
+2018-02-20 15:11:31 INFO  app:961 - CONSTRUCT { ?s ?p ?o } WHERE {{?s ?p ?o . FILTER (?s in (<http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons>) ) . OPTIONAL { ?o <http://www.w3.org/2000/01/rdf-schema#label> ?o1 }  . FILTER(!BOUND(?o1)) . OPTIONAL { ?o <http://purl.org/dc/terms/title> ?o2 }  . FILTER(!BOUND(?o2))} UNION { <http://www.w3.org/2000/01/rdf-schema#Class> a <http://www.w3.org/2000/01/rdf-schema#Class> . { SELECT ?s ?p (str(?label) as ?o) {    ?s ?p ?res   . FILTER (?s in (<http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons>))   . ?res <http://www.w3.org/2000/01/rdf-schema#label> ?label }}} UNION { <http://www.w3.org/2000/01/rdf-schema#Class> a <http://www.w3.org/2000/01/rdf-schema#Class> . { SELECT ?s ?p (str(?label) as ?o) {    ?s ?p ?res   . FILTER (?s in (<http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons>))   . ?res <http://purl.org/dc/terms/title> ?label }}}}
+2018-02-20 15:11:31 DEBUG InternalIODispatch:71 - http-outgoing-0 [ACTIVE] Request ready
+2018-02-20 15:11:31 DEBUG ManagedNHttpClientConnectionImpl:116 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:rw]: Event cleared [w]
+2018-02-20 15:11:42 DEBUG HttpOp:1097 - [3] GET http://semantic.eea.europa.eu/sparql?query=CONSTRUCT+%0A++%7B+%3Fs+%3Fp+%3Fo+.%7D%0AWHERE%0A++%7B+++%7B+%3Fs+%3Fp+%3Fo%0A++++++++FILTER+%28+%3Fs+IN+%28%3Chttp%3A%2F%2Fland.copernicus.eu%2Flocal%2Furban-atlas%2Fancillary-data-on-population-estimates-by-urban-atlas-polygons%3E%29+%29%0A++++++++OPTIONAL%0A++++++++++%7B+%3Fo+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23label%3E+%3Fo1%7D%0A++++++++FILTER+%28+%21+bound%28%3Fo1%29+%29%0A++++++++OPTIONAL%0A++++++++++%7B+%3Fo+%3Chttp%3A%2F%2Fpurl.org%2Fdc%2Fterms%2Ftitle%3E+%3Fo2%7D%0A++++++++FILTER+%28+%21+bound%28%3Fo2%29+%29%0A++++++%7D%0A++++UNION%0A++++++%7B+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23Class%3E+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23Class%3E%0A++++++++%7B+SELECT++%3Fs+%3Fp+%28str%28%3Flabel%29+AS+%3Fo%29%0A++++++++++WHERE%0A++++++++++++%7B+%3Fs+%3Fp+%3Fres%0A++++++++++++++FILTER+%28+%3Fs+IN+%28%3Chttp%3A%2F%2Fland.copernicus.eu%2Flocal%2Furban-atlas%2Fancillary-data-on-population-estimates-by-urban-atlas-polygons%3E%29+%29%0A++++++++++++++%3Fres+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23label%3E+%3Flabel%0A++++++++++++%7D%0A++++++++%7D%0A++++++%7D%0A++++UNION%0A++++++%7B+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23Class%3E+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23Class%3E%0A++++++++%7B+SELECT++%3Fs+%3Fp+%28str%28%3Flabel%29+AS+%3Fo%29%0A++++++++++WHERE%0A++++++++++++%7B+%3Fs+%3Fp+%3Fres%0A++++++++++++++FILTER+%28+%3Fs+IN+%28%3Chttp%3A%2F%2Fland.copernicus.eu%2Flocal%2Furban-atlas%2Fancillary-data-on-population-estimates-by-urban-atlas-polygons%3E%29+%29%0A++++++++++++++%3Fres+%3Chttp%3A%2F%2Fpurl.org%2Fdc%2Fterms%2Ftitle%3E+%3Flabel%0A++++++++++++%7D%0A++++++++%7D%0A++++++%7D%0A++%7D%0A
+2018-02-20 15:11:42 DEBUG PoolingClientConnectionManager:184 - Connection request: [route: {}->http://semantic.eea.europa.eu:80][total kept alive: 0; route allocated: 0 of 5; total allocated: 0 of 10]
+2018-02-20 15:11:42 DEBUG PoolingClientConnectionManager:218 - Connection leased: [id: 2][route: {}->http://semantic.eea.europa.eu:80][total kept alive: 0; route allocated: 1 of 5; total allocated: 1 of 10]
+2018-02-20 15:11:42 DEBUG DefaultClientConnectionOperator:176 - Connecting to semantic.eea.europa.eu:80
+2018-02-20 15:11:42 DEBUG RequestAddCookies:122 - CookieSpec selected: default
+2018-02-20 15:11:42 DEBUG RequestAuthCache:76 - Auth cache not set in the context
+2018-02-20 15:11:42 DEBUG RequestTargetAuthentication:79 - Target auth state: UNCHALLENGED
+2018-02-20 15:11:42 DEBUG RequestProxyAuthentication:88 - Proxy auth state: UNCHALLENGED
+2018-02-20 15:11:42 DEBUG SystemDefaultHttpClient:684 - Attempt 1 to execute request
+2018-02-20 15:11:42 DEBUG DefaultClientConnection:276 - Sending request: GET /sparql?query=CONSTRUCT+%0A++%7B+%3Fs+%3Fp+%3Fo+.%7D%0AWHERE%0A++%7B+++%7B+%3Fs+%3Fp+%3Fo%0A++++++++FILTER+%28+%3Fs+IN+%28%3Chttp%3A%2F%2Fland.copernicus.eu%2Flocal%2Furban-atlas%2Fancillary-data-on-population-estimates-by-urban-atlas-polygons%3E%29+%29%0A++++++++OPTIONAL%0A++++++++++%7B+%3Fo+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23label%3E+%3Fo1%7D%0A++++++++FILTER+%28+%21+bound%28%3Fo1%29+%29%0A++++++++OPTIONAL%0A++++++++++%7B+%3Fo+%3Chttp%3A%2F%2Fpurl.org%2Fdc%2Fterms%2Ftitle%3E+%3Fo2%7D%0A++++++++FILTER+%28+%21+bound%28%3Fo2%29+%29%0A++++++%7D%0A++++UNION%0A++++++%7B+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23Class%3E+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23Class%3E%0A++++++++%7B+SELECT++%3Fs+%3Fp+%28str%28%3Flabel%29+AS+%3Fo%29%0A++++++++++WHERE%0A++++++++++++%7B+%3Fs+%3Fp+%3Fres%0A++++++++++++++FILTER+%28+%3Fs+IN+%28%3Chttp%3A%2F%2Fland.copernicus.eu%2Flocal%2Furban-atlas%2Fancillary-data-on-population-estimates-by-urban-atlas-polygons%3E%29+%29%0A++++++++++++++%3Fres+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23label%3E+%3Flabel%0A++++++++++++%7D%0A++++++++%7D%0A++++++%7D%0A++++UNION%0A++++++%7B+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23Class%3E+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23Class%3E%0A++++++++%7B+SELECT++%3Fs+%3Fp+%28str%28%3Flabel%29+AS+%3Fo%29%0A++++++++++WHERE%0A++++++++++++%7B+%3Fs+%3Fp+%3Fres%0A++++++++++++++FILTER+%28+%3Fs+IN+%28%3Chttp%3A%2F%2Fland.copernicus.eu%2Flocal%2Furban-atlas%2Fancillary-data-on-population-estimates-by-urban-atlas-polygons%3E%29+%29%0A++++++++++++++%3Fres+%3Chttp%3A%2F%2Fpurl.org%2Fdc%2Fterms%2Ftitle%3E+%3Flabel%0A++++++++++++%7D%0A++++++++%7D%0A++++++%7D%0A++%7D%0A HTTP/1.1
+2018-02-20 15:11:42 DEBUG wire:72 -  >> "GET /sparql?query=CONSTRUCT+%0A++%7B+%3Fs+%3Fp+%3Fo+.%7D%0AWHERE%0A++%7B+++%7B+%3Fs+%3Fp+%3Fo%0A++++++++FILTER+%28+%3Fs+IN+%28%3Chttp%3A%2F%2Fland.copernicus.eu%2Flocal%2Furban-atlas%2Fancillary-data-on-population-estimates-by-urban-atlas-polygons%3E%29+%29%0A++++++++OPTIONAL%0A++++++++++%7B+%3Fo+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23label%3E+%3Fo1%7D%0A++++++++FILTER+%28+%21+bound%28%3Fo1%29+%29%0A++++++++OPTIONAL%0A++++++++++%7B+%3Fo+%3Chttp%3A%2F%2Fpurl.org%2Fdc%2Fterms%2Ftitle%3E+%3Fo2%7D%0A++++++++FILTER+%28+%21+bound%28%3Fo2%29+%29%0A++++++%7D%0A++++UNION%0A++++++%7B+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23Class%3E+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23Class%3E%0A++++++++%7B+SELECT++%3Fs+%3Fp+%28str%28%3Flabel%29+AS+%3Fo%29%0A++++++++++WHERE%0A++++++++++++%7B+%3Fs+%3Fp+%3Fres%0A++++++++++++++FILTER+%28+%3Fs+IN+%28%3Chttp%3A%2F%2Fland.copernicus.eu%2Flocal%2Furban-atlas%2Fancillary-data-on-population-estimates-by-urban-atlas-polygons%3E%29+%29%0A++++++++++++++%3Fres+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23label%3E+%3Flabel%0A++++++++++++%7D%0A++++++++%7D%0A++++++%7D%0A++++UNION%0A++++++%7B+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23Class%3E+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23Class%3E%0A++++++++%7B+SELECT++%3Fs+%3Fp+%28str%28%3Flabel%29+AS+%3Fo%29%0A++++++++++WHERE%0A++++++++++++%7B+%3Fs+%3Fp+%3Fres%0A++++++++++++++FILTER+%28+%3Fs+IN+%28%3Chttp%3A%2F%2Fland.copernicus.eu%2Flocal%2Furban-atlas%2Fancillary-data-on-population-estimates-by-urban-atlas-polygons%3E%29+%29%0A++++++++++++++%3Fres+%3Chttp%3A%2F%2Fpurl.org%2Fdc%2Fterms%2Ftitle%3E+%3Flabel%0A++++++++++++%7D%0A++++++++%7D%0A++++++%7D%0A++%7D%0A HTTP/1.1[\r][\n]"
+2018-02-20 15:11:42 DEBUG wire:72 -  >> "Accept: text/turtle, application/n-triples, application/rdf+xml;q=0.9, application/turtle;q=0.8, application/x-turtle;q=0.8, text/rdf+n3;q=0.7, application/n3;q=0.6, text/n3;q=0.6, text/plain;q=0.5, */*;q=0.1[\r][\n]"
+2018-02-20 15:11:42 DEBUG wire:72 -  >> "User-Agent: Apache-Jena-ARQ/2.12.1[\r][\n]"
+2018-02-20 15:11:42 DEBUG wire:72 -  >> "Accept-Encoding: gzip,deflate[\r][\n]"
+2018-02-20 15:11:42 DEBUG wire:72 -  >> "Host: semantic.eea.europa.eu[\r][\n]"
+2018-02-20 15:11:42 DEBUG wire:72 -  >> "Connection: Keep-Alive[\r][\n]"
+2018-02-20 15:11:42 DEBUG wire:72 -  >> "[\r][\n]"
+2018-02-20 15:11:42 DEBUG headers:280 - >> GET /sparql?query=CONSTRUCT+%0A++%7B+%3Fs+%3Fp+%3Fo+.%7D%0AWHERE%0A++%7B+++%7B+%3Fs+%3Fp+%3Fo%0A++++++++FILTER+%28+%3Fs+IN+%28%3Chttp%3A%2F%2Fland.copernicus.eu%2Flocal%2Furban-atlas%2Fancillary-data-on-population-estimates-by-urban-atlas-polygons%3E%29+%29%0A++++++++OPTIONAL%0A++++++++++%7B+%3Fo+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23label%3E+%3Fo1%7D%0A++++++++FILTER+%28+%21+bound%28%3Fo1%29+%29%0A++++++++OPTIONAL%0A++++++++++%7B+%3Fo+%3Chttp%3A%2F%2Fpurl.org%2Fdc%2Fterms%2Ftitle%3E+%3Fo2%7D%0A++++++++FILTER+%28+%21+bound%28%3Fo2%29+%29%0A++++++%7D%0A++++UNION%0A++++++%7B+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23Class%3E+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23Class%3E%0A++++++++%7B+SELECT++%3Fs+%3Fp+%28str%28%3Flabel%29+AS+%3Fo%29%0A++++++++++WHERE%0A++++++++++++%7B+%3Fs+%3Fp+%3Fres%0A++++++++++++++FILTER+%28+%3Fs+IN+%28%3Chttp%3A%2F%2Fland.copernicus.eu%2Flocal%2Furban-atlas%2Fancillary-data-on-population-estimates-by-urban-atlas-polygons%3E%29+%29%0A++++++++++++++%3Fres+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23label%3E+%3Flabel%0A++++++++++++%7D%0A++++++++%7D%0A++++++%7D%0A++++UNION%0A++++++%7B+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23Class%3E+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23Class%3E%0A++++++++%7B+SELECT++%3Fs+%3Fp+%28str%28%3Flabel%29+AS+%3Fo%29%0A++++++++++WHERE%0A++++++++++++%7B+%3Fs+%3Fp+%3Fres%0A++++++++++++++FILTER+%28+%3Fs+IN+%28%3Chttp%3A%2F%2Fland.copernicus.eu%2Flocal%2Furban-atlas%2Fancillary-data-on-population-estimates-by-urban-atlas-polygons%3E%29+%29%0A++++++++++++++%3Fres+%3Chttp%3A%2F%2Fpurl.org%2Fdc%2Fterms%2Ftitle%3E+%3Flabel%0A++++++++++++%7D%0A++++++++%7D%0A++++++%7D%0A++%7D%0A HTTP/1.1
+2018-02-20 15:11:42 DEBUG headers:283 - >> Accept: text/turtle, application/n-triples, application/rdf+xml;q=0.9, application/turtle;q=0.8, application/x-turtle;q=0.8, text/rdf+n3;q=0.7, application/n3;q=0.6, text/n3;q=0.6, text/plain;q=0.5, */*;q=0.1
+2018-02-20 15:11:42 DEBUG headers:283 - >> User-Agent: Apache-Jena-ARQ/2.12.1
+2018-02-20 15:11:42 DEBUG headers:283 - >> Accept-Encoding: gzip,deflate
+2018-02-20 15:11:42 DEBUG headers:283 - >> Host: semantic.eea.europa.eu
+2018-02-20 15:11:42 DEBUG headers:283 - >> Connection: Keep-Alive
+2018-02-20 15:11:43 DEBUG wire:72 -  << "HTTP/1.1 200 OK[\r][\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "Server: Apache-Coyote/1.1[\r][\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "Set-Cookie: JSESSIONID=D9E8E9812DFF25B36B24E8C1DFB9DFDD; Path=/; HttpOnly[\r][\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "Content-Type: text/turtle;charset=UTF-8[\r][\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "Content-Language: en[\r][\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "Transfer-Encoding: chunked[\r][\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "Date: Tue, 20 Feb 2018 13:11:43 GMT[\r][\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[\r][\n]"
+2018-02-20 15:11:43 DEBUG DefaultClientConnection:261 - Receiving response: HTTP/1.1 200 OK
+2018-02-20 15:11:43 DEBUG headers:264 - << HTTP/1.1 200 OK
+2018-02-20 15:11:43 DEBUG headers:267 - << Server: Apache-Coyote/1.1
+2018-02-20 15:11:43 DEBUG headers:267 - << Set-Cookie: JSESSIONID=D9E8E9812DFF25B36B24E8C1DFB9DFDD; Path=/; HttpOnly
+2018-02-20 15:11:43 DEBUG headers:267 - << Content-Type: text/turtle;charset=UTF-8
+2018-02-20 15:11:43 DEBUG headers:267 - << Content-Language: en
+2018-02-20 15:11:43 DEBUG headers:267 - << Transfer-Encoding: chunked
+2018-02-20 15:11:43 DEBUG headers:267 - << Date: Tue, 20 Feb 2018 13:11:43 GMT
+2018-02-20 15:11:43 DEBUG ResponseProcessCookies:118 - Cookie accepted [JSESSIONID="D9E8E9812DFF25B36B24E8C1DFB9DFDD", version:0, domain:semantic.eea.europa.eu, path:/, expiry:null]
+2018-02-20 15:11:43 DEBUG SystemDefaultHttpClient:511 - Connection can be kept alive indefinitely
+2018-02-20 15:11:43 DEBUG wire:72 -  << "5cc6[\r][\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "<http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons> <http://purl.org/dc/terms/issued> "2017-01-12T11:30:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "cy" , "lv" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "persistent.interfaces.IPersistent" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "is" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/de> , <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/cy> ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "AccessControl.interfaces.IRoleManager" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/creator> "wijesjay" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/nl> ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:86 -  << "[0x9]<http://www.eea.europa.eu/ontologies."
+2018-02-20 15:11:43 DEBUG wire:72 -  << "rdf#objectProvides> "plone.portlets.interfaces.ILocalPortletAssignable" , "Products.CMFPlone.interfaces.constrains.ISelectableConstrainTypes" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "hu" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#owners> "<p>European Environment Agency (EEA) - copernicus@eea.europa.eu</p>"@en ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "ch" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "plone.app.folder.folder.IATUnifiedFolder" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "lu" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "Products.CMFEditions.interfaces.IVersioned" , "Products.Archetypes.interfaces.base.IBaseObject" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#temporalCoverage> "2010" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/isPartOf> <http://land.copernicus.eu/local/urban-atlas> ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/ee> ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "bg" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "eea.facetednavigation.subtypes.interfaces.IPossibleFacetedNavigable" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/ro> ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "se" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "eea.pdf.subtypes.interfaces.IPDFAware" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/ie> , <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/pl> ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "lt" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "webdav.EtagSupport.EtagBaseInterface" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://schema.org/productID> "I3M4XBNZOP" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#lastUpload> "2017-01-11T00:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "eea.geotags.storage.interfaces.IGeoTaggable" , "eea.relations.content.interfaces.IBaseObject" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "at" , "fi" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "OFS.interfaces.ICopyContainer" , "eea.faceted.inheritance.subtypes.interfaces.IPossibleFacetedHeritor" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/lv> ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "Products.ATContentTypes.interfaces.interfaces.IATContentType" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#dataResourceLocator> "http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/view#fieldsetlegend-download"@en ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "li" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#isValidatedDataset> "True" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/subject> "Population" ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/at> ;[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#accessAndUseConstraints> """<p>Access to data is based on a principle of full, open and free access as established by the Copernicus data and information policy Regulation (EU) No 1159/2013 of 12 July 2013. This regulation establishes registration and licensing conditions for GMES/Copernicus users and can be found[0xc2][0xa0]<a class=\"external-link\" href=\"http://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32013R1159\" target=\"_blank\" title=\"\">here</a>.[0xc2][0xa0]Free, full and open access to this data set is made on the conditions that:</p>[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "<p>1. When distributing or communicating Copernicus dedicated data and Copernicus service information to the public, users shall inform the public of the source of that data and information.</p>[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "<p>2. Users shall make sure not to convey the impression to the public that the user's activities are officially endorsed by the Union.</p>[\n]"
+2018-02-20 15:11:43 DEBUG wire:72 -  << "<p>3. Where that data or information has been adapted or modified, the user shall clearly state this.</p>[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "<p>4. The data remain the sole property of the European Union. Any information and data produced in the framework of the action shall be the sole property of the European Union. Any communication and publication by the beneficiary shall acknowledge that the data were produced [0xe2][0x80][0x9c]with funding by the European Union[0xe2][0x80][0x9d].</p>"""@en ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#temporalCoverage> "2008" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "Products.CMFCore.interfaces._content.IWorkflowAware" , "Products.CMFCore.interfaces._content.IDynamicType" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/lt> ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#classificationTopicCategory> "Geoscientific Information" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "App.interfaces.INavigation" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#classificationTopicCategory> "Economy" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "cz" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "OFS.interfaces.IPropertyManager" , "eea.pdf.subtypes.interfaces.ICollectionPDFAware" , "OFS.interfaces.ITraversable" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "be" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#dataResourceTitle> "Ancillary data on population estimates by Urban Atlas polygons"@en ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "land.copernicus.content.content.interfaces.ILandItem" , "Products.CMFCore.interfaces._content.IMutableMinimalDublinCore" , "eea.progressbar.interfaces.IBaseObject" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/fi> , <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/bg> ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/modified> "2017-11-30T11:26:31Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "eea.cache.subtypes.interfaces.ICacheAware" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "ee" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "OFS.interfaces.IFolder" , "zope.annotation.interfaces.IAttributeAnnotatable" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "pl" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/subject> "Urban Atlas" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "gr" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "eea.versions.interfaces.IVersionEnhanced" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#dataResourceAbstract> "<p style=\"text-align: justify; \">Estimates of the residential population at the vector polygon level are tabular data that can be inserted to the Urban Atlas dataset in a GIS environment. The estimation was done by downscaling, or disaggregating, census population reported at country-specific geometries ([0xe2][0x80][0x98]source geometry[0xe2][0x80][0x99]) to the Urban Atlas land use/land cover polygons ([0xe2][0x80][0x98]target geometry[0xe2][0x80][0x99]). The downscaling method can be described as a [0xe2][0x80][0x98]smart[0xe2][0x80][0x99] areal interpolation which combined land use/land cover information from Urban Atlas, building densities from the European Settlement Map and census data. This complementary data to the Copernicus Urban Atlas product have been produced by the JRC and DG REGIO. Read more <a href=\"https://bookshop.europa.eu/en/mapping-population-density-in-functional-urban-areas-pbLFNA28194/\" target=\"_blank\">here</a>.</p>"@en ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:86 -  << "[0x9]<http://purl.org/d"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "c/terms/title> "Population estimates by Urban Atlas polygon"@en ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/sk> ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/created> "2017-01-12T06:38:03Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/hr> ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "Products.CMFCore.interfaces._content.ICatalogAware" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "es" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "eea.alchemy.interfaces.IAlchemyDiscoverable" , "OFS.interfaces.IItem" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#accessAndUseLimitationPublic> "<p>No Limitation</p>"@en ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/se> ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "Products.CMFCore.interfaces._content.IFolderish" , "AccessControl.interfaces.IOwned" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#responsiblePartyRole> "<p>Resource Provider</p>"@en ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "plone.folder.interfaces.IOrderableFolder" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/description> "Estimates of the residential population at the vector polygon level are tabular data that can be inserted to the Urban Atlas dataset in a GIS environment. The estimation was done by downscaling, or disaggregating, census population reported at country-specific geometries ([0xe2][0x80][0x98]source geometry[0xe2][0x80][0x99]) to the Urban Atlas land use/land cover polygons ([0xe2][0x80][0x98]target geometry[0xe2][0x80][0x99]). The downscaling method can be described as a [0xe2][0x80][0x98]smart[0xe2][0x80][0x99] areal interpolation which combined land use/land cover information from Urban Atlas, building densities from the European Settlement Map and census data. This complementary data to the Copernicus Urban Atlas product have been produced by the JRC and DG REGIO."@en ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#excludeFromNav> "False" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/it> , <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/cz> ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#download> "<p><i><span><em><span>Estimates of the residential population at the vector polygon level are tabular data that can be joined to the Urban Atlas 2012 datasets in a GIS environment. The estimation was done by downscaling, or disaggregating, census population reported at country-specific geometries ([0xe2][0x80][0x98]source geometry[0xe2][0x80][0x99]) to the Urban Atlas land use/land cover polygons ([0xe2][0x80][0x98]target geometry[0xe2][0x80][0x99]). The downscaling method combined land use/land cover information from Urban Atlas, building densities from the European Settlement Map and census data. These complementary datasets to the Copernicus Urban Atlas product have been produced by the JRC and DG REGIO. Read more </span></em></span><span><a href=\"https://bookshop.europa.eu/en/mapping-population-density-in-functional-urban-areas-pbLFNA28194/\" target=\"_blank\"><i><span><span>here</span></span></i></a></span>.</i></p>"@en ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "no" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "OFS.interfaces.IOrderedContainer" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#temporalCoverage> "2012" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]a <http://land.copernicus.eu/portal_types/LandItem#LandItem> ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "plone.contentrules.engine.interfaces.IRuleAssignable" , "Products.Archetypes.interfaces.referenceable.IReferenceable" , "webdav.interfaces.IWriteLock" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#id> "ancillary-data-on-population-estimates-by-urban-atlas-polygons"@en ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "plone.app.imaging.interfaces.IBaseObject" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#frozen> "False" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "App.interfaces.IPersistentExtra" ;[\n]"
+2018-02-20 15:11:44 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "ro" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/el> ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#nextPreviousEnabled> "False" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#fileCategories> "Type" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "Products.CMFCore.interfaces._content.IOpaqueItemManager" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "ie" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "OFS.interfaces.ICopySource" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/no> ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#temporalCoverage> "2011" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "dk" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/mt> ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "plone.uuid.interfaces.IUUIDAware" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/dk> ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "Products.CMFDynamicViewFTI.interfaces.ISelectableBrowserDefault" , "eea.uberlisting.browser.app.interfaces.IPossibleUberlistingView" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#classificationTopicCategory> "Society" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "nl" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/is> ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "gb" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#coordinateReferenceSystem> "EPSG:3035 (ETRS89, LAEA)"@en ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#hasWorkflowState> <http://land.copernicus.eu/portal_workflow/folder_workflow/states/published> ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "AccessControl.interfaces.IPermissionMappingSupport" , "plone.locking.interfaces.ITTWLockable" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#temporalCoverage> "2009" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "Products.ATContentTypes.interfaces.folder.IATBTreeFolder" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://intelleo.eu/ontologies/workflow/ns#currentStatus> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/@@rdf#workflow_state_progress> ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/pt> ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#forcedisableautolinks> "False" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "plone.app.iterate.interfaces.IIterateAware" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/ch> ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://xmlns.com/foaf/0.1/depiction> "depiction" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "eea.annotator.subtypes.interfaces.IAnnotatorAware" , "OFS.interfaces.IFindSupport" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#conformitySpecification> "<p>Commission Regulation (EU) No 1089/2010 of 23 November 2010 implementing Directive 2007/2/EC of the European Parliament and of the Council as regards interoperability of spatial data sets and services, Date of publication:[0xc2][0xa0]2010-12-08</p>"@en ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "webdav.interfaces.IDAVCollection" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "de" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/be> , <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/lu> ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "archetypes.schemaextender.interfaces.IExtensible" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "si" , "sk" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#temporalCoverage> "2007" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "mt" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#tocdepth> "4" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "Products.Archetypes.interfaces.metadata.IExtensibleMetadata" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "it" ;[\n]"
+2018-02-20 15:11:45 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "Acquisition.interfaces.IAcquirer" ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "fr" ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/si> ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "Products.Archetypes.interfaces.base.IBaseFolder" ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#conformityDegree> "Null"@en ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "Products.CMFCore.interfaces._content.IContentish" ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#geographicCoverage> "pt" ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/es> ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#dataResourceType> "Dataset (Ancillary)"@en ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#temporalCoverage> "2006" ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/abstract> """ancillary-data-on-population-estimates-by-urban-atlas-polygons  Population estimates by Urban Atlas polygon  Estimates of the residential population at the vector polygon level are tabular data that can be inserted to the Urban Atlas dataset in a GIS environment. The estimation was done by downscaling, or disaggregating, census population reported at country-specific geometries ([0xe2][0x80][0x98]source geometry[0xe2][0x80][0x99]) to the Urban Atlas land use/land cover polygons ([0xe2][0x80][0x98]target geometry[0xe2][0x80][0x99]). The downscaling method can be described as a [0xe2][0x80][0x98]smart[0xe2][0x80][0x99] areal interpolation which combined land use/land cover information from Urban Atlas, building densities from the European Settlement Map and census data. This complementary data to the Copernicus Urban Atlas product have been produced by the JRC and DG REGIO.  Ancillary data on population estimates by Urban Atlas polygons   Estimates of the residential population at the vector polygon level are tabular data that can be inserted to the Urban Atlas dataset in a GIS environment. The estimation was done by downscaling, or disaggregating, census population reported at country-specific geometries ([0xe2][0x80][0x98]source geometry[0xe2][0x80][0x99]) to the Urban Atlas land use/land cover polygons ([0xe2][0x80][0x98]target geometry[0xe2][0x80][0x99]). The downscaling method can be described as a [0xe2][0x80][0x98]smart[0xe2][0x80][0x99] areal interpolation which combined land use/land cover information from Urban Atlas, building densities from the European Settlement Map and census data. This complementary data to the Copernicus Urban Atlas product have been produced by the JRC and DG REGIO. Read more  here .   Dataset (Ancillary)  http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/view#fieldsetlegend-download  Urban Atlas Population   EPSG:3035 (ETRS89, LAEA)   Commission Regulation (EU) No 1089/2010 of 23 November 2010 implementing Directive 2007/2/EC of the European Parliament and of the Council as regards interoperability of spatial data sets and services, Date of publication:[0xc2][0xa0]2010-12-08    Access to data is based on a principle of full, open and free access as established by the Copernicus data and information policy Regulation (EU) No 1159/2013 of 12 July 2013. This regulation establishes registration and licensing conditions for GMES/Copernicus users and can be found[0xc2][0xa0] here .[0xc2][0xa0]Free, full and open access to this data set is made on the conditions that: [\r][\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << " 1. When distributing or communicating Copernicus dedicated data and Copernicus service information to the public, users shall inform the public of the source of that data and information. [\r][\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << " 2. Users shall make sure not to convey the impression to the public that the user's activities are officially endorsed by the Union. [\r][\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << " 3. Where that data or information has been adapted or modified, the user shall clearly state this. [\r][\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << " 4. The data remain the sole property of the European Union. Any information and data produced in the framework of the action shall be the sole property of the European Union. Any communication and publication by the beneficiary shall acknowledge that the data were produced [0xe2][0x80][0x9c]with funding by the European Union[0xe2][0x80][0x9d].    No Limitation    European Environment Agency (EEA) - copernicus@eea.europa.eu    Resource Provider    European Environment Agency (EEA)  """ ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "collective.quickupload.interfaces.IQuickUploadCapable" ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#fileCategories> "Country" ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "App.interfaces.IUndoSupport" ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/hu> ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://land.copernicus.eu/portal_types/LandItem#dataCustodians> "<p>European Environment Agency (EEA)</p>"@en ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "webdav.interfaces.IDAVResource" ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://purl.org/dc/terms/hasPart> <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/fr> , <http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons/uk> ;[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[0x9]<http://www.eea.europa.eu/ontologies.rdf#objectProvides> "OFS.interfaces.IObjectManager" .[\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[\r][\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "0[\r][\n]"
+2018-02-20 15:11:46 DEBUG wire:72 -  << "[\r][\n]"
+2018-02-20 15:11:46 DEBUG PoolingClientConnectionManager:267 - Connection [id: 2][route: {}->http://semantic.eea.europa.eu:80] can be kept alive indefinitely
+2018-02-20 15:11:46 DEBUG PoolingClientConnectionManager:274 - Connection released: [id: 2][route: {}->http://semantic.eea.europa.eu:80][total kept alive: 1; route allocated: 1 of 5; total allocated: 1 of 10]
+2018-02-20 15:11:52 DEBUG MainClientExec:121 - [exchange: 6] start execution
+2018-02-20 15:11:52 DEBUG RequestAddCookies:122 - CookieSpec selected: default
+2018-02-20 15:11:52 DEBUG RequestAuthCache:130 - Re-using cached 'basic' auth scheme for http://localhost:9200
+2018-02-20 15:11:52 DEBUG InternalHttpAsyncClient:352 - [exchange: 6] Request connection for {}->http://localhost:9200
+2018-02-20 15:11:52 DEBUG PoolingNHttpClientConnectionManager:250 - Connection request: [route: {}->http://localhost:9200][total kept alive: 1; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:52 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:rw]: Set timeout 0
+2018-02-20 15:11:52 DEBUG PoolingNHttpClientConnectionManager:491 - Connection leased: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 0; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:52 DEBUG InternalHttpAsyncClient:307 - [exchange: 6] Connection allocated: CPoolProxy{http-outgoing-0 [ACTIVE]}
+2018-02-20 15:11:52 DEBUG ManagedNHttpClientConnectionImpl:182 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:rw]: Set attribute http.nio.exchange-handler
+2018-02-20 15:11:52 DEBUG ManagedNHttpClientConnectionImpl:108 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:rw]: Event set [w]
+2018-02-20 15:11:52 DEBUG InternalIODispatch:71 - http-outgoing-0 [ACTIVE] Request ready
+2018-02-20 15:11:52 DEBUG InternalHttpAsyncClient:170 - Connection route already established
+2018-02-20 15:11:52 DEBUG MainClientExec:215 - [exchange: 6] Attempt 1 to execute request
+2018-02-20 15:11:52 DEBUG MainClientExec:222 - Target auth state: CHALLENGED
+2018-02-20 15:11:52 DEBUG MainClientExec:229 - Proxy auth state: UNCHALLENGED
+2018-02-20 15:11:52 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: Set timeout 30000
+2018-02-20 15:11:52 DEBUG headers:136 - http-outgoing-0 >> POST /_bulk?timeout=1m HTTP/1.1
+2018-02-20 15:11:52 DEBUG headers:139 - http-outgoing-0 >> Content-Length: 9460
+2018-02-20 15:11:52 DEBUG headers:139 - http-outgoing-0 >> Content-Type: application/json
+2018-02-20 15:11:52 DEBUG headers:139 - http-outgoing-0 >> Host: localhost:9200
+2018-02-20 15:11:52 DEBUG headers:139 - http-outgoing-0 >> Connection: Keep-Alive
+2018-02-20 15:11:52 DEBUG headers:139 - http-outgoing-0 >> User-Agent: Apache-HttpAsyncClient/4.1.2 (Java/1.8.0_161)
+2018-02-20 15:11:52 DEBUG headers:139 - http-outgoing-0 >> Authorization: Basic dXNlcl9ydzpyd19wYXNz
+2018-02-20 15:11:52 DEBUG ManagedNHttpClientConnectionImpl:108 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: Event set [w]
+2018-02-20 15:11:52 DEBUG InternalIODispatch:94 - http-outgoing-0 [ACTIVE] Output ready
+2018-02-20 15:11:52 DEBUG MainClientExec:258 - [exchange: 6] produce content
+2018-02-20 15:11:52 DEBUG InternalIODispatch:98 - http-outgoing-0 [ACTIVE] [content length: 9460; pos: 4096; completed: false]
+2018-02-20 15:11:52 DEBUG ManagedNHttpClientConnectionImpl:222 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: 4333 bytes written
+2018-02-20 15:11:52 DEBUG wire:54 - http-outgoing-0 >> "POST /_bulk?timeout=1m HTTP/1.1[\r][\n]"
+2018-02-20 15:11:52 DEBUG wire:54 - http-outgoing-0 >> "Content-Length: 9460[\r][\n]"
+2018-02-20 15:11:52 DEBUG wire:54 - http-outgoing-0 >> "Content-Type: application/json[\r][\n]"
+2018-02-20 15:11:52 DEBUG wire:54 - http-outgoing-0 >> "Host: localhost:9200[\r][\n]"
+2018-02-20 15:11:52 DEBUG wire:54 - http-outgoing-0 >> "Connection: Keep-Alive[\r][\n]"
+2018-02-20 15:11:52 DEBUG wire:54 - http-outgoing-0 >> "User-Agent: Apache-HttpAsyncClient/4.1.2 (Java/1.8.0_161)[\r][\n]"
+2018-02-20 15:11:52 DEBUG wire:54 - http-outgoing-0 >> "Authorization: Basic dXNlcl9ydzpyd19wYXNz[\r][\n]"
+2018-02-20 15:11:52 DEBUG wire:54 - http-outgoing-0 >> "[\r][\n]"
+2018-02-20 15:11:52 DEBUG wire:54 - http-outgoing-0 >> "{"index":{"_index":"global-search","_type":"resource","_id":"http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons"}}[\n]"
+2018-02-20 15:11:52 DEBUG wire:68 - http-outgoing-0 >> "{"year":["\"2017-01-12T11:30:00Z\""],"http://www.eea.europa.eu/ontologies.rdf#objectProvides":["\"eea.pdf.subtypes.interfaces.IPDFAware\"","\"plone.locking.interfaces.ITTWLockable\"","\"Products.ATContentTypes.interfaces.interfaces.IATContentType\"","\"eea.cache.subtypes.interfaces.ICacheAware\"","\"webdav.interfaces.IDAVResource\"","\"Products.CMFDynamicViewFTI.interfaces.ISelectableBrowserDefault\"","\"AccessControl.interfaces.IRoleManager\"","\"persistent.interfaces.IPersistent\"","\"plone.app.folder.folder.IATUnifiedFolder\"","\"OFS.interfaces.IFolder\"","\"Products.CMFCore.interfaces._content.IOpaqueItemManager\"","\"plone.folder.interfaces.IOrderableFolder\"","\"Products.CMFCore.interfaces._content.IContentish\"","\"OFS.interfaces.ITraversable\"","\"Products.CMFCore.interfaces._content.IWorkflowAware\"","\"eea.geotags.storage.interfaces.IGeoTaggable\"","\"archetypes.schemaextender.interfaces.IExtensible\"","\"Products.Archetypes.interfaces.referenceable.IReferenceable\"","\"Products.CMFEditions.interfaces.IVersioned\"","\"eea.faceted.inheritance.subtypes.interfaces.IPossibleFacetedHeritor\"","\"eea.progressbar.interfaces.IBaseObject\"","\"plone.uuid.interfaces.IUUIDAware\"","\"eea.facetednavigation.subtypes.interfaces.IPossibleFacetedNavigable\"","\"OFS.interfaces.IOrderedContainer\"","\"eea.alchemy.interfaces.IAlchemyDiscoverable\"","\"Products.Archetypes.interfaces.base.IBaseObject\"","\"zope.annotation.interfaces.IAttributeAnnotatable\"","\"eea.annotator.subtypes.interfaces.IAnnotatorAware\"","\"Products.CMFCore.interfaces._content.IFolderish\"","\"OFS.interfaces.IItem\"","\"eea.relations.content.interfaces.IBaseObject\"","\"plone.app.iterate.interfaces.IIterateAware\"","\"Products.ATContentTypes.interfaces.folder.IATBTreeFolder\"","\"App.interfaces.IPersistentExtra\"","\"webdav.interfaces.IWriteLock\"","\"plone.contentrules.engine.interfaces.IRuleAssignable\"","\"OFS.interfaces.ICopySource\"","\"OFS.interfaces.IObjectManager\"","\"OFS.interfaces.IFindSupport\"","\"Products.Archetypes.interfaces.metadata.IExtensibleMetadata\"","\"plone.portlets.interfaces.ILocalPortletAssignable\"","\"Products.CMFCore.interfaces._content.ICatalogAware\"","\"App.interfaces.INavigation\"","\"Products.Archetypes.interfaces.base.IBaseFolder\"","\"collective.quickupload.interfaces.IQuickUploadCapable\"","\"Products.CMFCore.interfaces._content.IMutableMinimalDublinCore\"","\"AccessControl.interfaces.IOwned\"","\"AccessControl.interfaces.IPermissionMappingSupport\"","\"Products.CMFPlone.interfaces.constrains.ISelectableConstrainTypes\"","\"OFS.interfaces.IPropertyManager\"","\"eea.uberlisting.browser.app.interfaces.IPossibleUberlistingView\"","\"webdav.EtagSupport.EtagBaseInterface\"","\"Acquisition.interfaces.IAcquirer\"","\"Data (at EEA)\"","\"eea.pdf.subtypes.interfaces.ICollectionPDFAware\"","\"App.interfaces.IUndoSupport\"","\"Products.CMFCore.interfaces._content.IDynamicType\"","\"OFS.interfaces.ICopyContainer\"","\"eea.versions.interfaces.IVersionEnhanced\"","\"webdav.interfaces.IDAVCollection\"","\"plone.app.imaging.interfaces.IBaseObject\""],"items_count_places":["31"],"language":["\"en\""],"items_count_http://www.eea.europa.eu/ontologies.rdf#hasWorkflowState":["1"],"http://purl.org/dc/terms/description":["\"<p style='text-align: justify; '>Estimates of the residential population at the vector polygon level are tabular data that can be inserted to the Urban Atlas dataset in a GIS environment. The estimation was done by downscaling, or disaggregating, census population reported at country-specific geometries ([0xffffffe2][0xffffff80][0xffffff98]source geometry[0xffffffe2][0xffffff80][0xffffff99]) to the Urban Atlas land use/land cover polygons ([0xffffffe2][0xffffff80][0xffffff98]target geometry[0xffffffe2][0xffffff80][0xffffff99]). The downscaling method can be described as a [0xffffffe2][0xffffff80][0xffffff98]smart[0xffffffe2][0xffffff80][0xffffff99] areal interpolation which combined land use/land cover information from Urban Atlas, building densities from the European Settlement Map and census data. This complementary data to the Copernicus Urban At"
+2018-02-20 15:11:52 DEBUG InternalIODispatch:94 - http-outgoing-0 [ACTIVE] Output ready
+2018-02-20 15:11:52 DEBUG MainClientExec:258 - [exchange: 6] produce content
+2018-02-20 15:11:52 DEBUG InternalIODispatch:98 - http-outgoing-0 [ACTIVE] [content length: 9460; pos: 8192; completed: false]
+2018-02-20 15:11:52 DEBUG ManagedNHttpClientConnectionImpl:222 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: 4096 bytes written
+2018-02-20 15:11:52 DEBUG wire:68 - http-outgoing-0 >> "las product have been produced by the JRC and DG REGIO. Read more <a href='https://bookshop.europa.eu/en/mapping-population-density-in-functional-urban-areas-pbLFNA28194/' target='_blank'>here</a>.</p>\""],"http://purl.org/dc/terms/spatial":["\"Netherlands\"","\"United Kingdom\"","\"Poland\"","\"Cyprus\"","\"Hungary\"","\"Spain\"","\"Luxembourg\"","\"Iceland\"","\"Denmark\"","\"Bulgaria\"","\"Belgium\"","\"Finland\"","\"Germany\"","\"Norway\"","\"Estonia\"","\"Romania\"","\"Liechtenstein\"","\"Ireland\"","\"Czech Republic\"","\"Slovakia\"","\"Slovenia\"","\"Austria\"","\"Sweden\"","\"Italy\"","\"Greece\"","\"France\"","\"Latvia\"","\"Malta\"","\"Lithuania\"","\"Switzerland\"","\"Portugal\""],"creator_cms":["\"wijesjay\""],"items_count_creator_cms":["1"],"items_count_language":["1"],"http://purl.org/dc/terms/subject":["\"Urban Atlas\"","\"Population\""],"items_count_time_coverage":["7"],"time_coverage":["\"2010\"","\"2011\"","\"2012\"","\"2006\"","\"2007\"","\"2008\"","\"2009\""],"text":["\"<p style='text-align: justify; '>Estimates of the residential population at the vector polygon level are tabular data that can be inserted to the Urban Atlas dataset in a GIS environment. The estimation was done by downscaling, or disaggregating, census population reported at country-specific geometries ([0xffffffe2][0xffffff80][0xffffff98]source geometry[0xffffffe2][0xffffff80][0xffffff99]) to the Urban Atlas land use/land cover polygons ([0xffffffe2][0xffffff80][0xffffff98]target geometry[0xffffffe2][0xffffff80][0xffffff99]). The downscaling method can be described as a [0xffffffe2][0xffffff80][0xffffff98]smart[0xffffffe2][0xffffff80][0xffffff99] areal interpolation which combined land use/land cover information from Urban Atlas, building densities from the European Settlement Map and census data. This complementary data to the Copernicus Urban Atlas product have been produced by the JRC and DG REGIO. Read more <a href='https://bookshop.europa.eu/en/mapping-population-density-in-functional-urban-areas-pbLFNA28194/' target='_blank'>here</a>.</p>\""],"items_count_http://purl.org/dc/terms/references":["0"],"items_count_label":["1"],"items_count_http://purl.org/dc/terms/description":["1"],"items_count_http://purl.org/dc/terms/modified":["1"],"items_count_http://purl.org/dc/terms/spatial":["31"],"items_count_http://www.eea.europa.eu/ontologies.rdf#objectProvides":["61"],"http://www.eea.europa.eu/portal_types#topic":["\"Land use\""],"http://www.w3.org/1999/02/22-rdf-syntax-ns#type":["\"http://land.copernicus.eu/portal_types/LandItem#LandItem\""],"items_count_text":["1"],"http://www.w3.org/1999/02/22-rdf-syntax-ns#about":["\"http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons\""],"http://www.eea.europa.eu/portal_types#dataProvider":["\"European Environment Agency (EEA)\"","\"Joint Research Centre (JRC)\""],"description":["\"Estimates of the residential population at the vector polygon level are tabular data that can be inserted to the Urban Atlas dataset in a GIS environment. The estimation was done by downscaling, or disaggregating, census population reported at country-specific geometries ([0xffffffe2][0xffffff80][0xffffff98]source geometry[0xffffffe2][0xffffff80][0xffffff99]) to the Urban Atlas land use/land cover polygons ([0xffffffe2][0xffffff80][0xffffff98]target geometry[0xffffffe2][0xffffff80][0xffffff99]). The downscaling method can be described as a [0xffffffe2][0xffffff80][0xffffff98]smart[0xffffffe2][0xffffff80][0xffffff99] areal interpolation which combined land use/land cover information from Urban Atlas, building densities from the European Settlement Map and census data. This complementary data to the Copernicus Urban Atlas product have been produced by the JRC and DG REGIO.\""],"items_count_year":["1"],"items_count_cluster_id":["1"],"items_count_http://www.w3.org/1999/02/22-rdf-syntax-ns#type":["1"],"items_count_http://www.eea.europa.eu/portal_types#topic":["1"],"items_count_http://www.w3.org/1999/02/22-rdf-syntax-ns#about":["1"],"cluster_id":["\"eea_copernicus\""],"http://www.eea.europa.eu/ontologies.rdf#hasWorkflowState":["\"published\""],"http://www.eea.europa.eu/ontologies.rdf#fleschReadingEaseScore":[],"http://purl.org/dc/terms/modified":["\"2017-11-30T11:26:31Z\""],"items_count_http://www.eea.europa.eu/portal_types#dataProvider":["2"],"items_count_cluster_name":["1"],"items_count_http://purl.org/dc/terms/title":["1"],"cluster_name":["\"Copernicus Land "
+2018-02-20 15:11:52 DEBUG InternalIODispatch:94 - http-outgoing-0 [ACTIVE] Output ready
+2018-02-20 15:11:52 DEBUG MainClientExec:258 - [exchange: 6] produce content
+2018-02-20 15:11:52 DEBUG MainClientExec:273 - [exchange: 6] Request completed
+2018-02-20 15:11:52 DEBUG InternalIODispatch:98 - http-outgoing-0 [ACTIVE] [content length: 9460; pos: 9460; completed: true]
+2018-02-20 15:11:52 DEBUG ManagedNHttpClientConnectionImpl:222 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: 1268 bytes written
+2018-02-20 15:11:52 DEBUG wire:54 - http-outgoing-0 >> "at EEA (land.copernicus.eu)\""],"items_count_http://purl.org/dc/terms/subject":["2"],"http://www.eea.europa.eu/ontologies.rdf#readingTime":[],"items_count_http://www.eea.europa.eu/ontologies.rdf#fleschReadingEaseScore":["0"],"label":["\"Population estimates by Urban Atlas polygon\""],"items_count_description":["1"],"http://purl.org/dc/terms/format":["\"text/html\"","\"application/octec-stream (Esri shapefile: .shp .shx .dbf)\""],"places":["\"Netherlands\"","\"United Kingdom\"","\"Poland\"","\"Cyprus\"","\"Hungary\"","\"Spain\"","\"Luxembourg\"","\"Iceland\"","\"Denmark\"","\"Bulgaria\"","\"Belgium\"","\"Finland\"","\"Germany\"","\"Norway\"","\"Estonia\"","\"Romania\"","\"Liechtenstein\"","\"Ireland\"","\"Czech Republic\"","\"Slovakia\"","\"Slovenia\"","\"Austria\"","\"Sweden\"","\"Italy\"","\"Greece\"","\"France\"","\"Latvia\"","\"Malta\"","\"Lithuania\"","\"Switzerland\"","\"Portugal\""],"http://purl.org/dc/terms/issued":["\"2017-01-12T11:30:00Z\""],"items_count_http://purl.org/dc/terms/issued":["1"],"http://purl.org/dc/terms/references":[],"items_count_http://purl.org/dc/terms/format":["2"],"http://purl.org/dc/terms/title":["\"Population estimates by Urban Atlas polygon\""],"items_count_http://www.eea.europa.eu/ontologies.rdf#readingTime":["0"]}[\n]"
+2018-02-20 15:11:52 DEBUG InternalIODispatch:71 - http-outgoing-0 [ACTIVE] Request ready
+2018-02-20 15:11:52 DEBUG ManagedNHttpClientConnectionImpl:116 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:w]: Event cleared [w]
+2018-02-20 15:11:52 DEBUG ManagedNHttpClientConnectionImpl:206 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: 438 bytes read
+2018-02-20 15:11:52 DEBUG wire:54 - http-outgoing-0 << "HTTP/1.1 200 OK[\r][\n]"
+2018-02-20 15:11:52 DEBUG wire:54 - http-outgoing-0 << "X-RR-User: user_rw[\r][\n]"
+2018-02-20 15:11:52 DEBUG wire:54 - http-outgoing-0 << "content-type: application/json; charset=UTF-8[\r][\n]"
+2018-02-20 15:11:52 DEBUG wire:54 - http-outgoing-0 << "content-length: 331[\r][\n]"
+2018-02-20 15:11:52 DEBUG wire:54 - http-outgoing-0 << "[\r][\n]"
+2018-02-20 15:11:52 DEBUG wire:68 - http-outgoing-0 << "{"took":134,"errors":false,"items":[{"index":{"_index":"global-search","_type":"resource","_id":"http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons","_version":1,"result":"created","_shards":{"total":2,"successful":2,"failed":0},"_seq_no":0,"_primary_term":1,"status":201}}]}"
+2018-02-20 15:11:52 DEBUG headers:125 - http-outgoing-0 << HTTP/1.1 200 OK
+2018-02-20 15:11:52 DEBUG headers:128 - http-outgoing-0 << X-RR-User: user_rw
+2018-02-20 15:11:52 DEBUG headers:128 - http-outgoing-0 << content-type: application/json; charset=UTF-8
+2018-02-20 15:11:52 DEBUG headers:128 - http-outgoing-0 << content-length: 331
+2018-02-20 15:11:52 DEBUG InternalIODispatch:106 - http-outgoing-0 [ACTIVE(331)] Response received
+2018-02-20 15:11:52 DEBUG MainClientExec:286 - [exchange: 6] Response received HTTP/1.1 200 OK
+2018-02-20 15:11:52 DEBUG MainClientExec:86 - Authentication succeeded
+2018-02-20 15:11:52 DEBUG InternalIODispatch:81 - http-outgoing-0 [ACTIVE(331)] Input ready
+2018-02-20 15:11:52 DEBUG MainClientExec:325 - [exchange: 6] Consume content
+2018-02-20 15:11:52 DEBUG InternalHttpAsyncClient:292 - [exchange: 6] Connection can be kept alive indefinitely
+2018-02-20 15:11:52 DEBUG MainClientExec:385 - [exchange: 6] Response processed
+2018-02-20 15:11:52 DEBUG InternalHttpAsyncClient:233 - [exchange: 6] releasing connection
+2018-02-20 15:11:52 DEBUG ManagedNHttpClientConnectionImpl:190 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Remove attribute http.nio.exchange-handler
+2018-02-20 15:11:52 DEBUG PoolingNHttpClientConnectionManager:285 - Releasing connection: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 0; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:52 DEBUG PoolingNHttpClientConnectionManager:299 - Connection [id: http-outgoing-0][route: {}->http://localhost:9200] can be kept alive indefinitely
+2018-02-20 15:11:52 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set timeout 0
+2018-02-20 15:11:52 DEBUG PoolingNHttpClientConnectionManager:305 - Connection released: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 1; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:52 DEBUG RestClient:59 - request [POST http://localhost:9200/_bulk?timeout=1m] returned [HTTP/1.1 200 OK]
+2018-02-20 15:11:52 DEBUG InternalIODispatch:85 - http-outgoing-0 [ACTIVE] [content length: 331; pos: 331; completed: true]
+2018-02-20 15:11:52 INFO  app:1536 - Indexed 1 documents on global-search/resource in 0.22 seconds
+2018-02-20 15:11:57 INFO  app:1058 - Finished synchronisation: Deleted 0, Updated 1/1
+2018-02-20 15:11:57 INFO  app:1061 - Uris updated with success:
+2018-02-20 15:11:57 INFO  app:1064 - http://land.copernicus.eu/local/urban-atlas/ancillary-data-on-population-estimates-by-urban-atlas-polygons
+2018-02-20 15:11:57 INFO  app:612 - Ended synchronization from [1970-01-01T00:00:00], for endpoint [http://semantic.eea.europa.eu/sparql],index name [global-search], type name [resource] with status Success
+2018-02-20 15:11:57 DEBUG MainClientExec:121 - [exchange: 7] start execution
+2018-02-20 15:11:57 DEBUG RequestAddCookies:122 - CookieSpec selected: default
+2018-02-20 15:11:57 DEBUG RequestAuthCache:130 - Re-using cached 'basic' auth scheme for http://localhost:9200
+2018-02-20 15:11:57 DEBUG InternalHttpAsyncClient:352 - [exchange: 7] Request connection for {}->http://localhost:9200
+2018-02-20 15:11:57 DEBUG PoolingNHttpClientConnectionManager:250 - Connection request: [route: {}->http://localhost:9200][total kept alive: 1; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set timeout 0
+2018-02-20 15:11:57 DEBUG PoolingNHttpClientConnectionManager:491 - Connection leased: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 0; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:57 DEBUG InternalHttpAsyncClient:307 - [exchange: 7] Connection allocated: CPoolProxy{http-outgoing-0 [ACTIVE]}
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:182 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set attribute http.nio.exchange-handler
+2018-02-20 15:11:57 DEBUG InternalIODispatch:71 - http-outgoing-0 [ACTIVE] Request ready
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:108 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: Event set [w]
+2018-02-20 15:11:57 DEBUG InternalHttpAsyncClient:170 - Connection route already established
+2018-02-20 15:11:57 DEBUG MainClientExec:215 - [exchange: 7] Attempt 1 to execute request
+2018-02-20 15:11:57 DEBUG MainClientExec:222 - Target auth state: CHALLENGED
+2018-02-20 15:11:57 DEBUG MainClientExec:229 - Proxy auth state: UNCHALLENGED
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: Set timeout 30000
+2018-02-20 15:11:57 DEBUG headers:136 - http-outgoing-0 >> POST /_bulk?timeout=1m HTTP/1.1
+2018-02-20 15:11:57 DEBUG headers:139 - http-outgoing-0 >> Content-Length: 139
+2018-02-20 15:11:57 DEBUG headers:139 - http-outgoing-0 >> Content-Type: application/json
+2018-02-20 15:11:57 DEBUG headers:139 - http-outgoing-0 >> Host: localhost:9200
+2018-02-20 15:11:57 DEBUG headers:139 - http-outgoing-0 >> Connection: Keep-Alive
+2018-02-20 15:11:57 DEBUG headers:139 - http-outgoing-0 >> User-Agent: Apache-HttpAsyncClient/4.1.2 (Java/1.8.0_161)
+2018-02-20 15:11:57 DEBUG headers:139 - http-outgoing-0 >> Authorization: Basic dXNlcl9ydzpyd19wYXNz
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:108 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: Event set [w]
+2018-02-20 15:11:57 DEBUG InternalIODispatch:94 - http-outgoing-0 [ACTIVE] Output ready
+2018-02-20 15:11:57 DEBUG MainClientExec:258 - [exchange: 7] produce content
+2018-02-20 15:11:57 DEBUG MainClientExec:273 - [exchange: 7] Request completed
+2018-02-20 15:11:57 DEBUG InternalIODispatch:98 - http-outgoing-0 [ACTIVE] [content length: 139; pos: 139; completed: true]
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:222 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: 375 bytes written
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 >> "POST /_bulk?timeout=1m HTTP/1.1[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 >> "Content-Length: 139[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 >> "Content-Type: application/json[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 >> "Host: localhost:9200[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 >> "Connection: Keep-Alive[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 >> "User-Agent: Apache-HttpAsyncClient/4.1.2 (Java/1.8.0_161)[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 >> "Authorization: Basic dXNlcl9ydzpyd19wYXNz[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 >> "[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 >> "{"index":{"_index":"global-search_status","_type":"last_update","_id":"eea_copernicus"}}[\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 >> "{"updated_at":1519131870,"name":"eea_copernicus"}[\n]"
+2018-02-20 15:11:57 DEBUG InternalIODispatch:71 - http-outgoing-0 [ACTIVE] Request ready
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:116 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:w]: Event cleared [w]
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:206 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: 355 bytes read
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 << "HTTP/1.1 200 OK[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 << "X-RR-User: user_rw[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 << "content-type: application/json; charset=UTF-8[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 << "content-length: 248[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 << "[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:68 - http-outgoing-0 << "{"took":15,"errors":false,"items":[{"index":{"_index":"global-search_status","_type":"last_update","_id":"eea_copernicus","_version":2,"result":"updated","_shards":{"total":2,"successful":2,"failed":0},"_seq_no":1,"_primary_term":1,"status":200}}]}"
+2018-02-20 15:11:57 DEBUG headers:125 - http-outgoing-0 << HTTP/1.1 200 OK
+2018-02-20 15:11:57 DEBUG headers:128 - http-outgoing-0 << X-RR-User: user_rw
+2018-02-20 15:11:57 DEBUG headers:128 - http-outgoing-0 << content-type: application/json; charset=UTF-8
+2018-02-20 15:11:57 DEBUG headers:128 - http-outgoing-0 << content-length: 248
+2018-02-20 15:11:57 DEBUG InternalIODispatch:106 - http-outgoing-0 [ACTIVE(248)] Response received
+2018-02-20 15:11:57 DEBUG MainClientExec:286 - [exchange: 7] Response received HTTP/1.1 200 OK
+2018-02-20 15:11:57 DEBUG MainClientExec:86 - Authentication succeeded
+2018-02-20 15:11:57 DEBUG InternalIODispatch:81 - http-outgoing-0 [ACTIVE(248)] Input ready
+2018-02-20 15:11:57 DEBUG MainClientExec:325 - [exchange: 7] Consume content
+2018-02-20 15:11:57 DEBUG InternalHttpAsyncClient:292 - [exchange: 7] Connection can be kept alive indefinitely
+2018-02-20 15:11:57 DEBUG MainClientExec:385 - [exchange: 7] Response processed
+2018-02-20 15:11:57 DEBUG InternalHttpAsyncClient:233 - [exchange: 7] releasing connection
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:190 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Remove attribute http.nio.exchange-handler
+2018-02-20 15:11:57 DEBUG PoolingNHttpClientConnectionManager:285 - Releasing connection: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 0; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:57 DEBUG PoolingNHttpClientConnectionManager:299 - Connection [id: http-outgoing-0][route: {}->http://localhost:9200] can be kept alive indefinitely
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set timeout 0
+2018-02-20 15:11:57 DEBUG PoolingNHttpClientConnectionManager:305 - Connection released: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 1; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:57 DEBUG RestClient:59 - request [POST http://localhost:9200/_bulk?timeout=1m] returned [HTTP/1.1 200 OK]
+2018-02-20 15:11:57 DEBUG InternalIODispatch:85 - http-outgoing-0 [ACTIVE] [content length: 248; pos: 248; completed: true]
+2018-02-20 15:11:57 DEBUG app:519 - bulkR: [global-search_status,last_update,eea_copernicus]
+2018-02-20 15:11:57 DEBUG MainClientExec:121 - [exchange: 8] start execution
+2018-02-20 15:11:57 DEBUG RequestAddCookies:122 - CookieSpec selected: default
+2018-02-20 15:11:57 DEBUG RequestAuthCache:130 - Re-using cached 'basic' auth scheme for http://localhost:9200
+2018-02-20 15:11:57 DEBUG InternalHttpAsyncClient:352 - [exchange: 8] Request connection for {}->http://localhost:9200
+2018-02-20 15:11:57 DEBUG PoolingNHttpClientConnectionManager:250 - Connection request: [route: {}->http://localhost:9200][total kept alive: 1; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set timeout 0
+2018-02-20 15:11:57 DEBUG PoolingNHttpClientConnectionManager:491 - Connection leased: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 0; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:57 DEBUG InternalHttpAsyncClient:307 - [exchange: 8] Connection allocated: CPoolProxy{http-outgoing-0 [ACTIVE]}
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:182 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set attribute http.nio.exchange-handler
+2018-02-20 15:11:57 DEBUG InternalIODispatch:71 - http-outgoing-0 [ACTIVE] Request ready
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:108 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: Event set [w]
+2018-02-20 15:11:57 DEBUG InternalHttpAsyncClient:170 - Connection route already established
+2018-02-20 15:11:57 DEBUG MainClientExec:215 - [exchange: 8] Attempt 1 to execute request
+2018-02-20 15:11:57 DEBUG MainClientExec:222 - Target auth state: CHALLENGED
+2018-02-20 15:11:57 DEBUG MainClientExec:229 - Proxy auth state: UNCHALLENGED
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: Set timeout 30000
+2018-02-20 15:11:57 DEBUG headers:136 - http-outgoing-0 >> DELETE /eeariver/river/eea_copernicus?timeout=1m HTTP/1.1
+2018-02-20 15:11:57 DEBUG headers:139 - http-outgoing-0 >> Content-Length: 0
+2018-02-20 15:11:57 DEBUG headers:139 - http-outgoing-0 >> Host: localhost:9200
+2018-02-20 15:11:57 DEBUG headers:139 - http-outgoing-0 >> Connection: Keep-Alive
+2018-02-20 15:11:57 DEBUG headers:139 - http-outgoing-0 >> User-Agent: Apache-HttpAsyncClient/4.1.2 (Java/1.8.0_161)
+2018-02-20 15:11:57 DEBUG headers:139 - http-outgoing-0 >> Authorization: Basic dXNlcl9ydzpyd19wYXNz
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:108 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: Event set [w]
+2018-02-20 15:11:57 DEBUG MainClientExec:273 - [exchange: 8] Request completed
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:222 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][rw:w]: 228 bytes written
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 >> "DELETE /eeariver/river/eea_copernicus?timeout=1m HTTP/1.1[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 >> "Content-Length: 0[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 >> "Host: localhost:9200[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 >> "Connection: Keep-Alive[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 >> "User-Agent: Apache-HttpAsyncClient/4.1.2 (Java/1.8.0_161)[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 >> "Authorization: Basic dXNlcl9ydzpyd19wYXNz[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 >> "[\r][\n]"
+2018-02-20 15:11:57 DEBUG InternalIODispatch:71 - http-outgoing-0 [ACTIVE] Request ready
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:116 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:w]: Event cleared [w]
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:206 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: 277 bytes read
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 << "HTTP/1.1 200 OK[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 << "X-RR-User: user_rw[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 << "content-type: application/json; charset=UTF-8[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 << "content-length: 170[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:54 - http-outgoing-0 << "[\r][\n]"
+2018-02-20 15:11:57 DEBUG wire:68 - http-outgoing-0 << "{"_index":"eeariver","_type":"river","_id":"eea_copernicus","_version":3,"result":"deleted","_shards":{"total":2,"successful":2,"failed":0},"_seq_no":2,"_primary_term":1}"
+2018-02-20 15:11:57 DEBUG headers:125 - http-outgoing-0 << HTTP/1.1 200 OK
+2018-02-20 15:11:57 DEBUG headers:128 - http-outgoing-0 << X-RR-User: user_rw
+2018-02-20 15:11:57 DEBUG headers:128 - http-outgoing-0 << content-type: application/json; charset=UTF-8
+2018-02-20 15:11:57 DEBUG headers:128 - http-outgoing-0 << content-length: 170
+2018-02-20 15:11:57 DEBUG InternalIODispatch:106 - http-outgoing-0 [ACTIVE(170)] Response received
+2018-02-20 15:11:57 DEBUG MainClientExec:286 - [exchange: 8] Response received HTTP/1.1 200 OK
+2018-02-20 15:11:57 DEBUG MainClientExec:86 - Authentication succeeded
+2018-02-20 15:11:57 DEBUG InternalIODispatch:81 - http-outgoing-0 [ACTIVE(170)] Input ready
+2018-02-20 15:11:57 DEBUG MainClientExec:325 - [exchange: 8] Consume content
+2018-02-20 15:11:57 DEBUG InternalHttpAsyncClient:292 - [exchange: 8] Connection can be kept alive indefinitely
+2018-02-20 15:11:57 DEBUG MainClientExec:385 - [exchange: 8] Response processed
+2018-02-20 15:11:57 DEBUG InternalHttpAsyncClient:233 - [exchange: 8] releasing connection
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:190 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Remove attribute http.nio.exchange-handler
+2018-02-20 15:11:57 DEBUG PoolingNHttpClientConnectionManager:285 - Releasing connection: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 0; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:57 DEBUG PoolingNHttpClientConnectionManager:299 - Connection [id: http-outgoing-0][route: {}->http://localhost:9200] can be kept alive indefinitely
+2018-02-20 15:11:57 DEBUG ManagedNHttpClientConnectionImpl:154 - http-outgoing-0 127.0.0.1:39322<->127.0.0.1:9200[ACTIVE][r:r]: Set timeout 0
+2018-02-20 15:11:57 DEBUG PoolingNHttpClientConnectionManager:305 - Connection released: [id: http-outgoing-0][route: {}->http://localhost:9200][total kept alive: 1; route allocated: 1 of 10; total allocated: 1 of 30]
+2018-02-20 15:11:57 DEBUG RestClient:59 - request [DELETE http://localhost:9200/eeariver/river/eea_copernicus?timeout=1m] returned [HTTP/1.1 200 OK]
+2018-02-20 15:11:57 INFO  app:588 - Deleted river index entry: eeariver/eea_copernicus
+2018-02-20 15:11:57 DEBUG InternalIODispatch:85 - http-outgoing-0 [ACTIVE] [content length: 170; pos: 170; completed: true]

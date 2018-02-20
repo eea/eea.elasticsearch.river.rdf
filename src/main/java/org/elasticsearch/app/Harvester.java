@@ -6,6 +6,7 @@ import com.hp.hpl.jena.graph.NodeFactory;
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.*;
+import com.hp.hpl.jena.sparql.ARQException;
 import com.hp.hpl.jena.sparql.engine.http.QueryExceptionHTTP;
 import com.hp.hpl.jena.sparql.util.Closure;
 import com.hp.hpl.jena.tdb.store.Hash;
@@ -963,9 +964,14 @@ public class Harvester implements Runnable {
 					Query query = QueryFactory.create(syncQuery);
 					QueryExecution qExec = QueryExecutionFactory.sparqlService(
 								rdfEndpoint, query);
+
 					try {
 						Model constructModel = ModelFactory.createDefaultModel();
-						qExec.execConstruct(constructModel);
+						try {
+							qExec.execConstruct(constructModel);
+						} catch (ARQException exc ){
+							logger.error("com.hp.hpl.jena.sparql.ARQException: [{}]", exc);
+						}
 
 						//TODO: prepareBulk
 						/* BulkRequestBuilder bulkRequest = client.prepareBulk();*/
@@ -1004,6 +1010,7 @@ public class Harvester implements Runnable {
 							if (e.getMessage() == "Future got interrupted"){
 								return false;
 							}
+
 						} finally {
 							qExec.close();
 						}
