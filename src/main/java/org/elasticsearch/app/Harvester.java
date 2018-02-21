@@ -1,15 +1,16 @@
 package  org.elasticsearch.app;
 
-import com.hp.hpl.jena.graph.Graph;
-import com.hp.hpl.jena.graph.Node;
-import com.hp.hpl.jena.graph.NodeFactory;
-import com.hp.hpl.jena.graph.Triple;
-import com.hp.hpl.jena.query.*;
-import com.hp.hpl.jena.rdf.model.*;
-import com.hp.hpl.jena.sparql.ARQException;
-import com.hp.hpl.jena.sparql.engine.http.QueryExceptionHTTP;
-import com.hp.hpl.jena.sparql.util.Closure;
-import com.hp.hpl.jena.tdb.store.Hash;
+import org.apache.jena.graph.Graph;
+import org.apache.jena.graph.Node;
+import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.graph.Triple;
+import org.apache.jena.graph.*;
+import org.apache.jena.query.*;
+import org.apache.jena.rdf.model.*;
+import org.apache.jena.sparql.ARQException;
+import org.apache.jena.sparql.engine.http.QueryExceptionHTTP;
+import org.apache.jena.sparql.util.Closure;
+import org.apache.jena.tdb.store.Hash;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.RiotException;
@@ -191,7 +192,6 @@ public class Harvester implements Runnable {
 		} catch (IllegalArgumentException e) {
 			//TODO: LOG - DONE
 			logger.info("Bad query type: {}", queryType);
-
 			/* River process can't continue */
 			throw e;
 		}
@@ -493,7 +493,7 @@ public class Harvester implements Runnable {
 	private void setLastUpdate(Date date) {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 		BulkRequest bulkRequest = new BulkRequest();
-
+		//TODO: bulkRequest - DONE
 		try {
 			String statusIndex = indexName + "_status";
 
@@ -578,6 +578,7 @@ public class Harvester implements Runnable {
 		//TODO: async ?
 		if (success) {
 			setLastUpdate(new Date(currentTime));
+			success = false;
 		}
 
 		// deleting river cluster from riverIndex
