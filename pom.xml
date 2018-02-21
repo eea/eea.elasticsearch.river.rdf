@@ -166,9 +166,15 @@
       <version>24.0-jre</version>
     </dependency>
 
-    <dependency>
+    <!--<dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-api</artifactId>
+      <version>2.10.0</version>
+    </dependency>-->
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-1.2-api</artifactId>
       <version>2.10.0</version>
     </dependency>
 
@@ -179,11 +185,18 @@
     </dependency>
 
     <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-bom</artifactId>
+      <version>2.10.0</version>
+      <scope>import</scope>
+      <type>pom</type>
+    </dependency>
+
+    <dependency>
       <groupId>org.apache.jena</groupId>
       <artifactId>apache-jena-libs</artifactId>
       <type>pom</type>
       <version>${jena.version}</version>
-      <!--<version>3.6.0</version>-->
     </dependency>
 
     <dependency>

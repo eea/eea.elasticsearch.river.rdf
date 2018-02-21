@@ -15,7 +15,7 @@ import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.RiotException;
 
-import org.apache.log4j.Logger;
+
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.ActionListener;
