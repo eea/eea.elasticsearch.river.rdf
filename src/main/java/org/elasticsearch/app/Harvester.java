@@ -4,13 +4,16 @@ import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.graph.Triple;
-import org.apache.jena.graph.*;
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.*;
+
 import org.apache.jena.sparql.ARQException;
 import org.apache.jena.sparql.engine.http.QueryExceptionHTTP;
 import org.apache.jena.sparql.util.Closure;
 import org.apache.jena.tdb.store.Hash;
+
+import org.apache.logging.log4j.Logger;
+
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.RiotException;

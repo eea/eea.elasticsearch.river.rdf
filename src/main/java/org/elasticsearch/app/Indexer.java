@@ -34,7 +34,7 @@ import java.net.InetAddress;
 import java.util.*;
 
 public class Indexer {
-    private static final ESLogger logger = Loggers.getLogger(Harvester.class);
+    private static final ESLogger logger = Loggers.getLogger(Indexer.class);
     private ArrayList<River> rivers = new ArrayList<>();
     private final static String USER = "user_rw";
     private final static String PASS = "rw_pass";
