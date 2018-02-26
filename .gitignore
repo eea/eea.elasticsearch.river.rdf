@@ -9,5 +9,5 @@ pom.xml.releaseBackup
 .classpath
 .project
 
-\logs
 \.idea/
+\IGNORE/
