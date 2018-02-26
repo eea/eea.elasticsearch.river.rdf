@@ -45,6 +45,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import static org.apache.jena.query.Syntax.syntaxARQ;
+import static org.apache.jena.query.Syntax.syntaxSPARQL_10;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 /**
@@ -643,6 +645,7 @@ public class Harvester implements Runnable {
 		//TODO: async?
 		QueryExecution qExec = QueryExecutionFactory.sparqlService(
 				rdfEndpoint, query);
+
 		try {
 			ResultSet results = qExec.execSelect();
 
