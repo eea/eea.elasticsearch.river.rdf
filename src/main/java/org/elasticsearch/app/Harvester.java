@@ -37,7 +37,6 @@ import org.elasticsearch.client.RestHighLevelClient;
 
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.river.eea_rdf.settings.EEASettings;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 

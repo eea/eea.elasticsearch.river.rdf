@@ -6,9 +6,8 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 
-import org.elasticsearch.river.*;
 import org.elasticsearch.app.Harvester;
-import org.elasticsearch.river.eea_rdf.settings.EEASettings;
+import org.elasticsearch.app.EEASettings;
 
 import java.util.Map;
 import java.util.List;

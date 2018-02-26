@@ -21,12 +21,10 @@ import org.elasticsearch.common.settings.Settings.Builder;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
-import org.elasticsearch.river.eea_rdf.settings.EEASettings;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.*;
 
 public class Indexer {
