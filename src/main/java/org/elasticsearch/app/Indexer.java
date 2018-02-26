@@ -76,6 +76,12 @@ public class Indexer {
             }
         }
 
+        logger.info("Username:" + USER);
+        logger.info("Password: " + PASS);
+        logger.info("HOST: " + HOST);
+        logger.info("PORT: " + PORT );
+        logger.info("RIVER INDEX: " + RIVER_INDEX);
+        
         River river = indexer.rivers.get(0);
 
         indexer.harvester = new Harvester();
