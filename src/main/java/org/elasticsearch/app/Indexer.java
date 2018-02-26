@@ -64,15 +64,15 @@ public class Indexer {
     public static void main(String[] args) throws IOException {
         Indexer indexer = new Indexer();
 
-        if( MULTITHREADING_ACTIVE ){
+        /*if( MULTITHREADING_ACTIVE ){
             for(River river : indexer.rivers){
                 indexer.harvester = new Harvester();
                 indexer.harvester.client(client).riverName( river.riverName())
-                    .riverIndex(RIVER_INDEX);
+                    .riverIndex(RIVER_INDEX).indexer(indexer);
                 indexer.addHarvesterSettings(river.getRiverSettings());
                 indexer.start();
             }
-        }
+        }*/
 
         logger.info("Username:" + USER);
         logger.info("Password: " + PASS);
@@ -83,7 +83,11 @@ public class Indexer {
         River river = indexer.rivers.get(0);
 
         indexer.harvester = new Harvester();
-        indexer.harvester.client(client).riverName( river.riverName() ).riverIndex(RIVER_INDEX);
+        indexer.harvester.client(client)
+                .riverName( river.riverName() )
+                .riverIndex(RIVER_INDEX)
+                .indexer(indexer);
+
         indexer.addHarvesterSettings(river.getRiverSettings());
         indexer.start();
 
@@ -288,12 +292,12 @@ public class Indexer {
                 .newThread(harvester);
 
         harvesterThread.start();
+
         logger.info( "Inside thread : " + harvesterThread.getName());
         harvesterThread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
                 logger.error("Thread FAILED: [{}] " , (Object) e.getStackTrace());
-
             }
         });
     }

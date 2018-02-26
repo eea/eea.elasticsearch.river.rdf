@@ -63,6 +63,8 @@ public class Harvester implements Runnable {
 	//TODO: LOGGER - DONE
     private final ESLogger logger = Loggers.getLogger(Harvester.class);
 
+	private Indexer indexer;
+
 	private String rdfEndpoint = "";
 
 	private String rdfClusterId = "";
@@ -122,8 +124,11 @@ public class Harvester implements Runnable {
 
 	public void close() {
 		closed = true;
-
 	}
+
+	public void indexer(Indexer indexer){
+	    this.indexer = indexer;
+    }
 
 	private HashMap<String, String> uriLabelCache = new HashMap<String, String>();
 
@@ -543,47 +548,52 @@ public class Harvester implements Runnable {
 	}
 
 	public void run() {
-		long currentTime = System.currentTimeMillis();
-		boolean success = false;
+	    while(!this.closed){
+            long currentTime = System.currentTimeMillis();
+            boolean success = false;
 
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-		Long ts = Long.valueOf(0);
-		try {
-			 ts = sdf.parse(startTime).getTime() / 1000;
-		} catch (ParseException e) {
-			e.printStackTrace();
-		}
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+            Long ts = Long.valueOf(0);
+            try {
+                ts = sdf.parse(startTime).getTime() / 1000;
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
 
-		if ( startTime.isEmpty() ) startTime = getLastUpdate();
+            if ( startTime.isEmpty() ) startTime = getLastUpdate();
 
-		if (indexAll)
-			success = runIndexAll();
-		else
-			success = runSync();
+            if (indexAll)
+                success = runIndexAll();
+            else
+                success = runSync();
 
-		//TODO: remove
-		//success = true;
+            //TODO: remove
+            //success = true;
 
-		//TODO: async ?
-		if (success) {
-			setLastUpdate(new Date(currentTime));
-			success = false;
-		}
+            //TODO: async ?
+            if (success) {
+                setLastUpdate(new Date(currentTime));
+                success = false;
+            }
 
-		// deleting river cluster from riverIndex
-		DeleteRequest deleteRequest = new DeleteRequest(riverIndex, "river", riverName);
-		client.deleteAsync(deleteRequest, new ActionListener<DeleteResponse>() {
-			@Override
-			public void onResponse(DeleteResponse deleteResponse) {
-				logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
-			}
+            // deleting river cluster from riverIndex
+            DeleteRequest deleteRequest = new DeleteRequest(riverIndex, "river", riverName);
 
-			@Override
-			public void onFailure(Exception e) {
-				logger.error("Could not delete river :" +  riverIndex + "/" +  riverName);
-				logger.error("Reason: [{}]", e.getMessage());
-			}
-		});
+            client.deleteAsync(deleteRequest, new ActionListener<DeleteResponse>() {
+                @Override
+                public void onResponse(DeleteResponse deleteResponse) {
+                    logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
+                    indexer.close();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    logger.error("Could not delete river :" +  riverIndex + "/" +  riverName);
+                    logger.error("Reason: [{}]", e.getMessage());
+                }
+            });
+        }
+
 		/* Any code after this step would not be executed as
 		   the master will interrupt the harvester thread after
 		   deleting the _river.
@@ -603,6 +613,7 @@ public class Harvester implements Runnable {
 					"index name [{}], type name [{}] with status {}",
 					startTime, rdfEndpoint, indexName, typeName,
 					success ? "Success": "Failure");
+
 		return success;
 	}
 
