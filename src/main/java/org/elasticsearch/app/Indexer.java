@@ -89,7 +89,23 @@ public class Indexer {
                 .indexer(indexer);
 
         indexer.addHarvesterSettings(river.getRiverSettings());
-        indexer.start();
+        //indexer.start();
+
+        indexer.harvesterThread = EsExecutors.daemonThreadFactory(
+                Builder.EMPTY_SETTINGS,
+                "eea_rdf_river(" + indexer.harvester.getRiverName() +	")")
+
+                .newThread(indexer.harvester);
+
+        indexer.harvesterThread.start();
+
+        logger.info( "Inside thread : " + indexer.harvesterThread.getName());
+        indexer.harvesterThread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                logger.error("Thread FAILED: [{}] " , (Object) e.getStackTrace());
+            }
+        });
 
         //InetAddress addr = InetAddress.getByName("127.0.0.1");
 
@@ -286,20 +302,7 @@ public class Indexer {
     }
 
     public void start() {
-        harvesterThread = EsExecutors.daemonThreadFactory(
-                Builder.EMPTY_SETTINGS,
-                "eea_rdf_river(" + harvester.getRiverName() +	")")
-                .newThread(harvester);
 
-        harvesterThread.start();
-
-        logger.info( "Inside thread : " + harvesterThread.getName());
-        harvesterThread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread t, Throwable e) {
-                logger.error("Thread FAILED: [{}] " , (Object) e.getStackTrace());
-            }
-        });
     }
 
     public void close() {
