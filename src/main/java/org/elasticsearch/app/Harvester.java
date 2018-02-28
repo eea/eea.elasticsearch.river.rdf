@@ -5,15 +5,14 @@ import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.query.*;
-import org.apache.jena.rdf.model.*;
 
+import org.apache.jena.rdf.model.*;
 import org.apache.jena.sparql.ARQException;
 import org.apache.jena.sparql.engine.http.QueryExceptionHTTP;
 
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.RiotException;
-
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
@@ -33,6 +32,7 @@ import org.elasticsearch.action.support.replication.ReplicationResponse;
 import org.elasticsearch.app.logging.ESLogger;
 
 import org.elasticsearch.app.logging.Loggers;
+
 import org.elasticsearch.client.RestHighLevelClient;
 
 import org.elasticsearch.common.unit.TimeValue;
@@ -45,8 +45,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import static org.apache.jena.query.Syntax.syntaxARQ;
-import static org.apache.jena.query.Syntax.syntaxSPARQL_10;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 /**
@@ -965,12 +963,12 @@ public class Harvester implements Runnable {
 				logger.info(syncQuery);
 
 				try {
-					Query query = QueryFactory.create(syncQuery);
-					QueryExecution qExec = QueryExecutionFactory.sparqlService(
-								rdfEndpoint, query);
-
+					Query query = QueryFactory.create(syncQuery );
+					QueryExecution qExec = QueryExecutionFactory.sparqlService(rdfEndpoint, query);
+					qExec.setTimeout(-1);
 					try {
-						Model constructModel = ModelFactory.createDefaultModel();
+						Model constructModel =  ModelFactory.createDefaultModel();
+
 						try {
 							qExec.execConstruct(constructModel);
 						} catch (ARQException exc ){
@@ -994,7 +992,7 @@ public class Harvester implements Runnable {
 							urisUpdatedWithSuccess.add(uri);
 						}
 
-					} catch (Exception e) {
+					} catch (Exception e){
 						//TODO: LOG - DONE
 						logger.error("Error while querying for modified content. {}", e.getLocalizedMessage());
 						e.printStackTrace();
