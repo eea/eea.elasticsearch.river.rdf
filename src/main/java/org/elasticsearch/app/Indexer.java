@@ -17,6 +17,7 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.Settings.Builder;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
@@ -62,9 +63,21 @@ public class Indexer {
     );
 
     public static void main(String[] args) throws IOException {
+
         Indexer indexer = new Indexer();
 
-        /*if( MULTITHREADING_ACTIVE ){
+        logger.info("Username:" + USER);
+        logger.info("Password: " + PASS);
+        logger.info("HOST: " + HOST);
+        logger.info("PORT: " + PORT );
+        logger.info("RIVER INDEX: " + RIVER_INDEX);
+
+        if(indexer.rivers.size() == 0){
+            logger.info("No rivers added in " + RIVER_INDEX + " index.Stopping...");
+            indexer.close();
+        }
+
+         /*if( MULTITHREADING_ACTIVE ){
             for(River river : indexer.rivers){
                 indexer.harvester = new Harvester();
                 indexer.harvester.client(client).riverName( river.riverName())
@@ -74,12 +87,7 @@ public class Indexer {
             }
         }*/
 
-        logger.info("Username:" + USER);
-        logger.info("Password: " + PASS);
-        logger.info("HOST: " + HOST);
-        logger.info("PORT: " + PORT );
-        logger.info("RIVER INDEX: " + RIVER_INDEX);
-        
+        //TODO: loop for all rivers
         River river = indexer.rivers.get(0);
 
         indexer.harvester = new Harvester();
@@ -91,6 +99,8 @@ public class Indexer {
         indexer.addHarvesterSettings(river.getRiverSettings());
         //indexer.start();
 
+       //Settings settings = Settings.builder().
+
         indexer.harvesterThread = EsExecutors.daemonThreadFactory(
                 Builder.EMPTY_SETTINGS,
                 "eea_rdf_river(" + indexer.harvester.getRiverName() +	")")
@@ -99,7 +109,13 @@ public class Indexer {
 
         indexer.harvesterThread.start();
 
-        logger.info( "Inside thread : " + indexer.harvesterThread.getName());
+        try {
+            indexer.harvesterThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        logger.info( "Finished indexing in: " + indexer.harvesterThread.getName());
         indexer.harvesterThread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
@@ -121,10 +137,15 @@ public class Indexer {
                 new UsernamePasswordCredentials(USER, PASS));
 
         getAllRivers();
+    }
+
+    public void getRivers(){
+        this.getAllRivers();
 
     }
 
     private void getAllRivers() {
+        this.rivers.clear();
         ArrayList< SearchHit > searchHitsA = new ArrayList<>();
 
         final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(1L));
@@ -184,8 +205,6 @@ public class Indexer {
         }
 
         Map<String, Object> rdfSettings = extractSettings(settings, "eeaRDF");
-
-
 
         harvester.rdfIndexType(XContentMapValues.nodeStringValue(
                 rdfSettings.get("indexType"), "full"))
@@ -306,9 +325,21 @@ public class Indexer {
     }
 
     public void close() {
-        harvester.log("Closing EEA RDF river [" + harvester.getRiverName() + "]");
-        harvester.close();
-        harvesterThread.interrupt();
+        if(harvester != null && harvesterThread != null){
+            harvester.log("Closing EEA RDF river [" + harvester.getRiverName() + "]");
+
+            harvester.close();
+            harvesterThread.interrupt();
+        }
+        System.exit(0);
+    }
+
+    public void closeHarvester(Harvester that) {
+        if(harvester != null && harvesterThread != null){
+            harvester.log("Closing EEA RDF river [" + harvester.getRiverName() + "]");
+            harvester.close();
+            harvesterThread.interrupt();
+        }
     }
 
    /* protected void configure() {

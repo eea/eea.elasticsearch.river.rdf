@@ -118,7 +118,7 @@ public class Harvester implements Runnable {
 	private String riverIndex;
 
 
-	private Boolean closed = false;
+	private volatile Boolean closed = false;
 
 	public void log(String message) { logger.info(message); }
 
@@ -579,11 +579,13 @@ public class Harvester implements Runnable {
             // deleting river cluster from riverIndex
             DeleteRequest deleteRequest = new DeleteRequest(riverIndex, "river", riverName);
 
+            Harvester that = this;
+
             client.deleteAsync(deleteRequest, new ActionListener<DeleteResponse>() {
                 @Override
                 public void onResponse(DeleteResponse deleteResponse) {
                     logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
-                    indexer.close();
+                    indexer.closeHarvester(that);
                 }
 
                 @Override
@@ -1246,7 +1248,7 @@ public class Harvester implements Runnable {
 			}
 
 			qExec = QueryExecutionFactory.sparqlService(rdfEndpoint, query);
-
+            qExec.setTimeout(-1);
 			try {
 				harvest(qExec);
 			} catch (Exception e) {
