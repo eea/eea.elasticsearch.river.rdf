@@ -13,6 +13,7 @@ import org.elasticsearch.app.logging.Loggers;
 import org.elasticsearch.app.river.River;
 import org.elasticsearch.app.river.RiverName;
 import org.elasticsearch.app.river.RiverSettings;
+import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -21,12 +22,17 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.Settings.Builder;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 public class Indexer {
     private static final ESLogger logger = Loggers.getLogger(Indexer.class);
@@ -40,6 +46,9 @@ public class Indexer {
     private final static boolean MULTITHREADING_ACTIVE = false;
 
     private volatile Harvester harvester;
+
+    private volatile HashMap<String, Harvester> harvesters;
+
     private volatile Thread harvesterThread;
 
     private static final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -61,6 +70,8 @@ public class Indexer {
             }
         })
     );
+
+    private static ExecutorService executorService;
 
     public static void main(String[] args) throws IOException {
 
@@ -88,7 +99,37 @@ public class Indexer {
         }*/
 
         //TODO: loop for all rivers
-        River river = indexer.rivers.get(0);
+        if(!MULTITHREADING_ACTIVE){
+
+            /*Indexer.executorService = EsExecutors.newAutoQueueFixed("threadPool", 1, 5, 5, 26,2,
+                    TimeValue.timeValueHours(10), EsExecutors.daemonThreadFactory("esapp"), new ThreadContext(Builder.EMPTY_SETTINGS));*/
+                Indexer.executorService = Executors.newFixedThreadPool(2);
+            } else {
+                Indexer.executorService = Executors.newSingleThreadExecutor();
+            }
+
+        for(River river : indexer.rivers){
+            Harvester h = new Harvester();
+
+            h.client(client).riverName(river.riverName())
+                    .riverIndex(RIVER_INDEX)
+                    .indexer(indexer);
+            indexer.addHarvesterSettings(h, river.getRiverSettings());
+
+            Indexer.executorService.submit(h);
+        }
+
+        Indexer.executorService.shutdown();
+
+        System.out.println("All tasks submitted.");
+        try {
+            Indexer.executorService.awaitTermination(1, TimeUnit.DAYS);
+        } catch (InterruptedException ignored) {
+        }
+        System.out.println("All tasks completed.");
+        indexer.close();
+
+       /* River river = indexer.rivers.get(0);
 
         indexer.harvester = new Harvester();
         indexer.harvester.client(client)
@@ -111,6 +152,7 @@ public class Indexer {
 
         try {
             indexer.harvesterThread.join();
+            indexer.close();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -121,7 +163,7 @@ public class Indexer {
             public void uncaughtException(Thread t, Throwable e) {
                 logger.error("Thread FAILED: [{}] " , (Object) e.getStackTrace());
             }
-        });
+        });*/
 
         //InetAddress addr = InetAddress.getByName("127.0.0.1");
 
@@ -177,7 +219,7 @@ public class Indexer {
             ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest);
             boolean succeeded = clearScrollResponse.isSucceeded();
         } catch (IOException e) {
-            logger.info("River index not found");
+            logger.info("River index " + RIVER_INDEX + " not found");
         }
 
         for (SearchHit  sh: searchHitsA ){
@@ -198,7 +240,7 @@ public class Indexer {
         }
     }
 
-    private void addHarvesterSettings(RiverSettings settings) {
+    private void addHarvesterSettings(Harvester harv, RiverSettings settings) {
         if (!((HashMap)settings.getSettings().get("syncReq")).containsKey("eeaRDF")) {
             throw new IllegalArgumentException(
                     "There are no eeaRDF settings in the river settings");
@@ -206,7 +248,7 @@ public class Indexer {
 
         Map<String, Object> rdfSettings = extractSettings(settings, "eeaRDF");
 
-        harvester.rdfIndexType(XContentMapValues.nodeStringValue(
+        harv.rdfIndexType(XContentMapValues.nodeStringValue(
                 rdfSettings.get("indexType"), "full"))
                 .rdfStartTime(XContentMapValues.nodeStringValue(
                         rdfSettings.get("startTime"),""))
@@ -252,33 +294,33 @@ public class Indexer {
                         EEASettings.DEFAULT_SYNC_OLD_DATA));
 
         if (rdfSettings.containsKey("proplist")) {
-            harvester.rdfPropList(getStrListFromSettings(rdfSettings, "proplist"));
+            harv.rdfPropList(getStrListFromSettings(rdfSettings, "proplist"));
         }
         if(rdfSettings.containsKey("query")) {
-            harvester.rdfQuery(getStrListFromSettings(rdfSettings, "query"));
+            harv.rdfQuery(getStrListFromSettings(rdfSettings, "query"));
         } else {
-            harvester.rdfQuery(EEASettings.DEFAULT_QUERIES);
+            harv.rdfQuery(EEASettings.DEFAULT_QUERIES);
         }
 
         if(rdfSettings.containsKey("normProp")) {
-            harvester.rdfNormalizationProp(getStrObjMapFromSettings(rdfSettings, "normProp"));
+            harv.rdfNormalizationProp(getStrObjMapFromSettings(rdfSettings, "normProp"));
         }
         if(rdfSettings.containsKey("normMissing")) {
-            harvester.rdfNormalizationMissing(getStrObjMapFromSettings(rdfSettings, "normMissing"));
+            harv.rdfNormalizationMissing(getStrObjMapFromSettings(rdfSettings, "normMissing"));
         }
         if(rdfSettings.containsKey("normObj")) {
-            harvester.rdfNormalizationObj(getStrStrMapFromSettings(rdfSettings, "normObj"));
+            harv.rdfNormalizationObj(getStrStrMapFromSettings(rdfSettings, "normObj"));
         }
         if(rdfSettings.containsKey("blackMap")) {
-            harvester.rdfBlackMap(getStrObjMapFromSettings(rdfSettings, "blackMap"));
+            harv.rdfBlackMap(getStrObjMapFromSettings(rdfSettings, "blackMap"));
         }
         if(rdfSettings.containsKey("whiteMap")) {
-            harvester.rdfWhiteMap(getStrObjMapFromSettings(rdfSettings, "whiteMap"));
+            harv.rdfWhiteMap(getStrObjMapFromSettings(rdfSettings, "whiteMap"));
         }
         //TODO : change to index
         if(settings.getSettings().containsKey("index")){
             Map<String, Object> indexSettings = extractSettings(settings, "index");
-            harvester.index(XContentMapValues.nodeStringValue(
+            harv.index(XContentMapValues.nodeStringValue(
                     indexSettings.get("index"),
                     EEASettings.DEFAULT_INDEX_NAME))
                     .type(XContentMapValues.nodeStringValue(
@@ -287,8 +329,8 @@ public class Indexer {
         }
         else {
             //TODO: don't know if is correct
-            harvester.index(  ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("index").toString() );
-            harvester.type( ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("type").toString() );
+            harv.index(  ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("index").toString() );
+            harv.type( ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("type").toString() );
 
             //harvester.index(EEASettings.DEFAULT_INDEX_NAME).type(EEASettings.DEFAULT_TYPE_NAME);
         }
@@ -325,21 +367,22 @@ public class Indexer {
     }
 
     public void close() {
-        if(harvester != null && harvesterThread != null){
+        /*if(harvester != null && harvesterThread != null){
             harvester.log("Closing EEA RDF river [" + harvester.getRiverName() + "]");
 
             harvester.close();
             harvesterThread.interrupt();
-        }
+        }*/
         System.exit(0);
     }
 
     public void closeHarvester(Harvester that) {
-        if(harvester != null && harvesterThread != null){
+
+        /*if(harvester != null && harvesterThread != null){
             harvester.log("Closing EEA RDF river [" + harvester.getRiverName() + "]");
             harvester.close();
             harvesterThread.interrupt();
-        }
+        }*/
     }
 
    /* protected void configure() {

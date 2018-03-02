@@ -11,17 +11,24 @@ Clusters: ORIGINAL / NEW
 - eea_folders - 6,957 / 6,957
 - eea_contracts - 63 / 63
 - eea_reports - 2,150 / 2,150
-- eea_daviz -
-- eea_dataexternal -
-- eea_data -
-- eea_copernicus  -
+- eea_daviz - 1,377 / 1,377
+- eea_dataexternal - 1,354 / 1,354
+- eea_data - 497 / 497
+- eea_copernicus  - 77 / 77
 - eea_figures  -  5,966 / 5,966
 - eea_content - 16,788 /  16,788
-- eea_vacancies -
-- rod_instruments -
-- rod_obligations_expired -
-- rod_obligations_active -
-- rod_clients -
-- eea_organisations -
-- eea_messages -
-- bise_factsheets -
+- eea_vacancies - 95 / 95
+- rod_instruments - 184 / 184
+- rod_obligations_expired - 196 / 196
+- rod_obligations_active - 394 / 394
+- rod_clients - 72 / 72
+- eea_organisations - 643 / 643
+- eea_messages - 733 / 733
+- bise_factsheets - 28 / 28
+
+TOTAL : 65429
+
+//FULL INDEXES TEST:
+    - debug enabled
+    - started at 17:46
+    - ended at 

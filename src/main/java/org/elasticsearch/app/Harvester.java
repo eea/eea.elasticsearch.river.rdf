@@ -548,6 +548,7 @@ public class Harvester implements Runnable {
 	}
 
 	public void run() {
+		Thread.currentThread().setName(riverName);
 	    while(!this.closed){
             long currentTime = System.currentTimeMillis();
             boolean success = false;
@@ -585,6 +586,7 @@ public class Harvester implements Runnable {
                 @Override
                 public void onResponse(DeleteResponse deleteResponse) {
                     logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
+                    that.close();
                     indexer.closeHarvester(that);
                 }
 
