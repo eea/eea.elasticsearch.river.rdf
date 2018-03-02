@@ -903,8 +903,10 @@ public class Harvester implements Runnable {
 										startTime);
 		Set<String> syncUris = executeSyncQuery(queryStr, "resource");
 
+		//TODO : if error retry
 		if (syncUris == null) {
 			logger.error("Errors occurred during sync procedure. Aborting!");
+
 			return false;
 		}
 
