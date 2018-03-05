@@ -26,9 +26,11 @@ Clusters: ORIGINAL / NEW
 - eea_messages - 733 / 733
 - bise_factsheets - 28 / 28
 
-TOTAL : 65429
+//TOTAL : 65429(from calculations) / 65,643
+
+TOTAL : 65429 / 65,643
 
 //FULL INDEXES TEST:
     - debug enabled
-    - started at 17:46
+    - started at 11:02
     - ended at
