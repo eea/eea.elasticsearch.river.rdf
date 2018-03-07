@@ -36,9 +36,11 @@ import org.elasticsearch.app.logging.Loggers;
 import org.elasticsearch.client.RestHighLevelClient;
 
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -46,6 +48,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
+import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 
 /**
  *
@@ -553,13 +557,13 @@ public class Harvester implements Runnable {
             long currentTime = System.currentTimeMillis();
             boolean success = false;
 
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+            /*SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
             Long ts = Long.valueOf(0);
             try {
                 ts = sdf.parse(startTime).getTime() / 1000;
             } catch (ParseException e) {
                 e.printStackTrace();
-            }
+            }*/
 
             if ( startTime.isEmpty() ) startTime = getLastUpdate();
 
@@ -611,7 +615,6 @@ public class Harvester implements Runnable {
 					rdfEndpoint, indexName, typeName);
 
 		boolean success = sync();
-		closed = true;
 
 		logger.info("Ended synchronization from [{}], for endpoint [{}]," +
 					"index name [{}], type name [{}] with status {}",
@@ -771,11 +774,14 @@ public class Harvester implements Runnable {
 		int searchKeepAlive = 60000;
 		int count = 0;
 
-
 		// TODO: async?
 		final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(1L));
 		SearchRequest searchRequest = new SearchRequest();
 		searchRequest.indices(indexName).types(typeName);
+
+		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+		searchSourceBuilder.query(termQuery("cluster_id", riverName));
+		searchRequest.source(searchSourceBuilder);
 
 		searchRequest.scroll(scroll);
 

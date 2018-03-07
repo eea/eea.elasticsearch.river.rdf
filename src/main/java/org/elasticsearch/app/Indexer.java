@@ -99,7 +99,7 @@ public class Indexer {
         }*/
 
         //TODO: loop for all rivers
-        if(MULTITHREADING_ACTIVE){
+        if(!MULTITHREADING_ACTIVE){
         /*Indexer.executorService = EsExecutors.newAutoQueueFixed("threadPool", 1, 5, 5, 26,2,
                 TimeValue.timeValueHours(10), EsExecutors.daemonThreadFactory("esapp"), new ThreadContext(Builder.EMPTY_SETTINGS));*/
             Indexer.executorService = Executors.newFixedThreadPool(2);
