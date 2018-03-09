@@ -35,15 +35,19 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 public class Indexer {
-    private static final ESLogger logger = Loggers.getLogger(Indexer.class);
-    private ArrayList<River> rivers = new ArrayList<>();
     private final static String USER = "user_rw";
     private final static String PASS = "rw_pass";
     private final static String HOST = "localhost";
     private final static int PORT = 9200;
-    private final static String RIVER_INDEX = "eeariver";
+    private String RIVER_INDEX = "eeariver";
+    private boolean MULTITHREADING_ACTIVE = false;
 
-    private final static boolean MULTITHREADING_ACTIVE = false;
+
+    private static final ESLogger logger = Loggers.getLogger(Indexer.class);
+    private ArrayList<River> rivers = new ArrayList<>();
+
+
+    public Map<String, String> envMap;
 
     private volatile Harvester harvester;
 
@@ -53,53 +57,33 @@ public class Indexer {
 
     private static final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
-    private static RestHighLevelClient client = new RestHighLevelClient(
-        RestClient.builder(
-                new HttpHost(HOST, PORT, "http")
-        ).setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-            @Override
-            public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-            }
-        })
-        .setFailureListener(new RestClient.FailureListener(){
-            @Override
-            public void onFailure(HttpHost host) {
-                super.onFailure(host);
-                logger.error("Connection failure: [{}]", host);
-            }
-        })
-    );
+    public RestHighLevelClient client;
 
     private static ExecutorService executorService;
 
     public static void main(String[] args) throws IOException {
 
+        logger.info("STARTING...");
+
         Indexer indexer = new Indexer();
 
-        logger.info("Username:" + USER);
-        logger.info("Password: " + PASS);
-        logger.info("HOST: " + HOST);
-        logger.info("PORT: " + PORT );
-        logger.info("RIVER INDEX: " + RIVER_INDEX);
+        logger.info("Username:" + indexer.envMap.get("elastic_user"));
+        logger.info("Password: " + indexer.envMap.get("elastic_pass"));
+        logger.info("HOST: " + indexer.envMap.get("elastic_host"));
+        logger.info("PORT: " + indexer.envMap.get("elastic_port"));
+        logger.info("RIVER INDEX: " + indexer.RIVER_INDEX);
+        logger.info("MULTITHREADING_ACTIVE: " + indexer.MULTITHREADING_ACTIVE);
+
+        System.exit(0);
 
         if(indexer.rivers.size() == 0){
-            logger.info("No rivers added in " + RIVER_INDEX + " index.Stopping...");
+            logger.info("No rivers detected");
+            logger.info("No rivers added in " + indexer.RIVER_INDEX + " index.Stopping...");
             indexer.close();
         }
 
-         /*if( MULTITHREADING_ACTIVE ){
-            for(River river : indexer.rivers){
-                indexer.harvester = new Harvester();
-                indexer.harvester.client(client).riverName( river.riverName())
-                    .riverIndex(RIVER_INDEX).indexer(indexer);
-                indexer.addHarvesterSettings(river.getRiverSettings());
-                indexer.start();
-            }
-        }*/
-
         //TODO: loop for all rivers
-        if(!MULTITHREADING_ACTIVE){
+        if(indexer.MULTITHREADING_ACTIVE){
         /*Indexer.executorService = EsExecutors.newAutoQueueFixed("threadPool", 1, 5, 5, 26,2,
                 TimeValue.timeValueHours(10), EsExecutors.daemonThreadFactory("esapp"), new ThreadContext(Builder.EMPTY_SETTINGS));*/
             Indexer.executorService = Executors.newFixedThreadPool(2);
@@ -110,8 +94,8 @@ public class Indexer {
         for(River river : indexer.rivers){
             Harvester h = new Harvester();
 
-            h.client(client).riverName(river.riverName())
-                    .riverIndex(RIVER_INDEX)
+            h.client(indexer.client).riverName(river.riverName())
+                    .riverIndex(indexer.RIVER_INDEX)
                     .indexer(indexer);
             indexer.addHarvesterSettings(h, river.getRiverSettings());
 
@@ -174,8 +158,38 @@ public class Indexer {
     }
 
     public Indexer() {
+        Map<String, String> env = System.getenv();
+        this.envMap = env;
+
+        String host = (!env.get("elastic_host").isEmpty()) ? env.get("elastic_host") : HOST;
+        int port = (!env.get("elastic_port").isEmpty()) ? Integer.parseInt(env.get("elastic_port")) : PORT;
+        String user = (!env.get("elastic_user").isEmpty()) ? env.get("elastic_user") : USER;
+        String pass = (!env.get("elastic_pass").isEmpty()) ? env.get("elastic_pass") : PASS;
+        this.RIVER_INDEX = (!env.get("river_index").isEmpty()) ? env.get("river_index") : this.RIVER_INDEX;
+        this.MULTITHREADING_ACTIVE  = (!env.get("indexer_multithreading").isEmpty()) ? Boolean.parseBoolean(env.get("indexer_multithreading")) : this.MULTITHREADING_ACTIVE;
+
+
+
         credentialsProvider.setCredentials(AuthScope.ANY,
-                new UsernamePasswordCredentials(USER, PASS));
+                new UsernamePasswordCredentials(user , pass));
+
+        client = new RestHighLevelClient(
+            RestClient.builder(
+                    new HttpHost( host , port, "http")
+            ).setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
+                @Override
+                public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
+                    return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+                }
+            })
+            .setFailureListener(new RestClient.FailureListener(){
+                @Override
+                public void onFailure(HttpHost host) {
+                    super.onFailure(host);
+                    logger.error("Connection failure: [{}]", host);
+                }
+            })
+        );
 
         getAllRivers();
     }
@@ -218,7 +232,7 @@ public class Indexer {
             ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest);
             boolean succeeded = clearScrollResponse.isSucceeded();
         } catch (IOException e) {
-            logger.info("River index " + RIVER_INDEX + " not found");
+            logger.info("River index " + this.RIVER_INDEX + " not found");
         }
 
         for (SearchHit  sh: searchHitsA ){
@@ -376,6 +390,7 @@ public class Indexer {
     }
 
     public void closeHarvester(Harvester that) {
+        logger.info("Closing thread");
 
         /*if(harvester != null && harvesterThread != null){
             harvester.log("Closing EEA RDF river [" + harvester.getRiverName() + "]");

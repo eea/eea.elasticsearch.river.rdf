@@ -1,0 +1,14 @@
+indexer:
+  environment:
+    VERSION_INFO: v1
+    elastic_host: 192.168.0.106
+    elastic_port: '9200'
+    elastic_user: 'user_rw'
+    elastic_pass: 'rw_pass'
+    river_index: 'eeariver'
+    indexer_multithreading: 'false'
+  build: .
+  #command:
+       #sh -c "tail -f /dev/null"
+  volumes:
+      - .:/usr/src/river.rdf

@@ -58,6 +58,8 @@ import static org.elasticsearch.index.query.QueryBuilders.termQuery;
  */
 public class Harvester implements Runnable {
 
+	private boolean synced = false;
+
 	private enum QueryType {
 		SELECT,
 		CONSTRUCT,
@@ -553,10 +555,9 @@ public class Harvester implements Runnable {
 
 	public void run() {
 		Thread.currentThread().setName(riverName);
-	    while(!this.closed){
+	    while(!this.closed && !synced){
             long currentTime = System.currentTimeMillis();
-            boolean success = false;
-
+			boolean success = false;
             /*SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
             Long ts = Long.valueOf(0);
             try {
@@ -567,7 +568,7 @@ public class Harvester implements Runnable {
 
             if ( startTime.isEmpty() ) startTime = getLastUpdate();
 
-            if (indexAll)
+			if (indexAll && !synced)
                 success = runIndexAll();
             else
                 success = runSync();
@@ -579,29 +580,35 @@ public class Harvester implements Runnable {
             if (success) {
                 setLastUpdate(new Date(currentTime));
                 success = false;
+				synced = true;
+                // deleting river cluster from riverIndex
+                DeleteRequest deleteRequest = new DeleteRequest(riverIndex, "river", riverName);
+
+                Harvester that = this;
+
+                client.deleteAsync(deleteRequest, new ActionListener<DeleteResponse>() {
+                    @Override
+                    public void onResponse(DeleteResponse deleteResponse) {
+                        logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
+                        that.close();
+                        indexer.closeHarvester(that);
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        logger.error("Could not delete river :" +  riverIndex + "/" +  riverName);
+                        logger.error("Reason: [{}]", e.getMessage());
+                        that.close();
+                        indexer.closeHarvester(that);
+                    }
+                });
+
             }
-
-            // deleting river cluster from riverIndex
-            DeleteRequest deleteRequest = new DeleteRequest(riverIndex, "river", riverName);
-
-            Harvester that = this;
-
-            client.deleteAsync(deleteRequest, new ActionListener<DeleteResponse>() {
-                @Override
-                public void onResponse(DeleteResponse deleteResponse) {
-                    logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
-                    that.close();
-                    indexer.closeHarvester(that);
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    logger.error("Could not delete river :" +  riverIndex + "/" +  riverName);
-                    logger.error("Reason: [{}]", e.getMessage());
-                }
-            });
         }
 
+        if(this.closed){
+			logger.info("Thread closed");
+		}
 		/* Any code after this step would not be executed as
 		   the master will interrupt the harvester thread after
 		   deleting the _river.
@@ -987,8 +994,6 @@ public class Harvester implements Runnable {
 							logger.error("com.hp.hpl.jena.sparql.ARQException: [{}]", exc);
 						}
 
-						//TODO: prepareBulk
-						/* BulkRequestBuilder bulkRequest = client.prepareBulk();*/
 						BulkRequest bulkRequest = new BulkRequest();
 
 						/**
@@ -1517,6 +1522,7 @@ public class Harvester implements Runnable {
 					bulkResponse = client.bulk(bulkRequest);
 				} catch (IOException e) {
 					e.printStackTrace();
+
 				}
 
 				if (bulkResponse.hasFailures()) {
