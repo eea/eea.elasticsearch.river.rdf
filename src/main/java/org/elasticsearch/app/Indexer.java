@@ -41,6 +41,7 @@ public class Indexer {
     private final static int PORT = 9200;
     private String RIVER_INDEX = "eeariver";
     private boolean MULTITHREADING_ACTIVE = false;
+    private int THREADS = 1;
 
 
     private static final ESLogger logger = Loggers.getLogger(Indexer.class);
@@ -73,8 +74,7 @@ public class Indexer {
         logger.info("PORT: " + indexer.envMap.get("elastic_port"));
         logger.info("RIVER INDEX: " + indexer.RIVER_INDEX);
         logger.info("MULTITHREADING_ACTIVE: " + indexer.MULTITHREADING_ACTIVE);
-
-        System.exit(0);
+        logger.info("THREADS: " + indexer.THREADS);
 
         if(indexer.rivers.size() == 0){
             logger.info("No rivers detected");
@@ -86,7 +86,7 @@ public class Indexer {
         if(indexer.MULTITHREADING_ACTIVE){
         /*Indexer.executorService = EsExecutors.newAutoQueueFixed("threadPool", 1, 5, 5, 26,2,
                 TimeValue.timeValueHours(10), EsExecutors.daemonThreadFactory("esapp"), new ThreadContext(Builder.EMPTY_SETTINGS));*/
-            Indexer.executorService = Executors.newFixedThreadPool(2);
+            Indexer.executorService = Executors.newFixedThreadPool(indexer.THREADS);
         } else {
             Indexer.executorService = Executors.newSingleThreadExecutor();
         }
@@ -104,12 +104,12 @@ public class Indexer {
 
         Indexer.executorService.shutdown();
 
-        System.out.println("All tasks submitted.");
+        logger.info("All tasks submitted.");
         try {
             Indexer.executorService.awaitTermination(1, TimeUnit.DAYS);
         } catch (InterruptedException ignored) {
         }
-        System.out.println("All tasks completed.");
+        logger.info("All tasks completed.");
         indexer.close();
 
        /* River river = indexer.rivers.get(0);
@@ -167,8 +167,7 @@ public class Indexer {
         String pass = (!env.get("elastic_pass").isEmpty()) ? env.get("elastic_pass") : PASS;
         this.RIVER_INDEX = (!env.get("river_index").isEmpty()) ? env.get("river_index") : this.RIVER_INDEX;
         this.MULTITHREADING_ACTIVE  = (!env.get("indexer_multithreading").isEmpty()) ? Boolean.parseBoolean(env.get("indexer_multithreading")) : this.MULTITHREADING_ACTIVE;
-
-
+        this.THREADS = (!env.get("threads").isEmpty()) ? Integer.parseInt(env.get("threads")) : this.THREADS;
 
         credentialsProvider.setCredentials(AuthScope.ANY,
                 new UsernamePasswordCredentials(user , pass));
