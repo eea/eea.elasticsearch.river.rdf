@@ -165,9 +165,9 @@ public class Indexer {
         this.envMap = env;
 
         String host = (env.get("elastic_host") != null) ? env.get("elastic_host") : HOST;
-        logger.error("{}", env.get("elastic_host"));
 
-        System.exit(0);
+
+        
         int port = (env.get("elastic_port") != null) ? Integer.parseInt(env.get("elastic_port")) : PORT;
         String user = (env.get("elastic_user") != null) ? env.get("elastic_user") : USER;
         String pass = (env.get("elastic_pass") != null) ? env.get("elastic_pass") : PASS;
