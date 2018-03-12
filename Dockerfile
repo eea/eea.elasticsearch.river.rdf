@@ -15,7 +15,10 @@ RUN touch /var/log/cron-ady.log
 
 RUN service cron start
 RUN service rsyslog start
-CMD service cron start && service rsyslog start
 RUN cd /usr/src/river.rdf && /usr/bin/mvn clean install
+
+RUN printenv | grep -v "no_proxy" >> /etc/environment
+CMD service cron start && service rsyslog start
+
 
 #CMD cd /usr/src/river.rdf &&  mvn clean && mvn compile && mvn exec:java -Dexec.mainClass="org.elasticsearch.app.Indexer"

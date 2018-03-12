@@ -1,4 +1,4 @@
-* * * * * solo -port=6000 . $HOME/.profile; /bin/sh /usr/src/river.rdf/indexer.sh
+* * * * * solo -port=6000 /bin/bash /usr/src/river.rdf/indexer.sh
 
 #* * * * * solo -port=6000 echo "Hello world" >> /var/log/cron-ady.log 2>&1
 # Mandatory blank line

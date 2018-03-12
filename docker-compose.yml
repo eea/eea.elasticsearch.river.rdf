@@ -10,12 +10,13 @@ indexer:
     threads: 2
   #tty: true
   build: .
-  labels:
-    eea.indexer.description: "Indexer app"
-    eea.indexer.department: "Elasticsearch river indexer"
-    eea.indexer.label-with-empty-value: ""
+  #labels:
+    #eea.indexer.description: "Indexer app"
+    #eea.indexer.department: "Elasticsearch river indexer"
+    #eea.indexer.label-with-empty-value: ""
 
   command:
-      sh -c "/usr/sbin/service cron start && tail -f /dev/null"
+      sh -c "printenv | grep -v "no_proxy" >> /etc/environment && /usr/sbin/service cron start && tail -f /dev/null"
+      #sh -c "/usr/sbin/service cron start && cron -f"
   volumes:
       - .:/usr/src/river.rdf

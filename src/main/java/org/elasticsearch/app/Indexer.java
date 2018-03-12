@@ -7,6 +7,7 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 
+import org.apache.jena.base.Sys;
 import org.elasticsearch.action.search.*;
 import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
@@ -158,16 +159,21 @@ public class Indexer {
     }
 
     public Indexer() {
+        //logger.error("{}", System.getenv());
+        //logger.error("{}", System.getProperties());
         Map<String, String> env = System.getenv();
         this.envMap = env;
 
-        String host = (!env.get("elastic_host").isEmpty()) ? env.get("elastic_host") : HOST;
-        int port = (!env.get("elastic_port").isEmpty()) ? Integer.parseInt(env.get("elastic_port")) : PORT;
-        String user = (!env.get("elastic_user").isEmpty()) ? env.get("elastic_user") : USER;
-        String pass = (!env.get("elastic_pass").isEmpty()) ? env.get("elastic_pass") : PASS;
-        this.RIVER_INDEX = (!env.get("river_index").isEmpty()) ? env.get("river_index") : this.RIVER_INDEX;
-        this.MULTITHREADING_ACTIVE  = (!env.get("indexer_multithreading").isEmpty()) ? Boolean.parseBoolean(env.get("indexer_multithreading")) : this.MULTITHREADING_ACTIVE;
-        this.THREADS = (!env.get("threads").isEmpty()) ? Integer.parseInt(env.get("threads")) : this.THREADS;
+        String host = (env.get("elastic_host") != null) ? env.get("elastic_host") : HOST;
+        logger.error("{}", env.get("elastic_host"));
+
+        System.exit(0);
+        int port = (env.get("elastic_port") != null) ? Integer.parseInt(env.get("elastic_port")) : PORT;
+        String user = (env.get("elastic_user") != null) ? env.get("elastic_user") : USER;
+        String pass = (env.get("elastic_pass") != null) ? env.get("elastic_pass") : PASS;
+        this.RIVER_INDEX = ( env.get("river_index") != null) ? env.get("river_index") : this.RIVER_INDEX;
+        this.MULTITHREADING_ACTIVE  = (env.get("indexer_multithreading") != null) ? Boolean.parseBoolean(env.get("indexer_multithreading")) : this.MULTITHREADING_ACTIVE;
+        this.THREADS = (env.get("threads") != null) ? Integer.parseInt(env.get("threads")) : this.THREADS;
 
         credentialsProvider.setCredentials(AuthScope.ANY,
                 new UsernamePasswordCredentials(user , pass));
