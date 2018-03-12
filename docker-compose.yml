@@ -6,9 +6,16 @@ indexer:
     elastic_user: 'user_rw'
     elastic_pass: 'rw_pass'
     river_index: 'eeariver'
-    indexer_multithreading: 'false'
+    indexer_multithreading: 'true'
+    threads: 2
+  #tty: true
   build: .
-  #command:
-       #sh -c "tail -f /dev/null"
+  labels:
+    eea.indexer.description: "Indexer app"
+    eea.indexer.department: "Elasticsearch river indexer"
+    eea.indexer.label-with-empty-value: ""
+
+  command:
+      sh -c "/usr/sbin/service cron start && tail -f /dev/null"
   volumes:
       - .:/usr/src/river.rdf
