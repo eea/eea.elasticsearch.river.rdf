@@ -8,6 +8,7 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 
 import org.apache.jena.base.Sys;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.*;
 import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
@@ -238,6 +239,10 @@ public class Indexer {
             boolean succeeded = clearScrollResponse.isSucceeded();
         } catch (IOException e) {
             logger.info("River index " + this.RIVER_INDEX + " not found");
+            System.exit(0);
+        } catch (ElasticsearchStatusException ex){
+            logger.info("River index " + this.RIVER_INDEX + " not found");
+            System.exit(0);
         }
 
         for (SearchHit  sh: searchHitsA ){

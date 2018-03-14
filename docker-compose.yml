@@ -8,6 +8,7 @@ indexer:
     river_index: 'eeariver'
     indexer_multithreading: 'true'
     threads: 2
+
   #tty: true
   build: .
   #labels:
