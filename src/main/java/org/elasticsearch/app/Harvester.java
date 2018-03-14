@@ -29,6 +29,8 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.*;
 import org.elasticsearch.action.support.replication.ReplicationResponse;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.app.logging.ESLogger;
 
 import org.elasticsearch.app.logging.Loggers;
@@ -502,6 +504,7 @@ public class Harvester implements Runnable {
                     jsonBuilder().startObject()
 							.field("updated_at", date.getTime() / 1000 )
 							.field("name", riverName )
+							.field("status")
 							.endObject()
 				)
             );
@@ -579,6 +582,7 @@ public class Harvester implements Runnable {
             //TODO: async ?
             if (success) {
                 setLastUpdate(new Date(currentTime));
+
                 success = false;
 				synced = true;
                 // deleting river cluster from riverIndex
@@ -590,6 +594,7 @@ public class Harvester implements Runnable {
                     @Override
                     public void onResponse(DeleteResponse deleteResponse) {
                         logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
+						//setClusterStatus("synced");
                         that.close();
                         indexer.closeHarvester(that);
                     }
@@ -597,6 +602,7 @@ public class Harvester implements Runnable {
                     @Override
                     public void onFailure(Exception e) {
                         logger.error("Could not delete river :" +  riverIndex + "/" +  riverName);
+						//setClusterStatus("synced");
                         logger.error("Reason: [{}]", e.getMessage());
                         that.close();
                         indexer.closeHarvester(that);
@@ -621,6 +627,7 @@ public class Harvester implements Runnable {
 				    "index name [{}], type name [{}]",
 					rdfEndpoint, indexName, typeName);
 
+		//setClusterStatus("indexing");
 		boolean success = sync();
 
 		logger.info("Ended synchronization from [{}], for endpoint [{}]," +
@@ -896,6 +903,37 @@ public class Harvester implements Runnable {
 		return count;
 	}
 
+	private void setClusterStatus(String status) {
+		String statusIndex = indexName + "_status";
+		boolean indexing = false;
+
+		GetRequest getRequest = new GetRequest(statusIndex, "last_update" , riverName);
+		try {
+			GetResponse getResponse = client.get(getRequest);
+			if(getResponse.getSource().get("status") == "indexing"){
+				indexing = true;
+			}
+		} catch (IOException e) {
+			//e.printStackTrace();
+		}
+
+		if(!indexing){
+			Map<String, Object> jsonMap = new HashMap<>();
+			jsonMap.put("status", status);
+			UpdateRequest request = new UpdateRequest( statusIndex, "last_update", riverName)
+					.doc(jsonMap);
+			try {
+				UpdateResponse updateResponse = client.update(request);
+				logger.info("Updating index {} status to: indexing", riverName);
+			} catch (IOException e) {
+				logger.error("{}", e);
+			}
+		} else {
+
+		}
+
+	}
+
 	/**
 	 * Starts a harvester with predefined queries to synchronize with the
 	 * changes from the SPARQL endpoint
@@ -915,6 +953,8 @@ public class Harvester implements Runnable {
 										syncTimeProp, graphSyncConditions,
 										startTime);
 		Set<String> syncUris = executeSyncQuery(queryStr, "resource");
+
+
 
 		//TODO : if error retry
 		if (syncUris == null) {
@@ -1093,6 +1133,8 @@ public class Harvester implements Runnable {
 		}
 		return true;
 	}
+
+
 
 	/**
 	 * Starts the harvester for queries and/or URLs

@@ -167,7 +167,7 @@ public class Indexer {
         String host = (env.get("elastic_host") != null) ? env.get("elastic_host") : HOST;
 
 
-        
+
         int port = (env.get("elastic_port") != null) ? Integer.parseInt(env.get("elastic_port")) : PORT;
         String user = (env.get("elastic_user") != null) ? env.get("elastic_user") : USER;
         String pass = (env.get("elastic_pass") != null) ? env.get("elastic_pass") : PASS;
