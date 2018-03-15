@@ -8,17 +8,19 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 
 import org.apache.jena.base.Sys;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.search.*;
 import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
 import org.elasticsearch.app.river.River;
 import org.elasticsearch.app.river.RiverName;
 import org.elasticsearch.app.river.RiverSettings;
-import org.elasticsearch.client.ResponseException;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.*;
 
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.Settings.Builder;
@@ -26,6 +28,7 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
+import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 
@@ -109,9 +112,23 @@ public class Indexer {
         logger.info("All tasks submitted.");
         try {
             Indexer.executorService.awaitTermination(1, TimeUnit.DAYS);
+
+            try {
+                DeleteIndexRequest request = new DeleteIndexRequest(indexer.RIVER_INDEX);
+                indexer.client.indices().delete(request);
+            } catch (ElasticsearchException exception) {
+                if (exception.status() == RestStatus.NOT_FOUND) {
+                    logger.error("River index not found");
+                }
+            }
+
+            logger.info("Deleting river index!!!");
         } catch (InterruptedException ignored) {
         }
         logger.info("All tasks completed.");
+
+
+
         indexer.close();
 
        /* River river = indexer.rivers.get(0);
