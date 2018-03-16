@@ -1,13 +1,13 @@
 ==================================
-EEA ElasticSearch RDF River Plugin
+EEA ElasticSearch RDF River Indexer
 ==================================
 
 Introduction
 ============
 
-The EEA RDF River Plugin for ElasticSearch allows to harvest metadata from
+The EEA RDF Indexer for ElasticSearch allows to harvest metadata from
 SPARQL endpoints or plain RDF files into ElasticSearch. It is provided as a
-plugin.
+standalone application.
 
 
 .. contents::
@@ -17,9 +17,9 @@ Installation
 
 Prerequisites:
 
-* ElasticSearch < 2.0. tested with 0.90.2 up to 1.7.3.
+* ElasticSearch > 6.2. tested with 6.1 up to 6.2.
 
-* Java 7 Runtime Environment
+* Java 8 Runtime Environment
 
 Binaries for this plugin are available at:
 
@@ -29,7 +29,8 @@ In order to install the plugin, you first need to have
 `Elasticsearch <http://www.elasticsearch.org/download/>`_ installed. Just
 download the latest release and extract it.
 
-To install the RDF River plugin run from the previously extracted directory::
+..TODO : change for docker-compose
+To install the RDF Indexer run from the previously extracted directory::
 
 ./bin/plugin --url https://github.com/eea/eea.elasticsearch.river.rdf/releases/download/$PLUGIN_VERSION/eea-rdf-river-plugin-$PLUGIN_VERSION.zip -i eea-rdf-river
 

@@ -7,13 +7,10 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 
-import org.apache.jena.base.Sys;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.delete.DeleteResponse;
+
 import org.elasticsearch.action.search.*;
 import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
@@ -22,11 +19,7 @@ import org.elasticsearch.app.river.RiverName;
 import org.elasticsearch.app.river.RiverSettings;
 import org.elasticsearch.client.*;
 
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.settings.Settings.Builder;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.EsExecutors;
-import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.Scroll;
@@ -36,7 +29,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 public class Indexer {
@@ -50,16 +42,11 @@ public class Indexer {
 
 
     private static final ESLogger logger = Loggers.getLogger(Indexer.class);
+
     private ArrayList<River> rivers = new ArrayList<>();
 
 
     public Map<String, String> envMap;
-
-    private volatile Harvester harvester;
-
-    private volatile HashMap<String, Harvester> harvesters;
-
-    private volatile Thread harvesterThread;
 
     private static final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
@@ -127,70 +114,22 @@ public class Indexer {
         }
         logger.info("All tasks completed.");
 
-
-
         indexer.close();
 
-       /* River river = indexer.rivers.get(0);
-
-        indexer.harvester = new Harvester();
-        indexer.harvester.client(client)
-                .riverName( river.riverName() )
-                .riverIndex(RIVER_INDEX)
-                .indexer(indexer);
-
-        indexer.addHarvesterSettings(river.getRiverSettings());
-        //indexer.start();
-
-       //Settings settings = Settings.builder().
-
-        indexer.harvesterThread = EsExecutors.daemonThreadFactory(
-                Builder.EMPTY_SETTINGS,
-                "eea_rdf_river(" + indexer.harvester.getRiverName() +	")")
-
-                .newThread(indexer.harvester);
-
-        indexer.harvesterThread.start();
-
-        try {
-            indexer.harvesterThread.join();
-            indexer.close();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        logger.info( "Finished indexing in: " + indexer.harvesterThread.getName());
-        indexer.harvesterThread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread t, Throwable e) {
-                logger.error("Thread FAILED: [{}] " , (Object) e.getStackTrace());
-            }
-        });*/
-
-        //InetAddress addr = InetAddress.getByName("127.0.0.1");
-
-        /*Client client = new TransportClient()
-                .addTransportAddress(new InetSocketTransportAddress(addr, 9200));*/
-
-        //client.close();
-        //harvester.run();
     }
 
     public Indexer() {
-        //logger.error("{}", System.getenv());
-        //logger.error("{}", System.getProperties());
         Map<String, String> env = System.getenv();
         this.envMap = env;
 
         String host = (env.get("elastic_host") != null) ? env.get("elastic_host") : HOST;
 
-
-
         int port = (env.get("elastic_port") != null) ? Integer.parseInt(env.get("elastic_port")) : PORT;
         String user = (env.get("elastic_user") != null) ? env.get("elastic_user") : USER;
         String pass = (env.get("elastic_pass") != null) ? env.get("elastic_pass") : PASS;
         this.RIVER_INDEX = ( env.get("river_index") != null) ? env.get("river_index") : this.RIVER_INDEX;
-        this.MULTITHREADING_ACTIVE  = (env.get("indexer_multithreading") != null) ? Boolean.parseBoolean(env.get("indexer_multithreading")) : this.MULTITHREADING_ACTIVE;
+        this.MULTITHREADING_ACTIVE  = (env.get("indexer_multithreading") != null) ?
+                Boolean.parseBoolean(env.get("indexer_multithreading")) : this.MULTITHREADING_ACTIVE;
         this.THREADS = (env.get("threads") != null) ? Integer.parseInt(env.get("threads")) : this.THREADS;
 
         credentialsProvider.setCredentials(AuthScope.ANY,
@@ -407,26 +346,11 @@ public class Indexer {
     }
 
     public void close() {
-        /*if(harvester != null && harvesterThread != null){
-            harvester.log("Closing EEA RDF river [" + harvester.getRiverName() + "]");
-
-            harvester.close();
-            harvesterThread.interrupt();
-        }*/
         System.exit(0);
     }
 
     public void closeHarvester(Harvester that) {
         logger.info("Closing thread");
-
-        /*if(harvester != null && harvesterThread != null){
-            harvester.log("Closing EEA RDF river [" + harvester.getRiverName() + "]");
-            harvester.close();
-            harvesterThread.interrupt();
-        }*/
     }
 
-   /* protected void configure() {
-        bind(River.class).to(RDFRiver.class).asEagerSingleton();
-    }*/
 }
