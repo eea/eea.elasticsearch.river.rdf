@@ -29,7 +29,8 @@ In order to install the plugin, you first need to have
 `Elasticsearch <http://www.elasticsearch.org/download/>`_ installed. Just
 download the latest release and extract it.
 
-..TODO : change for docker-compose
+.. TODO : change for docker-compose
+
 To install the RDF Indexer run from the previously extracted directory::
 
 ./bin/plugin --url https://github.com/eea/eea.elasticsearch.river.rdf/releases/download/$PLUGIN_VERSION/eea-rdf-river-plugin-$PLUGIN_VERSION.zip -i eea-rdf-river
