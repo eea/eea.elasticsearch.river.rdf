@@ -40,11 +40,9 @@ public class Indexer {
     private boolean MULTITHREADING_ACTIVE = false;
     private int THREADS = 1;
 
-
     private static final ESLogger logger = Loggers.getLogger(Indexer.class);
 
     private ArrayList<River> rivers = new ArrayList<>();
-
 
     public Map<String, String> envMap;
 
