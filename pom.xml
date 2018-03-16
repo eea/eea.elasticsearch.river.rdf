@@ -7,8 +7,8 @@
 
   <packaging>jar</packaging>
 
-  <name>eea-rdf-river-plugin</name>
-  <description>Elasticsearch RDF River Plugin for EEA</description>
+  <name>eea-rdf-river-indexer</name>
+  <description>Elasticsearch RDF River Indexer for EEA</description>
 
   <inceptionYear>2013</inceptionYear>
 
@@ -18,9 +18,7 @@
   </organization>
 
   <properties>
-    <!--<elasticsearch.version>1.4.2</elasticsearch.version>-->
     <elasticsearch.version>6.2.2</elasticsearch.version>
-    <!--<jena.version>3.1.0</jena.version>-->
     <jena.version>3.0.0</jena.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
@@ -35,7 +33,6 @@
 
   <build>
     <plugins>
-
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
@@ -132,7 +129,6 @@
 
     </plugins>
 
-
   </build>
 
 
@@ -145,54 +141,17 @@
     </dependency>
 
     <dependency>
-      <!--<groupId>org.elasticsearch</groupId>
-      <artifactId>elasticsearch</artifactId>-->
       <groupId>org.elasticsearch.client</groupId>
       <artifactId>elasticsearch-rest-high-level-client</artifactId>
       <version>${elasticsearch.version}</version>
       <scope>compile</scope>
     </dependency>
 
-    <!--<dependency>
-      <groupId>org.elasticsearch</groupId>
-      <artifactId>elasticsearch</artifactId>
-      <version>1.4.2</version>
-      <scope>compile</scope>
-    </dependency>-->
-
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>24.0-jre</version>
     </dependency>
-
-    <!--<dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-      <version>2.9.1</version>
-    </dependency>-->
-
-    <!--<dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-1.2-api</artifactId>
-      <version>2.9.1</version>
-    </dependency>-->
-
-    <!--<dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>2.9.1</version>
-    </dependency>-->
-
-    <!--<dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-bom</artifactId>
-      <version>2.9.1</version>
-      <scope>import</scope>
-      <type>pom</type>
-    </dependency>-->
-
-
 
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
@@ -205,7 +164,6 @@
       <artifactId>apache-jena-libs</artifactId>
       <type>pom</type>
       <version>${jena.version}</version>
-      <!--<version>2.12.1</version>-->
     </dependency>
 
     <dependency>
