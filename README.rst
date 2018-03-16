@@ -1,5 +1,5 @@
 ==================================
-EEA ElasticSearch RDF River Indexer
+EEA ElasticSearch RDF Indexer
 ==================================
 
 Introduction
