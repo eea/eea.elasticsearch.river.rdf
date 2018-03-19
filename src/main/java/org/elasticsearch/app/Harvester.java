@@ -331,7 +331,6 @@ public class Harvester implements Runnable {
 		if(blackMap != null && !blackMap.isEmpty()) {
 			this.blackMap =  new HashMap<String,Set<String>>();
 			for(Map.Entry<String,Object> entry : blackMap.entrySet()) {
-
 				this.blackMap.put(
 					entry.getKey(), new HashSet((List<String>)entry.getValue()));
 			}
@@ -1388,6 +1387,38 @@ public class Harvester implements Runnable {
 
 			String currValue;
 
+			if (normalizeProp.containsKey(property)) {
+				Object norm_property = normalizeProp.get(property);
+				if (norm_property instanceof String){
+					property = norm_property.toString();
+					if (jsonMap.containsKey(property)) {
+						jsonMap.get(property).addAll(results);
+					} else {
+						jsonMap.put(property, results);
+					}
+				} else {
+					if (norm_property instanceof List<?>){
+						for (String norm_prop : ((List<String>) norm_property)) {
+							if (jsonMap.containsKey(norm_prop)) {
+								jsonMap.get(norm_prop).addAll(results);
+							} else {
+								jsonMap.put(norm_prop, results);
+							}
+						}
+					} else {
+						property = norm_property.toString();
+						if (jsonMap.containsKey(property)) {
+							jsonMap.get(property).addAll(results);
+						} else {
+							jsonMap.put(property, results);
+						}
+						logger.error("Normalizer error:" , norm_property);
+					}
+				}
+			} else {
+				jsonMap.put(property, results);
+			}
+
 			while (niter.hasNext()) {
 				RDFNode node = niter.next();
 				currValue = getStringForResult(node, getPropLabel);
@@ -1411,50 +1442,20 @@ public class Harvester implements Runnable {
 					continue;
 				}
 				if (normalizeObj.containsKey(shortValue)) {
-                	if (!results.contains("\"" + normalizeObj.get(shortValue) + "\"")){
+					if (!results.contains("\"" + normalizeObj.get(shortValue) + "\"")){
 						results.add("\"" + normalizeObj.get(shortValue) + "\"");
-	                }
+					}
 				} else {
-                    if (!results.contains(currValue)){
-					    results.add(currValue);
-                    }
+					if (!results.contains(currValue)){
+						results.add(currValue);
+					}
 				}
 			}
 
 			// Do not index empty properties
 			if (results.isEmpty()) continue;
 
-			if (normalizeProp.containsKey(property)) {
-				Object norm_property = normalizeProp.get(property);
-				if (norm_property instanceof String){
-                    property = norm_property.toString();
-				    if (jsonMap.containsKey(property)) {
-					    jsonMap.get(property).addAll(results);
-				    } else {
-					    jsonMap.put(property, results);
-				    }
-                } else {
-                    if (norm_property instanceof List<?>){
-	                    for (String norm_prop : ((List<String>) norm_property)) {
-    	                    if (jsonMap.containsKey(norm_prop)) {
-        	                    jsonMap.get(norm_prop).addAll(results);
-                            } else {
-                                jsonMap.put(norm_prop, results);
-                            }
-                        }
-                    } else {
-                    	property = norm_property.toString();
-						if (jsonMap.containsKey(property)) {
-							jsonMap.get(property).addAll(results);
-						} else {
-							jsonMap.put(property, results);
-						}
-                    	logger.error("Normalizer error:" , norm_property);
-					}
-                }
-			} else {
-				jsonMap.put(property, results);
-			}
+
 		}
 
 		if(addLanguage) {
