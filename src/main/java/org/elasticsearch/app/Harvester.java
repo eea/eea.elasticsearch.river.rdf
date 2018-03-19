@@ -504,7 +504,6 @@ public class Harvester implements Runnable {
                     jsonBuilder().startObject()
 							.field("updated_at", date.getTime() / 1000 )
 							.field("name", riverName )
-							.field("status")
 							.endObject()
 				)
             );
