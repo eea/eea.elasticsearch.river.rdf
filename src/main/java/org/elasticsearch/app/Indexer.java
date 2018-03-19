@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 public class Indexer {
     private final static String USER = "user_rw";
     private final static String PASS = "rw_pass";
-    private final static String HOST = "localhost";
+    private final static String HOST = "192.168.0.106";
     private final static int PORT = 9200;
     private String RIVER_INDEX = "eeariver";
     private boolean MULTITHREADING_ACTIVE = false;

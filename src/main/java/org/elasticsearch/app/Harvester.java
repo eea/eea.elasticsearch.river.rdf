@@ -1377,9 +1377,8 @@ public class Harvester implements Runnable {
 
 		if(addUriForResource) {
 			results.add("\"" + rs.toString() + "\"");
-			jsonMap.put(
-					"http://www.w3.org/1999/02/22-rdf-syntax-ns#about",
-					results);
+			//jsonMap.put("http://www.w3.org/1999/02/22-rdf-syntax-ns#about", results);
+			jsonMap.put("about", results);
 		}
 
 		Set<String> rdfLanguages = new HashSet<String>();
@@ -1387,7 +1386,6 @@ public class Harvester implements Runnable {
 			NodeIterator niter = model.listObjectsOfProperty(rs,prop);
 			String property = prop.toString();
 			results = new ArrayList<String>();
-
 
 			String currValue;
 
@@ -1414,13 +1412,13 @@ public class Harvester implements Runnable {
 					continue;
 				}
 				if (normalizeObj.containsKey(shortValue)) {
-                                        if (!results.contains("\"" + normalizeObj.get(shortValue) + "\"")){
-					    results.add("\"" + normalizeObj.get(shortValue) + "\"");
-                                        }
+                	if (!results.contains("\"" + normalizeObj.get(shortValue) + "\"")){
+						results.add("\"" + normalizeObj.get(shortValue) + "\"");
+	                }
 				} else {
-                                        if (!results.contains(currValue)){
+                    if (!results.contains(currValue)){
 					    results.add(currValue);
-                                        }
+                    }
 				}
 			}
 
@@ -1429,81 +1427,90 @@ public class Harvester implements Runnable {
 
 			if (normalizeProp.containsKey(property)) {
 				Object norm_property = normalizeProp.get(property);
-                                if (norm_property instanceof String){
-                                    property = norm_property.toString();
+				if (norm_property instanceof String){
+                    property = norm_property.toString();
 				    if (jsonMap.containsKey(property)) {
 					    jsonMap.get(property).addAll(results);
 				    } else {
 					    jsonMap.put(property, results);
 				    }
-                                }
-                                else {
-                                    if (norm_property instanceof List<?>){
-                                        for (String norm_prop : ((List<String>) norm_property)) {
-                                            if (jsonMap.containsKey(norm_prop)) {
-                                                jsonMap.get(norm_prop).addAll(results);
-                                            } else {
-                                                jsonMap.put(norm_prop, results);
-                                            }
-                                        }
-                                    }
-                                }
+                } else {
+                    if (norm_property instanceof List<?>){
+	                    for (String norm_prop : ((List<String>) norm_property)) {
+    	                    if (jsonMap.containsKey(norm_prop)) {
+        	                    jsonMap.get(norm_prop).addAll(results);
+                            } else {
+                                jsonMap.put(norm_prop, results);
+                            }
+                        }
+                    } else {
+                    	property = norm_property.toString();
+						if (jsonMap.containsKey(property)) {
+							jsonMap.get(property).addAll(results);
+						} else {
+							jsonMap.put(property, results);
+						}
+                    	logger.error("Normalizer error:" , norm_property);
+					}
+                }
 			} else {
 				jsonMap.put(property, results);
 			}
 		}
 
 		if(addLanguage) {
-                    HashSet<Property> allProperties = new HashSet<Property>();
+			HashSet<Property> allProperties = new HashSet<Property>();
 
-                    StmtIterator it = model.listStatements();
-                    while(it.hasNext()) {
-                        Statement st = it.nextStatement();
-                        Property prop = st.getPredicate();
+            StmtIterator it = model.listStatements();
+            while(it.hasNext()) {
+            	Statement st = it.nextStatement();
+                Property prop = st.getPredicate();
 
-                        allProperties.add(prop);
+                allProperties.add(prop);
+            }
+
+            for(Property prop: allProperties) {
+            	String property = prop.toString();
+                NodeIterator niter = model.listObjectsOfProperty(rs,prop);
+                String lang;
+
+                while (niter.hasNext()) {
+                	RDFNode node = niter.next();
+                	if (addLanguage) {
+                    	if (node.isLiteral()) {
+                        	lang = node.asLiteral().getLanguage();
+                            if (!lang.isEmpty()) {
+                            	rdfLanguages.add("\"" + lang + "\"");
+						    }
+						}
                     }
-
-
-                    for(Property prop: allProperties) {
-                        String property = prop.toString();
-                        NodeIterator niter = model.listObjectsOfProperty(rs,prop);
-                        String lang;
-
-                        while (niter.hasNext()) {
-                            RDFNode node = niter.next();
-                            if (addLanguage) {
-                                if (node.isLiteral()) {
-                                    lang = node.asLiteral().getLanguage();
-                                    if (!lang.isEmpty()) {
-                                        rdfLanguages.add("\"" + lang + "\"");
-                                    }
-                                }
-                            }
-                        }
-                    }
+			    }
+			}
 
 		    if(rdfLanguages.isEmpty() && !language.isEmpty())
 		        rdfLanguages.add(language);
 			if(!rdfLanguages.isEmpty())
 			    jsonMap.put(
 			        "language", new ArrayList<String>(rdfLanguages));
-	        }
+	    }
 
 		for (Map.Entry<String, Object> it : normalizeMissing.entrySet()) {
 			if (!jsonMap.containsKey(it.getKey())) {
 				ArrayList<String> res = new ArrayList<String>();
-                                Object miss_values = it.getValue();
-                                if (miss_values instanceof String){
+				Object miss_values = it.getValue();
+                if (miss_values instanceof String){
 				    res.add("\"" + (String)miss_values + "\"");
-                                }
-                                else {
-                                    if (miss_values instanceof List<?>){
-                                        for (String miss_value: ((List<String>)miss_values)){
-                                            res.add("\"" + miss_value + "\"");
-                                        }
-                                    }
-                                }
+                } else {
+		            if (miss_values instanceof List<?>){
+        	            for (String miss_value: ((List<String>)miss_values)){
+            	            res.add("\"" + miss_value + "\"");
+                        }
+                    } else if(miss_values instanceof Number){
+						res.add("\"" + miss_values.toString() + "\"");
+					} else {
+						res.add("\"" + miss_values.toString() + "\"");
+					}
+	            }
 				jsonMap.put(it.getKey(), res);
 			}
 		}
