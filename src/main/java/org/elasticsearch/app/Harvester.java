@@ -1,5 +1,6 @@
 package  org.elasticsearch.app;
 
+import com.google.common.collect.Maps;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
@@ -38,19 +39,16 @@ import org.elasticsearch.app.logging.Loggers;
 import org.elasticsearch.client.RestHighLevelClient;
 
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 
 /**
@@ -1345,15 +1343,16 @@ public class Harvester implements Runnable {
 		}
 	}
 
-    private Map<String, ArrayList<String>> addCountingToJsonMap(Map<String, ArrayList<String>> jsonMap){
+    private Map<String, Object> addCountingToJsonMap(Map<String, Object> jsonMap){
         Iterator it = jsonMap.entrySet().iterator();
-        Map<String, ArrayList<String>> countingMap = new HashMap<String, ArrayList<String>>();
-        ArrayList<String> itemsCount = new ArrayList<String>();
+        Map<String, Object> countingMap = new HashMap<String, Object>();
+        ArrayList<Object> itemsCount = new ArrayList<Object>();
+        //TODO: fix
         while (it.hasNext()) {
-            itemsCount = new ArrayList<String>();
-            Map.Entry<String, ArrayList<String>> pair = (Map.Entry<String, ArrayList<String>>)it.next();
-            itemsCount.add(Integer.toString(pair.getValue().size()));
-            countingMap.put("items_count_" + pair.getKey(), itemsCount);
+            itemsCount = new ArrayList<Object>();
+            Map.Entry<String, Object> pair = (Map.Entry<String, Object>)it.next();
+            itemsCount.add( pair.getValue());
+            countingMap.put("items_count_" + pair.getKey(), itemsCount.size());
         }
         jsonMap.putAll(countingMap);
         return jsonMap;
@@ -1368,22 +1367,23 @@ public class Harvester implements Runnable {
 	 *                     one of the properties set in {@link #uriDescriptionList}.
 	 * @return map of properties to be indexed for res
 	 */
-	private Map<String, ArrayList<String>> getJsonMap(Resource rs, Set<Property> properties, Model model,
+	private Map<String, Object> getJsonMap(Resource rs, Set<Property> properties, Model model,
 													  boolean getPropLabel) {
-		Map<String, ArrayList<String>> jsonMap = new HashMap<String, ArrayList<String>>();
-		ArrayList<String> results = new ArrayList<String>();
+		Map<String, Object> jsonMap = new HashMap<>();
+		ArrayList<Object> results = new ArrayList<Object>();
 
 		if(addUriForResource) {
-			results.add("\"" + rs.toString() + "\"");
+			results.add( rs.toString() );
 			//jsonMap.put("http://www.w3.org/1999/02/22-rdf-syntax-ns#about", results);
 			jsonMap.put("about", results);
 		}
 
 		Set<String> rdfLanguages = new HashSet<String>();
+
 		for(Property prop: properties) {
 			NodeIterator niter = model.listObjectsOfProperty(rs,prop);
 			String property = prop.toString();
-			results = new ArrayList<String>();
+			results = new ArrayList<Object>();
 
 			String currValue;
 
@@ -1392,15 +1392,33 @@ public class Harvester implements Runnable {
 				if (norm_property instanceof String){
 					property = norm_property.toString();
 					if (jsonMap.containsKey(property)) {
-						jsonMap.get(property).addAll(results);
+						Object temp = jsonMap.get(property);
+						if(temp instanceof List){
+							if(((List) temp).size() == 1)
+								jsonMap.put(property,results.get(0));
+							else
+								jsonMap.put(property,results.toArray() );
+						} else {
+							jsonMap.put(property, results);
+						}
 					} else {
 						jsonMap.put(property, results);
 					}
 				} else {
 					if (norm_property instanceof List<?>){
 						for (String norm_prop : ((List<String>) norm_property)) {
+							Object temp = jsonMap.get(norm_prop);
+
 							if (jsonMap.containsKey(norm_prop)) {
-								jsonMap.get(norm_prop).addAll(results);
+								if(temp instanceof List){
+									//((List) temp).addAll(results);
+									if(results.size() == 1)
+										jsonMap.put(norm_prop, results.get(0));
+									else
+										jsonMap.put(norm_prop, results.toArray());
+								} else {
+									jsonMap.put(norm_prop, results);
+								}
 							} else {
 								jsonMap.put(norm_prop, results);
 							}
@@ -1408,7 +1426,19 @@ public class Harvester implements Runnable {
 					} else {
 						property = norm_property.toString();
 						if (jsonMap.containsKey(property)) {
-							jsonMap.get(property).addAll(results);
+							Object temp = jsonMap.get(property);
+							if(temp instanceof List){
+								//((List) temp).addAll(results);
+								if(results.size() == 1)
+									jsonMap.put(property, results.get(0));
+								else
+									jsonMap.put(property, results.toArray());
+							} else {
+								jsonMap.put(property, results);
+							}
+							//logger.debug("{}", jsonMap.get(property));
+							//logger.debug("{}", results);
+							//jsonMap.get(property).addAll(results);
 						} else {
 							jsonMap.put(property, results);
 						}
@@ -1442,8 +1472,8 @@ public class Harvester implements Runnable {
 					continue;
 				}
 				if (normalizeObj.containsKey(shortValue)) {
-					if (!results.contains("\"" + normalizeObj.get(shortValue) + "\"")){
-						results.add("\"" + normalizeObj.get(shortValue) + "\"");
+					if (!results.contains( normalizeObj.get(shortValue)  )){
+						results.add( normalizeObj.get(shortValue) );
 					}
 				} else {
 					if (!results.contains(currValue)){
@@ -1480,7 +1510,7 @@ public class Harvester implements Runnable {
                     	if (node.isLiteral()) {
                         	lang = node.asLiteral().getLanguage();
                             if (!lang.isEmpty()) {
-                            	rdfLanguages.add("\"" + lang + "\"");
+                            	rdfLanguages.add( lang );
 						    }
 						}
                     }
@@ -1496,19 +1526,19 @@ public class Harvester implements Runnable {
 
 		for (Map.Entry<String, Object> it : normalizeMissing.entrySet()) {
 			if (!jsonMap.containsKey(it.getKey())) {
-				ArrayList<String> res = new ArrayList<String>();
+				ArrayList<Object> res = new ArrayList<Object>();
 				Object miss_values = it.getValue();
                 if (miss_values instanceof String){
-				    res.add("\"" + (String)miss_values + "\"");
+				    res.add( (String) miss_values );
                 } else {
 		            if (miss_values instanceof List<?>){
         	            for (String miss_value: ((List<String>)miss_values)){
-            	            res.add("\"" + miss_value + "\"");
+            	            res.add( miss_value );
                         }
                     } else if(miss_values instanceof Number){
-						res.add("\"" + miss_values.toString() + "\"");
+						res.add( miss_values );
 					} else {
-						res.add("\"" + miss_values.toString() + "\"");
+						res.add( miss_values.toString() );
 					}
 	            }
 				jsonMap.put(it.getKey(), res);
@@ -1550,7 +1580,7 @@ public class Harvester implements Runnable {
 
 		while(resIt.hasNext()) {
 			Resource rs = resIt.nextResource();
-			Map<String, ArrayList<String>> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
+			Map<String, Object> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
 			if (addCounting){
 				jsonMap = addCountingToJsonMap(jsonMap);
 			}
