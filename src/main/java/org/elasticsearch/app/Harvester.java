@@ -36,6 +36,8 @@ import org.elasticsearch.app.logging.ESLogger;
 
 import org.elasticsearch.app.logging.Loggers;
 
+
+import org.elasticsearch.app.support.ESNormalizer;
 import org.elasticsearch.client.RestHighLevelClient;
 
 import org.elasticsearch.common.unit.TimeValue;
@@ -70,6 +72,8 @@ public class Harvester implements Runnable {
     private final ESLogger logger = Loggers.getLogger(Harvester.class);
 
 	private Indexer indexer;
+
+
 
 	private String rdfEndpoint = "";
 
@@ -138,8 +142,20 @@ public class Harvester implements Runnable {
 
 	private HashMap<String, String> uriLabelCache = new HashMap<String, String>();
 
+	public HashMap<String, String> getUriLabelCache(){
+		return this.uriLabelCache;
+	}
+
+	public void putToUriLabelCache(String uri, String result){
+		uriLabelCache.put(uri, result);
+	}
+
 	public String getRiverName(){
 		return this.riverName;
+	}
+
+	public String getRdfEndpoint() {
+		return rdfEndpoint;
 	}
 
 	/**
@@ -357,6 +373,10 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
+	public List<String> getUriDescriptionList() {
+		return uriDescriptionList;
+	}
+
 	/**
 	 * Sets the {@link Harvester}'s {@link #uriDescriptionList} parameter.
 	 * Whenever {@link #uriDescriptionList} is set, all the objects represented
@@ -372,6 +392,8 @@ public class Harvester implements Runnable {
 		uriDescriptionList = Arrays.asList(uriList.split(","));
 		return this;
 	}
+
+
 
 	/**
 	 * Sets the {@link Harvester}'s {@link #uriDescriptionList} parameter.
@@ -1352,12 +1374,13 @@ public class Harvester implements Runnable {
             itemsCount = new ArrayList<Object>();
             Map.Entry<String, Object> pair = (Map.Entry<String, Object>)it.next();
             itemsCount.add( pair.getValue());
-            countingMap.put("items_count_" + pair.getKey(), itemsCount.size());
+            countingMap.put("items_count_" + pair.getKey(), itemsCount);
         }
         jsonMap.putAll(countingMap);
         return jsonMap;
     }
-	/**
+
+    /**
 	 * Get JSON map for a given resource by applying the river settings
 	 * @param rs resource being processed
 	 * @param properties properties to be indexed
@@ -1369,8 +1392,22 @@ public class Harvester implements Runnable {
 	 */
 	private Map<String, Object> getJsonMap(Resource rs, Set<Property> properties, Model model,
 													  boolean getPropLabel) {
-		Map<String, Object> jsonMap = new HashMap<>();
-		ArrayList<Object> results = new ArrayList<Object>();
+
+		ESNormalizer esNormalizer = new ESNormalizer(rs, properties, model, getPropLabel, this);
+		esNormalizer.setAddUriForResource(addUriForResource);
+		esNormalizer.setNormalizeProp(normalizeProp);
+		esNormalizer.setWhiteMap(whiteMap);
+		esNormalizer.setBlackMap(blackMap);
+		esNormalizer.setNormalizeObj(normalizeObj);
+		esNormalizer.setAddLanguage(addLanguage);
+		esNormalizer.setNormalizeMissing(normalizeMissing);
+		esNormalizer.setLanguage(language);
+
+		esNormalizer.process();
+
+		return esNormalizer.getJsonMap();
+
+		/*ArrayList<Object> results = new ArrayList<Object>();
 
 		if(addUriForResource) {
 			results.add( rs.toString() );
@@ -1393,8 +1430,9 @@ public class Harvester implements Runnable {
 					property = norm_property.toString();
 					if (jsonMap.containsKey(property)) {
 						Object temp = jsonMap.get(property);
+
 						if(temp instanceof List){
-							if(((List) temp).size() == 1)
+							if(((List) results).size() == 1)
 								jsonMap.put(property,results.get(0));
 							else
 								jsonMap.put(property,results.toArray() );
@@ -1402,31 +1440,41 @@ public class Harvester implements Runnable {
 							jsonMap.put(property, results);
 						}
 					} else {
-						jsonMap.put(property, results);
+						if(results.size() == 1)
+							jsonMap.put(property, results.get(0));
+						else
+							jsonMap.put(property, results);
 					}
 				} else {
 					if (norm_property instanceof List<?>){
+
 						for (String norm_prop : ((List<String>) norm_property)) {
 							Object temp = jsonMap.get(norm_prop);
-
+							//TODO:
 							if (jsonMap.containsKey(norm_prop)) {
 								if(temp instanceof List){
 									//((List) temp).addAll(results);
 									if(results.size() == 1)
 										jsonMap.put(norm_prop, results.get(0));
 									else
-										jsonMap.put(norm_prop, results.toArray());
+										jsonMap.put(norm_prop, temp);
 								} else {
+
 									jsonMap.put(norm_prop, results);
 								}
 							} else {
-								jsonMap.put(norm_prop, results);
+								if(results.size() == 1)
+									jsonMap.put(norm_prop, results.get(0));
+								else
+									jsonMap.put(norm_prop, results);
 							}
 						}
+
 					} else {
 						property = norm_property.toString();
 						if (jsonMap.containsKey(property)) {
 							Object temp = jsonMap.get(property);
+							//TODO:
 							if(temp instanceof List){
 								//((List) temp).addAll(results);
 								if(results.size() == 1)
@@ -1434,13 +1482,19 @@ public class Harvester implements Runnable {
 								else
 									jsonMap.put(property, results.toArray());
 							} else {
-								jsonMap.put(property, results);
+								if(results.size() == 1)
+									jsonMap.put(property, results.get(0));
+								else
+									jsonMap.put(property, results);
+
 							}
-							//logger.debug("{}", jsonMap.get(property));
-							//logger.debug("{}", results);
 							//jsonMap.get(property).addAll(results);
 						} else {
-							jsonMap.put(property, results);
+							if(results.size() == 1)
+								jsonMap.put(property, results.get(0));
+							else
+								jsonMap.put(property, results);
+
 						}
 						logger.error("Normalizer error:" , norm_property);
 					}
@@ -1486,9 +1540,11 @@ public class Harvester implements Runnable {
 			if (results.isEmpty()) continue;
 
 
-		}
+		}*/
 
-		if(addLanguage) {
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		/*if(addLanguage) {
 			HashSet<Property> allProperties = new HashSet<Property>();
 
             StmtIterator it = model.listStatements();
@@ -1522,9 +1578,11 @@ public class Harvester implements Runnable {
 			if(!rdfLanguages.isEmpty())
 			    jsonMap.put(
 			        "language", new ArrayList<String>(rdfLanguages));
-	    }
+	    }*/
 
-		for (Map.Entry<String, Object> it : normalizeMissing.entrySet()) {
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		/*for (Map.Entry<String, Object> it : normalizeMissing.entrySet()) {
 			if (!jsonMap.containsKey(it.getKey())) {
 				ArrayList<Object> res = new ArrayList<Object>();
 				Object miss_values = it.getValue();
@@ -1543,9 +1601,9 @@ public class Harvester implements Runnable {
 	            }
 				jsonMap.put(it.getKey(), res);
 			}
-		}
+		}*/
 
-		return jsonMap;
+		//return jsonMap;
 	}
 
 	/**
@@ -1679,120 +1737,6 @@ public class Harvester implements Runnable {
 		return result.toString();
 	}
 
-	/**
-	 * Builds a String result for Elastic Search from an RDFNode
-	 * @param node An RDFNode representing the value of a property for a given
-	 * resource
-	 * @return If the RDFNode has a Literal value, among Boolean, Byte, Double,
-	 * Float, Integer Long, Short, this value is returned, converted to String
-	 * <p>If the RDFNode has a String Literal value, this value will be
-	 * returned, surrounded by double quotes </p>
-	 * <p>If the RDFNode has a Resource value (URI) and toDescribeURIs is set
-	 * to true, the value of @getLabelForUri for the resource is returned,
-	 * surrounded by double quotes.</p>
-	 * Otherwise, the URI will be returned
-	 */
-	private String getStringForResult(RDFNode node, boolean getNodeLabel) {
-		String result = "";
-		boolean quote = false;
-
-		if(node.isLiteral()) {
-			Object literalValue = node.asLiteral().getValue();
-			try {
-				Class<?> literalJavaClass = node.asLiteral()
-					.getDatatype()
-					.getJavaClass();
-
-				if (literalJavaClass.equals(Boolean.class)
-					|| Number.class.isAssignableFrom(literalJavaClass)) {
-
-					result += literalValue;
-				}	else {
-					result =	EEASettings.parseForJson(
-							node.asLiteral().getLexicalForm());
-					quote = true;
-				}
-			} catch (java.lang.NullPointerException npe) {
-				result = EEASettings.parseForJson(
-						node.asLiteral().getLexicalForm());
-				quote = true;
-			}
-
-		} else if(node.isResource()) {
-			result = node.asResource().getURI();
-			if(getNodeLabel) {
-				result = getLabelForUri(result);
-			}
-			quote = true;
-		}
-		if(quote) {
-			result = "\"" + result + "\"";
-		}
-		return result;
-	}
 
 
-	/**
-	 * Returns the string value of the first of the properties in the
-	 * uriDescriptionList for the given resource (as an URI). In case the
-	 * resource does not have any of the properties mentioned, its URI is
-	 * returned. The value is obtained by querying the endpoint and the
-	 * endpoint is queried repeatedly until it gives a response (value or the
-	 * lack of it)
-	 *
-	 * It is highly recommended that the list contains properties like labels
-	 * or titles, with test values.
-	 *
-	 * @param uri - the URI for which a label is required
-	 * @return a String value, either a label for the parameter or its value
-	 * if no label is obtained from the endpoint
-	 */
-	private String getLabelForUri(String uri) {
-		String result;
-
-		if (uriLabelCache.containsKey(uri)) {
-			return uriLabelCache.get(uri);
-		}
-
-		for(String prop:uriDescriptionList) {
-			String innerQuery = "SELECT ?r WHERE {<" + uri + "> <" +
-				prop + "> ?r } LIMIT 1";
-
-			try {
-				Query query = QueryFactory.create(innerQuery);
-				QueryExecution qExec = QueryExecutionFactory.sparqlService(
-						rdfEndpoint,
-						query);
-				boolean keepTrying = true;
-				while(keepTrying) {
-					keepTrying = false;
-
-					//TODO : try finally?
-					try {
-						ResultSet results = qExec.execSelect();
-
-						if(results.hasNext()) {
-							QuerySolution sol = results.nextSolution();
-							result = EEASettings.parseForJson(
-									sol.getLiteral("r").getLexicalForm());
-							if(!result.isEmpty()) {
-								uriLabelCache.put(uri, result);
-								return result;
-							}
-						}
-					} catch(Exception e) {
-						keepTrying = true;
-                        //TODO:LOG - DONE
-						logger.warn("Could not get label for uri {}. Retrying.",
-									uri);
-					} finally { qExec.close();}
-				}
-			} catch (QueryParseException qpe) {
-                //TODO:LOG - DONE
-				logger.error("Exception for query {}. The label cannot be obtained",
-							 innerQuery);
-			}
-		}
-		return uri;
-	}
 }
