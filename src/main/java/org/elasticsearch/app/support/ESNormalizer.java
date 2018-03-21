@@ -5,6 +5,7 @@ import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.*;
 import org.elasticsearch.app.EEASettings;
 import org.elasticsearch.app.Harvester;
+import org.elasticsearch.app.debug.JSONMap;
 import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
 
@@ -17,7 +18,7 @@ public class ESNormalizer {
     private Model model;
     private boolean getPropLabel;
 
-    private HashMap<String, Object> jsonMap = new HashMap<>();
+    private HashMap<String, Object> jsonMap = new JSONMap();
 
     private boolean addUriForResource;
     private Map<String, Object> normalizeProp;
@@ -90,6 +91,7 @@ public class ESNormalizer {
             if (!jsonMap.containsKey(it.getKey())) {
                 ArrayList<Object> res = new ArrayList<Object>();
                 Object miss_values = it.getValue();
+
                 if (miss_values instanceof String) {
                     res.add((String) miss_values);
                 } else {
@@ -154,6 +156,7 @@ public class ESNormalizer {
             }
         }
 
+
         // Do not index empty properties
         if (!results.isEmpty()) {
 
@@ -161,10 +164,14 @@ public class ESNormalizer {
                 Object norm_property = normalizeProp.get(property);
                 if (norm_property instanceof String){
                     property = norm_property.toString();
+                    if(property.equals("http://www.eea.europa.eu/ontologies.rdf#fleschReadingEaseScore")){
+                        logger.debug("{}", results);
+                    }
                     if (jsonMap.containsKey(property)) {
                         Object temp = jsonMap.get(property);
                         if(temp instanceof List){
                             results.addAll((List) temp);
+
                             if( results.size() == 1)
                                 jsonMap.put(property,results.get(0));
                             else
@@ -179,6 +186,9 @@ public class ESNormalizer {
                             jsonMap.put(property, results);
                     }
                 } else {
+                    if(property.equals("http://www.eea.europa.eu/ontologies.rdf#fleschReadingEaseScore")){
+                        logger.debug("{}", results);
+                    }
                     if (norm_property instanceof List<?>){
 
                         for (String norm_prop : ((List<String>) norm_property)) {
@@ -205,6 +215,9 @@ public class ESNormalizer {
 
                     } else {
                         property = norm_property.toString();
+                        if(property.equals("http://www.eea.europa.eu/ontologies.rdf#fleschReadingEaseScore")){
+                            logger.debug("{}", results);
+                        }
                         if (jsonMap.containsKey(property)) {
                             Object temp = jsonMap.get(property);
                             //TODO:
@@ -233,6 +246,9 @@ public class ESNormalizer {
                     }
                 }
             } else {
+                if(property.equals("http://www.eea.europa.eu/ontologies.rdf#fleschReadingEaseScore")){
+                    logger.debug("{}", results);
+                }
                 jsonMap.put(property, results);
             }
         }

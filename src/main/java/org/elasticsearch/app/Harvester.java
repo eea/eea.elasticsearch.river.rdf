@@ -1369,12 +1369,28 @@ public class Harvester implements Runnable {
         Iterator it = jsonMap.entrySet().iterator();
         Map<String, Object> countingMap = new HashMap<String, Object>();
         ArrayList<Object> itemsCount = new ArrayList<Object>();
+
         //TODO: fix
         while (it.hasNext()) {
             itemsCount = new ArrayList<Object>();
             Map.Entry<String, Object> pair = (Map.Entry<String, Object>)it.next();
-            itemsCount.add( pair.getValue());
-            countingMap.put("items_count_" + pair.getKey(), itemsCount);
+
+            if(pair.getValue() instanceof List<?>){
+				//itemsCount.add( ((List) pair.getValue()).size());
+				if( ((List) pair.getValue()).size() == 1){
+					countingMap.put("items_count_" + pair.getKey(),((List) pair.getValue()).get(0) );
+				} else {
+					countingMap.put("items_count_" + pair.getKey(), ((List) pair.getValue()).size());
+				}
+
+			} else {
+            	if((pair.getValue() instanceof Number) ){
+            		countingMap.put("items_count_" + pair.getKey(), pair.getValue());
+				} else {
+					itemsCount.add( pair.getValue());
+					countingMap.put("items_count_" + pair.getKey(), itemsCount.size());
+				}
+			}
         }
         jsonMap.putAll(countingMap);
         return jsonMap;
