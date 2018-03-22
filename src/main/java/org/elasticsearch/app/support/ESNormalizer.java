@@ -164,9 +164,7 @@ public class ESNormalizer {
                 Object norm_property = normalizeProp.get(property);
                 if (norm_property instanceof String){
                     property = norm_property.toString();
-                    if(property.equals("http://www.eea.europa.eu/ontologies.rdf#fleschReadingEaseScore")){
-                        logger.debug("{}", results);
-                    }
+
                     if (jsonMap.containsKey(property)) {
                         Object temp = jsonMap.get(property);
                         if(temp instanceof List){
@@ -186,9 +184,7 @@ public class ESNormalizer {
                             jsonMap.put(property, results);
                     }
                 } else {
-                    if(property.equals("http://www.eea.europa.eu/ontologies.rdf#fleschReadingEaseScore")){
-                        logger.debug("{}", results);
-                    }
+
                     if (norm_property instanceof List<?>){
 
                         for (String norm_prop : ((List<String>) norm_property)) {
@@ -203,6 +199,7 @@ public class ESNormalizer {
                                     else
                                         jsonMap.put(norm_prop,results );
                                 } else {
+                                    results.add(temp);
                                     jsonMap.put(norm_prop, results);
                                 }
                             } else {
@@ -215,9 +212,7 @@ public class ESNormalizer {
 
                     } else {
                         property = norm_property.toString();
-                        if(property.equals("http://www.eea.europa.eu/ontologies.rdf#fleschReadingEaseScore")){
-                            logger.debug("{}", results);
-                        }
+
                         if (jsonMap.containsKey(property)) {
                             Object temp = jsonMap.get(property);
                             //TODO:
@@ -246,9 +241,6 @@ public class ESNormalizer {
                     }
                 }
             } else {
-                if(property.equals("http://www.eea.europa.eu/ontologies.rdf#fleschReadingEaseScore")){
-                    logger.debug("{}", results);
-                }
                 jsonMap.put(property, results);
             }
         }

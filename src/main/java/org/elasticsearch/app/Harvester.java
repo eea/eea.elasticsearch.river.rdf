@@ -1376,12 +1376,7 @@ public class Harvester implements Runnable {
             Map.Entry<String, Object> pair = (Map.Entry<String, Object>)it.next();
 
             if(pair.getValue() instanceof List<?>){
-				if( ((List) pair.getValue()).size() == 1){
-					countingMap.put("items_count_" + pair.getKey(),((List) pair.getValue()).get(0) );
-				} else {
 					countingMap.put("items_count_" + pair.getKey(), ((List) pair.getValue()).size());
-				}
-
 			} else {
             	if((pair.getValue() instanceof Number) ){
             		countingMap.put("items_count_" + pair.getKey(), pair.getValue());
