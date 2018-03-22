@@ -275,8 +275,8 @@ public class Harvester implements Runnable {
 		if(!language.isEmpty()) {
 			addLanguage = true;
 			/* Quote the language str */
-			if(!language.startsWith("\""))
-				language = "\"" +  this.language + "\"";
+			/*if(!language.startsWith("\""))
+				language = "\"" +  this.language + "\"";*/
 		}
 		return this;
 	}

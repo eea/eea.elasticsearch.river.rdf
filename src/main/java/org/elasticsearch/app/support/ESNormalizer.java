@@ -303,6 +303,9 @@ public class ESNormalizer {
                 if(rdfLanguages.size() == 1 ){
                     Iterator iter = rdfLanguages.iterator();
                     Object first = iter.next();
+                    if(first instanceof List<?>){
+                        logger.info("is LIST");
+                    }
                     jsonMap.put("language", first);
                 } else {
                     jsonMap.put("language", rdfLanguages);
