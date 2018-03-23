@@ -1,2 +1,2 @@
-* * * * * solo -port=6000 /bin/bash /usr/src/river.rdf/indexer.sh
+* * * * * solo -port=6000 /bin/bash /usr/src/river.rdf/indexer.sh > /proc/$(cat /var/run/crond.pid)/fd/1 2>&1
 # Mandatory blank line
