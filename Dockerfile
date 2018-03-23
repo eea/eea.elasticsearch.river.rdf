@@ -11,7 +11,7 @@ RUN apt-get install -y rsyslog > /dev/null
 
 #ADD crontab /var/spool/cron/crontabs/root
 #RUN chmod 0600 /var/spool/cron/crontabs/root
-RUN touch /var/log/cron-ady.log
+#RUN touch /var/log/cron-ady.log
 
 #RUN service cron start
 RUN service rsyslog start
