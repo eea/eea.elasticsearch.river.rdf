@@ -54,7 +54,7 @@ public class Indexer {
 
     public static void main(String[] args) throws IOException {
 
-        logger.info("STARTING...");
+        logger.info("Starting...");
 
         Indexer indexer = new Indexer();
 
