@@ -1,6 +1,7 @@
 package  org.elasticsearch.app;
 
 import com.google.common.collect.Maps;
+import org.apache.jena.base.Sys;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
@@ -667,7 +668,9 @@ public class Harvester implements Runnable {
 	 * @param queryObjName name of the object returned
 	 * @return set of values for queryObjectName in the rdfQuery result
 	 */
-	HashSet<String> executeSyncQuery(String rdfQuery, String queryObjName) {
+	HashSet<String> executeSyncQuery(String rdfQuery, String queryObjName, int syncQueryCounter) {
+		long startTime = System.currentTimeMillis();
+
 		logger.info("Start executeSyncQuery");
 		logger.info("QUERY:");
 		logger.info(rdfQuery);
@@ -711,6 +714,10 @@ public class Harvester implements Runnable {
 		} finally {
 			qExec.close();
 		}
+
+
+		long endTime = System.currentTimeMillis();
+		logger.info("timeQuery: #" + syncQueryCounter + " : executeSyncQuery for rdfUrls took : {} ms" , endTime - startTime);
 
 		return rdfUrls;
 	}
@@ -962,6 +969,8 @@ public class Harvester implements Runnable {
 	public boolean sync() {
 		//TODO: LOG
 		logger.info("Sync resources newer than {}", startTime);
+		int rdfUrlssyncQueryCounter = 0;
+		int modelSyncQueryCounter = 0;
 
 		String rdfQueryTemplate =
 				"PREFIX xsd:<http://www.w3.org/2001/XMLSchema#> "
@@ -973,10 +982,9 @@ public class Harvester implements Runnable {
 		String queryStr = String.format(rdfQueryTemplate, syncConditions,
 										syncTimeProp, graphSyncConditions,
 										startTime);
-		Set<String> syncUris = executeSyncQuery(queryStr, "resource");
 
-
-
+		Set<String> syncUris = executeSyncQuery(queryStr, "resource", rdfUrlssyncQueryCounter);
+		rdfUrlssyncQueryCounter++;
 		//TODO : if error retry
 		if (syncUris == null) {
 			logger.error("Errors occurred during sync procedure. Aborting!");
@@ -1004,7 +1012,8 @@ public class Harvester implements Runnable {
 									 syncTimeProp, graphSyncConditions,
 									 sdf.format(new Date(0)));
 
-			HashSet<String> allIndexURIs = executeSyncQuery(queryStr, "resource");
+			HashSet<String> allIndexURIs = executeSyncQuery(queryStr, "resource", rdfUrlssyncQueryCounter);
+			rdfUrlssyncQueryCounter++;
 
 			if (allIndexURIs == null) {
 				logger.error("Errors occurred during modified content sync query. Aborting!");
@@ -1044,8 +1053,13 @@ public class Harvester implements Runnable {
 
 				try {
 					Query query = QueryFactory.create(syncQuery );
+
+					long startTime = System.currentTimeMillis();
 					QueryExecution qExec = QueryExecutionFactory.sparqlService(rdfEndpoint, query);
+
+
 					qExec.setTimeout(-1);
+
 					try {
 						Model constructModel =  ModelFactory.createDefaultModel();
 
@@ -1054,6 +1068,10 @@ public class Harvester implements Runnable {
 						} catch (ARQException exc ){
 							logger.error("com.hp.hpl.jena.sparql.ARQException: [{}]", exc);
 						}
+
+						long endTime = System.currentTimeMillis();
+						logger.info("timeQuery: " + modelSyncQueryCounter + " : modelSyncQuery took : {} ms" , endTime - startTime);
+						modelSyncQueryCounter++;
 
 						BulkRequest bulkRequest = new BulkRequest();
 
