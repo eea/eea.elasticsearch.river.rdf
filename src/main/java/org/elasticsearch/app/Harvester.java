@@ -575,7 +575,10 @@ public class Harvester implements Runnable {
 	}
 
 	public void run() {
+		logger.setLevel(this.indexer.loglevel);
+
 		Thread.currentThread().setName(riverName);
+
 	    while(!this.closed && !synced){
             long currentTime = System.currentTimeMillis();
 			boolean success = false;

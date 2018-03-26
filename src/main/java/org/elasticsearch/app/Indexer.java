@@ -39,6 +39,7 @@ public class Indexer {
     private String RIVER_INDEX = "eeariver";
     private boolean MULTITHREADING_ACTIVE = false;
     private int THREADS = 1;
+    public String loglevel;
 
     private static final ESLogger logger = Loggers.getLogger(Indexer.class);
 
@@ -57,6 +58,7 @@ public class Indexer {
         logger.info("Starting...");
 
         Indexer indexer = new Indexer();
+        logger.setLevel(indexer.loglevel);
 
         logger.info("Username:" + indexer.envMap.get("elastic_user"));
         logger.info("Password: " + indexer.envMap.get("elastic_pass"));
@@ -65,6 +67,7 @@ public class Indexer {
         logger.info("RIVER INDEX: " + indexer.RIVER_INDEX);
         logger.info("MULTITHREADING_ACTIVE: " + indexer.MULTITHREADING_ACTIVE);
         logger.info("THREADS: " + indexer.THREADS);
+        logger.info("LOG_LEVEL: " + indexer.envMap.get("LOG_LEVEL") );
 
         if(indexer.rivers.size() == 0){
             logger.info("No rivers detected");
@@ -129,6 +132,7 @@ public class Indexer {
         this.MULTITHREADING_ACTIVE  = (env.get("indexer_multithreading") != null) ?
                 Boolean.parseBoolean(env.get("indexer_multithreading")) : this.MULTITHREADING_ACTIVE;
         this.THREADS = (env.get("threads") != null) ? Integer.parseInt(env.get("threads")) : this.THREADS;
+        this.loglevel = ( env.get("LOG_LEVEL") != null) ? env.get("LOG_LEVEL") : "info";
 
         credentialsProvider.setCredentials(AuthScope.ANY,
                 new UsernamePasswordCredentials(user , pass));
