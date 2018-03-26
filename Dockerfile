@@ -4,9 +4,6 @@ ADD . /usr/src/river.rdf
 ADD solo.sh /usr/bin/solo
 RUN chmod +x /usr/bin/solo
 
-#RUN apt-get update
-#RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apt-utils
-
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates \
