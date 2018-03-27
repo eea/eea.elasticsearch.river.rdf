@@ -583,6 +583,7 @@ public class Harvester implements Runnable {
 	    while(!this.closed && !synced){
             long currentTime = System.currentTimeMillis();
 			boolean success = false;
+
             /*SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
             Long ts = Long.valueOf(0);
             try {
@@ -603,6 +604,7 @@ public class Harvester implements Runnable {
 
             //TODO: async ?
             if (success) {
+
                 setLastUpdate(new Date(currentTime));
 
                 success = false;
@@ -611,6 +613,10 @@ public class Harvester implements Runnable {
                 DeleteRequest deleteRequest = new DeleteRequest(riverIndex, "river", riverName);
 
                 Harvester that = this;
+
+				logger.info("===============================================================================");
+				logger.info("TOTAL TIME:  {} ms", System.currentTimeMillis() - currentTime );
+				logger.info("===============================================================================");
 
                 client.deleteAsync(deleteRequest, new ActionListener<DeleteResponse>() {
                     @Override
@@ -1045,6 +1051,9 @@ public class Harvester implements Runnable {
 		boolean isBulkWithErrors = false;
 		ArrayList<String> urisWithErrors = new ArrayList<String>();
 		ArrayList<String> urisUpdatedWithSuccess = new ArrayList<String>();
+
+		int modelCounter = 0;
+
 		while (true){
 			for (ArrayList<String> bulk : bulks) {
 				String syncQuery = getSyncQueryStr(bulk);
@@ -1056,7 +1065,6 @@ public class Harvester implements Runnable {
 
 					long startTime = System.currentTimeMillis();
 					QueryExecution qExec = QueryExecutionFactory.sparqlService(rdfEndpoint, query);
-
 
 					qExec.setTimeout(-1);
 
@@ -1070,7 +1078,9 @@ public class Harvester implements Runnable {
 						}
 
 						long endTime = System.currentTimeMillis();
-						logger.info("timeQuery: " + modelSyncQueryCounter + " : modelSyncQuery took : {} ms" , endTime - startTime);
+						logger.info("timeQuery: " + modelSyncQueryCounter + " : modelSyncQuery took : {} ms" ,
+								endTime - startTime
+						);
 						modelSyncQueryCounter++;
 
 						BulkRequest bulkRequest = new BulkRequest();
@@ -1080,7 +1090,7 @@ public class Harvester implements Runnable {
 						*  as the query already returned the correct labels.
 						*/
 
-						addModelToES(constructModel, bulkRequest, false);
+						addModelToES(constructModel, bulkRequest, false, modelCounter);
 
 						count += bulk.size();
 
@@ -1105,13 +1115,13 @@ public class Harvester implements Runnable {
 								}
 							}
 
-							if (e.getMessage() == "Future got interrupted"){
+							if (e.getMessage().equals("Future got interrupted")){
 								return false;
 							}
 
-						} finally {
-							qExec.close();
-						}
+					} finally {
+						qExec.close();
+					}
 				} catch (QueryParseException  qpe) {
 					//TODO: LOG - DONE
 					logger.warn("Could not parse Sync query. Please provide a relevant query. {}", qpe.getLocalizedMessage());
@@ -1646,6 +1656,7 @@ public class Harvester implements Runnable {
 	 *                     as their label. The label is taken as the value of
 	 *                     one of the properties set in {@link #uriDescriptionList}.
 	 */
+	@SuppressWarnings("Duplicates")
 	private void addModelToES(Model model, BulkRequest bulkRequest, boolean getPropLabel) {
 		long startTime = System.currentTimeMillis();
 		long bulkLength = 0;
@@ -1725,7 +1736,100 @@ public class Harvester implements Runnable {
 					bulkLength, indexName, typeName,
 					(System.currentTimeMillis() - startTime)/ 1000.0);
 	}
-        
+
+
+	@SuppressWarnings("Duplicates")
+	private void addModelToES(Model model, BulkRequest bulkRequest, boolean getPropLabel, int modelCounter) {
+		long startTime = System.currentTimeMillis();
+		long bulkLength = 0;
+		HashSet<Property> properties = new HashSet<Property>();
+
+		StmtIterator it = model.listStatements();
+		while(it.hasNext()) {
+			Statement st = it.nextStatement();
+			Property prop = st.getPredicate();
+			String property = prop.toString();
+
+			if (rdfPropList.isEmpty()
+					|| (isWhitePropList && rdfPropList.contains(property))
+					|| (!isWhitePropList && !rdfPropList.contains(property))
+					|| (normalizeProp.containsKey(property))) {
+				properties.add(prop);
+			}
+		}
+
+		ResIterator resIt = model.listSubjects();
+
+		int jsonMapCounter = 0;
+		while(resIt.hasNext()) {
+			Resource rs = resIt.nextResource();
+
+			long startJsonMap = System.currentTimeMillis();
+
+			Map<String, Object> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
+			long endJsonMap = System.currentTimeMillis();
+			logger.info("jsonMapTime : #" + modelCounter + "|" + jsonMapCounter + " : " + "{}",
+					endJsonMap - startJsonMap
+			);
+			jsonMapCounter++;
+
+
+			if (addCounting){
+				jsonMap = addCountingToJsonMap(jsonMap);
+			}
+
+			//TODO: prepareIndex - DONE ; make request async?
+			bulkRequest.add( new IndexRequest(indexName, typeName, rs.toString())
+					//.source(mapToString(jsonMap)));
+					.source(jsonMap));
+
+			bulkLength++;
+
+			// We want to execute the bulk for every  DEFAULT_BULK_SIZE requests
+			if(bulkLength % EEASettings.DEFAULT_BULK_SIZE == 0) {
+				BulkResponse bulkResponse = null;
+
+				//TODO: make request async
+				try {
+					bulkResponse = client.bulk(bulkRequest);
+
+				} catch (IOException e) {
+					e.printStackTrace();
+
+				}
+
+				if (bulkResponse.hasFailures()) {
+					processBulkResponseFailure(bulkResponse);
+				}
+
+				// After executing, flush the BulkRequestBuilder.
+				//TODO: prepareBulk - DONE
+				bulkRequest = new BulkRequest();
+			}
+		}
+
+		// Execute remaining requests
+		if(bulkRequest.numberOfActions() > 0) {
+			//BulkResponse response = bulkRequest.execute().actionGet();
+			BulkResponse response = null;
+			try {
+				response = client.bulk(bulkRequest);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			// Handle failure by iterating through each bulk response item
+			if(response != null && response.hasFailures()) {
+				processBulkResponseFailure(response);
+			}
+		}
+
+		// Show time taken to index the documents
+		//TODO:LOG - DONE
+		logger.info("Indexed {} documents on {}/{} in {} seconds",
+				bulkLength, indexName, typeName,
+				(System.currentTimeMillis() - startTime)/ 1000.0);
+	}
         
 	/**
 	 *  This method processes failures by iterating through each bulk response item
