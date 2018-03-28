@@ -12,7 +12,7 @@ import org.elasticsearch.app.logging.Loggers;
 import java.util.*;
 
 public class ESNormalizer {
-    private final Harvester harvester;
+    private Harvester harvester;
     private Resource rs;
     private Set<Property> properties;
     private Model model;
@@ -65,6 +65,9 @@ public class ESNormalizer {
 
     public void setAddLanguage(Boolean addLanguage) {
         this.addLanguage = addLanguage;
+    }
+
+    public ESNormalizer(){
     }
 
     public ESNormalizer(Resource rs, Set<Property> properties, Model model, boolean getPropLabel, Harvester harvester) {
@@ -335,13 +338,17 @@ public class ESNormalizer {
                 Class<?> literalJavaClass = node.asLiteral()
                         .getDatatype()
                         .getJavaClass();
+                String literalJavaClassName = node.asLiteral()
+                        .getDatatype()
+                        .getJavaClass().getName();
 
-                if (literalJavaClass.equals(Boolean.class)
-                        || Number.class.isAssignableFrom(literalJavaClass)) {
+                boolean BoolOrNumber = literalJavaClassName.equals(Boolean.class.getName())
+                        || Number.class.isAssignableFrom(literalJavaClass);
 
+                if (BoolOrNumber) {
                     result += literalValue;
-                }	else {
-                    result =	EEASettings.parseForJson(
+                } else {
+                    result = EEASettings.parseForJson(
                             node.asLiteral().getLexicalForm());
                     quote = true;
                 }
