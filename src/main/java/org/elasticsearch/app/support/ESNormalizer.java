@@ -117,8 +117,6 @@ public class ESNormalizer {
         }
     }
 
-
-    @SuppressWarnings("Duplicates")
     private void processProperty(Property prop) {
         NodeIterator niter = model.listObjectsOfProperty(rs,prop);
         String property = prop.toString();
