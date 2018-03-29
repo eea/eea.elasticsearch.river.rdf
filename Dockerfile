@@ -27,3 +27,5 @@ RUN service cron start && service rsyslog start
 #CMD service cron start && service rsyslog start
 
 #CMD cd /usr/src/river.rdf &&  mvn clean && mvn compile && mvn exec:java -Dexec.mainClass="org.elasticsearch.app.Indexer"
+
+#CMD ./startup.sh

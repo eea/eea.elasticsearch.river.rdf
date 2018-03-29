@@ -36,7 +36,13 @@ public class Indexer {
     private final static String PASS = "rw_pass";
     private final static String HOST = "localhost";
     private final static int PORT = 9200;
+
     private String RIVER_INDEX = "eeariver";
+
+    public String getRIVER_INDEX() {
+        return RIVER_INDEX;
+    }
+
     private boolean MULTITHREADING_ACTIVE = false;
     private int THREADS = 1;
     public String loglevel;
@@ -55,7 +61,7 @@ public class Indexer {
 
     public static void main(String[] args) throws IOException {
 
-        logger.info("Starting...");
+        logger.info("Starting application...");
 
         Indexer indexer = new Indexer();
         logger.setLevel(indexer.loglevel);
@@ -104,17 +110,20 @@ public class Indexer {
             try {
                 DeleteIndexRequest request = new DeleteIndexRequest(indexer.RIVER_INDEX);
                 indexer.client.indices().delete(request);
+                logger.info("Deleting river index!!!");
+
             } catch (ElasticsearchException exception) {
                 if (exception.status() == RestStatus.NOT_FOUND) {
                     logger.error("River index not found");
+                    logger.info("Tasks interrupted by missing river index.");
+                    indexer.close();
                 }
             }
 
-            logger.info("Deleting river index!!!");
         } catch (InterruptedException ignored) {
+            logger.info("Tasks interrupted.");
         }
         logger.info("All tasks completed.");
-
         indexer.close();
 
     }

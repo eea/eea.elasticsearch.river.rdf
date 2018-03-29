@@ -1,7 +1,5 @@
 package  org.elasticsearch.app;
 
-import com.google.common.collect.Maps;
-import org.apache.jena.base.Sys;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
@@ -42,9 +40,11 @@ import org.elasticsearch.app.support.ESNormalizer;
 import org.elasticsearch.client.RestHighLevelClient;
 
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
@@ -60,6 +60,7 @@ import static org.elasticsearch.index.query.QueryBuilders.termQuery;
  *
  */
 public class Harvester implements Runnable {
+	private static boolean DEBUG_TIME = false;
 
 	private boolean synced = false;
 
@@ -577,8 +578,28 @@ public class Harvester implements Runnable {
 
 	public void run() {
 		logger.setLevel(this.indexer.loglevel);
-
 		Thread.currentThread().setName(riverName);
+
+		if(checkRiverNotExists()){
+			SearchRequest searchRequest = new SearchRequest(indexer.getRIVER_INDEX());
+			SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+			searchSourceBuilder.query(QueryBuilders.matchAllQuery());
+			searchRequest.source(searchSourceBuilder);
+
+			try {
+				SearchResponse searchResponse = client.search(searchRequest);
+				SearchHits hits = searchResponse.getHits();
+				long totalHits = hits.getTotalHits();
+				if(totalHits == 0 ){
+					indexer.close();
+				}
+			} catch (IOException e) {
+				indexer.close();
+				e.printStackTrace();
+			}
+
+			this.close();
+		}
 
 	    while(!this.closed && !synced){
             long currentTime = System.currentTimeMillis();
@@ -723,7 +744,10 @@ public class Harvester implements Runnable {
 
 
 		long endTime = System.currentTimeMillis();
-		logger.info("timeQuery: #" + syncQueryCounter + " : executeSyncQuery for rdfUrls took : {} ms" , endTime - startTime);
+		if(DEBUG_TIME){
+			logger.info("timeQuery: #" + syncQueryCounter + " : executeSyncQuery for rdfUrls took : {} ms" , endTime - startTime);
+		}
+
 
 		return rdfUrls;
 	}
@@ -1054,6 +1078,8 @@ public class Harvester implements Runnable {
 
 		int modelCounter = 0;
 
+
+
 		while (true){
 			for (ArrayList<String> bulk : bulks) {
 				String syncQuery = getSyncQueryStr(bulk);
@@ -1078,9 +1104,13 @@ public class Harvester implements Runnable {
 						}
 
 						long endTime = System.currentTimeMillis();
-						logger.info("timeQuery: " + modelSyncQueryCounter + " : modelSyncQuery took : {} ms" ,
-								endTime - startTime
-						);
+
+						if(DEBUG_TIME){
+							logger.info("timeQuery: " + modelSyncQueryCounter + " : modelSyncQuery took : {} ms" ,
+									endTime - startTime
+							);
+						}
+
 						modelSyncQueryCounter++;
 
 						BulkRequest bulkRequest = new BulkRequest();
@@ -1089,6 +1119,12 @@ public class Harvester implements Runnable {
 						*  When adding the model to ES do not use toDescribeURIs
 						*  as the query already returned the correct labels.
 						*/
+						if(checkRiverNotExists()){
+							logger.error("River doesn't exist anymore");
+							logger.error("INDEXING CANCELLED");
+							this.close();
+							return false;
+						}
 
 						addModelToES(constructModel, bulkRequest, false, modelCounter);
 
@@ -1103,21 +1139,30 @@ public class Harvester implements Runnable {
 						logger.error("Error while querying for modified content. {}", e.getLocalizedMessage());
 						e.printStackTrace();
 
-							if (! isBulkWithErrors){
-								for (String uri : bulk){
-									ArrayList<String> currentErrorBulk = new ArrayList<String>();
-									currentErrorBulk.add(uri);
-									bulksWithErrors.add(currentErrorBulk);
-								}
-							} else{
-								for (String uri : bulk){
-									urisWithErrors.add(String.format("%s %s", uri, e.getLocalizedMessage()));
-								}
+						if (! isBulkWithErrors){
+							for (String uri : bulk){
+								ArrayList<String> currentErrorBulk = new ArrayList<String>();
+								currentErrorBulk.add(uri);
+								bulksWithErrors.add(currentErrorBulk);
 							}
+						} else{
+							for (String uri : bulk){
+								urisWithErrors.add(String.format("%s %s", uri, e.getLocalizedMessage()));
+							}
+						}
 
-							if (e.getMessage().equals("Future got interrupted")){
+						if (e.getMessage().equals("Future got interrupted")){
+							return false;
+						}
+						if( e instanceof ElasticsearchStatusException ){
+							RestStatus restStatus = ((ElasticsearchStatusException) e).status();
+							if(restStatus.getStatus() == 404){
+								logger.error("River doesn't exist anymore");
+								logger.error("INDEXING CANCELLED");
+								this.close();
 								return false;
 							}
+						}
 
 					} finally {
 						qExec.close();
@@ -1183,6 +1228,27 @@ public class Harvester implements Runnable {
 		return true;
 	}
 
+	private boolean checkRiverNotExists() {
+		GetRequest getRequest = new GetRequest(indexer.getRIVER_INDEX(), "river", riverName);
+		try {
+			GetResponse getResponse = client.get(getRequest);
+			if (getResponse.isExists()) {
+				return false;
+			} else {
+				logger.error("River doesn't exist anymore");
+				logger.error("INDEXING CANCELLED");
+				//TODO: update global-search_status ? or remove indexed cluster?
+				this.close();
+				return true;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			logger.error("River doesn't exist anymore");
+			logger.error("INDEXING CANCELLED");
+			this.close();
+			return true;
+		}
+	}
 
 
 	/**
@@ -1208,6 +1274,7 @@ public class Harvester implements Runnable {
 			 * Harvest from a SPARQL endpoint
 			 */
 			if(!rdfQueries.isEmpty()) {
+				//TODO: not updated for ES6
 				harvestFromEndpoint();
 			}
 
@@ -1768,9 +1835,14 @@ public class Harvester implements Runnable {
 
 			Map<String, Object> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
 			long endJsonMap = System.currentTimeMillis();
-			logger.info("jsonMapTime : #" + modelCounter + "|" + jsonMapCounter + " : " + "{}",
-					endJsonMap - startJsonMap
-			);
+
+			if(DEBUG_TIME){
+				logger.info("jsonMapTime : #" + modelCounter + "|" + jsonMapCounter + " : " + "{}",
+						endJsonMap - startJsonMap
+				);
+			}
+
+
 			jsonMapCounter++;
 
 
@@ -1823,6 +1895,8 @@ public class Harvester implements Runnable {
 				processBulkResponseFailure(response);
 			}
 		}
+
+
 
 		// Show time taken to index the documents
 		//TODO:LOG - DONE

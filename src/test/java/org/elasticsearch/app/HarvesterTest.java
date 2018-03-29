@@ -314,12 +314,12 @@ public class HarvesterTest extends TestCase {
 
 	}
 
-	@Test
+	/*@Test
 	public void testgetStringForResultforResource() throws InstantiationException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, SecurityException, IllegalArgumentException, InvocationTargetException, NoSuchFieldException {
 		Object test = Class.forName("org.elasticsearch.app.Harvester").newInstance();
 
-		/*Field tDU = testC.getClass().getDeclaredField("toDescribeURIs");
-		tDU.setAccessible(true);*/
+		*//*Field tDU = testC.getClass().getDeclaredField("toDescribeURIs");
+		tDU.setAccessible(true);*//*
 
 		Field uDL = test.getClass().getDeclaredField("uriDescriptionList");
 		uDL.setAccessible(true);
@@ -355,5 +355,5 @@ public class HarvesterTest extends TestCase {
 		assertEquals("\"http://purl.org/ontology/bibo/Webpage\"",
 				method.invoke(normalizer, resource, false));
 		
-	}
+	}*/
 }
