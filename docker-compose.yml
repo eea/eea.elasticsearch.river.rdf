@@ -17,8 +17,8 @@ indexer:
     #eea.indexer.department: "Elasticsearch river indexer"
     #eea.indexer.label-with-empty-value: ""
 
-  command:
-      sh -c "printenv | grep -v "no_proxy" >> /etc/environment && /usr/sbin/service cron start  && /usr/sbin/service rsyslog start  && tail -f /dev/null"
+  #command:
+      #sh -c "printenv | grep -v "no_proxy" >> /etc/environment && /usr/sbin/service cron start  && /usr/sbin/service rsyslog start  && tail -f /dev/null"
 
   volumes:
       - .:/usr/src/river.rdf

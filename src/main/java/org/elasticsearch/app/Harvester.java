@@ -1,6 +1,6 @@
 package  org.elasticsearch.app;
 
-import org.apache.jena.graph.Graph;
+/*import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.graph.Triple;
@@ -8,8 +8,16 @@ import org.apache.jena.query.*;
 
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.sparql.ARQException;
-import org.apache.jena.sparql.engine.http.QueryExceptionHTTP;
+import org.apache.jena.sparql.engine.http.QueryExceptionHTTP;*/
 
+import com.hp.hpl.jena.graph.Graph;
+import com.hp.hpl.jena.graph.Node;
+import com.hp.hpl.jena.graph.NodeFactory;
+import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.query.*;
+import com.hp.hpl.jena.rdf.model.*;
+import com.hp.hpl.jena.sparql.ARQException;
+import com.hp.hpl.jena.sparql.engine.http.QueryExceptionHTTP;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.RiotException;
@@ -60,7 +68,7 @@ import static org.elasticsearch.index.query.QueryBuilders.termQuery;
  *
  */
 public class Harvester implements Runnable {
-	private static boolean DEBUG_TIME = false;
+	private static boolean DEBUG_TIME = true;
 
 	private boolean synced = false;
 
@@ -1137,7 +1145,6 @@ public class Harvester implements Runnable {
 					} catch (Exception e){
 						//TODO: LOG - DONE
 						logger.error("Error while querying for modified content. {}", e.getLocalizedMessage());
-						e.printStackTrace();
 
 						if (! isBulkWithErrors){
 							for (String uri : bulk){
@@ -1163,6 +1170,8 @@ public class Harvester implements Runnable {
 								return false;
 							}
 						}
+
+						e.printStackTrace();
 
 					} finally {
 						qExec.close();
@@ -1499,7 +1508,7 @@ public class Harvester implements Runnable {
 	 * @return map of properties to be indexed for res
 	 */
 	private Map<String, Object> getJsonMap(Resource rs, Set<Property> properties, Model model,
-													  boolean getPropLabel) {
+										   boolean getPropLabel) {
 
 		ESNormalizer esNormalizer = new ESNormalizer(rs, properties, model, getPropLabel, this);
 		esNormalizer.setAddUriForResource(addUriForResource);

@@ -86,6 +86,8 @@ public class Indexer {
         /*Indexer.executorService = EsExecutors.newAutoQueueFixed("threadPool", 1, 5, 5, 26,2,
                 TimeValue.timeValueHours(10), EsExecutors.daemonThreadFactory("esapp"), new ThreadContext(Builder.EMPTY_SETTINGS));*/
             Indexer.executorService = Executors.newFixedThreadPool(indexer.THREADS);
+            //Indexer.executorService = Executors.newWorkStealingPool(4);
+
         } else {
             Indexer.executorService = Executors.newSingleThreadExecutor();
         }
@@ -99,6 +101,7 @@ public class Indexer {
             indexer.addHarvesterSettings(h, river.getRiverSettings());
 
             Indexer.executorService.submit(h);
+            logger.info("Created thread for river: {}", river.riverName());
         }
 
         Indexer.executorService.shutdown();

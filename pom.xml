@@ -19,7 +19,7 @@
 
   <properties>
     <elasticsearch.version>6.2.2</elasticsearch.version>
-    <jena.version>3.0.0</jena.version>
+    <jena.version>2.12.1</jena.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 

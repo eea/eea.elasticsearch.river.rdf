@@ -2,7 +2,7 @@ package org.elasticsearch.app;
 
 import junit.framework.TestCase;
 
-import org.apache.jena.datatypes.xsd.impl.XSDBaseStringType;
+import com.hp.hpl.jena.datatypes.xsd.impl.XSDBaseStringType;
 import org.elasticsearch.app.support.ESNormalizer;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -10,10 +10,10 @@ import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import org.apache.jena.datatypes.RDFDatatype;
-import org.apache.jena.rdf.model.Literal;
-import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.rdf.model.Resource;
+import com.hp.hpl.jena.datatypes.RDFDatatype;
+import com.hp.hpl.jena.rdf.model.Literal;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Resource;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;

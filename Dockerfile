@@ -1,7 +1,9 @@
 FROM maven:3.5.2-jdk-8
 
 ADD . /usr/src/river.rdf
+
 ADD solo.sh /usr/bin/solo
+
 RUN chmod +x /usr/bin/solo
 
 RUN apt-get update \
@@ -24,8 +26,7 @@ RUN sed -i '/#cron./c\cron.*                          \/proc\/1\/fd\/1'  /etc/rs
      && sed -i '/cron.*/a local2.*                          \/proc\/1\/fd\/1' /etc/rsyslog.conf
 
 RUN service cron start && service rsyslog start
-#CMD service cron start && service rsyslog start
 
 #CMD cd /usr/src/river.rdf &&  mvn clean && mvn compile && mvn exec:java -Dexec.mainClass="org.elasticsearch.app.Indexer"
 
-#CMD ./startup.sh
+ENTRYPOINT sh /usr/src/river.rdf/startup.sh
