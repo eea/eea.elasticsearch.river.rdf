@@ -77,32 +77,33 @@ Configuring the Docker container
 The Docker container can be configured changing the following parameters inside the file *docker-compose.yml* :
 
 ::
-indexer:
 
-  environment:
+    indexer:
 
-    elastic_host: 192.168.0.106     # the elastic host ip
+      environment:
 
-    elastic_port: '9200'            # the elastic host port
+        elastic_host: 192.168.0.106     # the elastic host ip
 
-    elastic_user: 'user'         # the elastic username
+        elastic_port: '9200'            # the elastic host port
 
-    elastic_pass: 'pass'         # the elastic password
+        elastic_user: 'user'         # the elastic username
 
-    river_index: 'eeariver'         # the name of the index where the rivers are created
+        elastic_pass: 'pass'         # the elastic password
 
-    indexer_multithreading: 'true'  # if you want multithreading; each river will have a single thread
+        river_index: 'eeariver'         # the name of the index where the rivers are created
 
-    threads: 4                      # in case of multithreading, the max number of concurrent working threads
+        indexer_multithreading: 'true'  # if you want multithreading; each river will have a single thread
 
-    LOG_LEVEL: "info"               # the log level ( info or debug)
+        threads: 4                      # in case of multithreading, the max number of concurrent working threads
 
-  tty: true
+        LOG_LEVEL: "info"               # the log level ( info or debug)
 
-  build: .
+      tty: true
 
-  volumes:
-      - .:/usr/src/river.rdf
+      build: .
+
+      volumes:
+          - .:/usr/src/river.rdf
 
 
 Main features
