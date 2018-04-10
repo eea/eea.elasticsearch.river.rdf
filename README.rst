@@ -58,16 +58,21 @@ Binaries for this application are available at:
 
 https://github.com/eea/eea.elasticsearch.river.rdf/releases
 
+ *Running it this way, it can be run only once.You need to run it inside a cronjob if you want to use it continuously.*
 
 3. As a Docker container
 ++++++++++++++++++++++++
 
-It can be run as a stand-alone Docker container using:
+It can be run as a stand-alone Docker container using inside the project directory:
 ::
 
   docker-compose up
 
+If used this way, it will create a container with the application running as a cronjob every minute. So there will be a
+delay from the moment it is started, to the moment it starts to index.
 
+Configuring the Docker container
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Main features
 =============
@@ -136,7 +141,7 @@ From a SPARQL endpoint
 ++++++++++++++++++++++
 
 The river is given a SPARQL endpoint and a list of queries. Each query response is indexed into ElasticSearch.
-The SPARQL query can be a SELECT query or a CONSTRUCT query. All the queries are of the same type. 
+The SPARQL query can be a SELECT query or a CONSTRUCT query. All the queries are of the same type.
 
 The SELECT query should always require a triple (?s ?p ?o) where ?s is the subject,
 ?p is the predicate and ?o is the object. The names and order are required for relevant
@@ -187,7 +192,7 @@ DESCRIBE queries can be written as such:
 Note:
     DESCRIBE queries can produce larger results than other types of queries,
     making the river plugin run out of memory.
- 
+
 **Tips**: `See how to optimize your queries / avoid endpoint timeout <http://taskman.eionet.europa.eu/projects/zope/wiki/HowToWriteOptimalSPARQLQueries>`_
 
 From both URIs and SPARQL endpoint
@@ -218,9 +223,9 @@ There are several other options available for the index operation. They can be a
 includeResourceURI
 ++++++++++++++++++
 
-Each resource is indexed into ElasticSearch with the _id property set to its URI. This is very convenient because it 
+Each resource is indexed into ElasticSearch with the _id property set to its URI. This is very convenient because it
 is well known that URIs are unique. Some applications however cannot extract the URI from the _id field, so whenever
-"includeResourceUri" is set on "true", a new property is added to each resource: 
+"includeResourceUri" is set on "true", a new property is added to each resource:
 "http://www.w3.org/1999/02/22-rdf-syntax-ns#about", having the value equal to the resource's URI.
 
 The default value for "includeResourceURI" is true.
@@ -239,13 +244,13 @@ The default value for "includeResourceURI" is true.
    }
  }'
 
-language and addLanguage 
+language and addLanguage
 ++++++++++++++++++++++++
 
-When "addLanguage" is set on "true", all the languages of the String Literals will be included in the output of a 
-new property, "language". If "language" is a required property, one that has to describe all the objects, a default 
+When "addLanguage" is set on "true", all the languages of the String Literals will be included in the output of a
+new property, "language". If "language" is a required property, one that has to describe all the objects, a default
 language should be set for when there are no String Literals or they do not have languages defined. This can be done
-when indexing the data by setting "language" to be the default language. 
+when indexing the data by setting "language" to be the default language.
 
 The default value for "addLanguage" is true and for "language", "en".
 
@@ -263,14 +268,14 @@ The default value for "addLanguage" is true and for "language", "en".
       "language" : "it"
    }
  }'
- 
- 
+
+
 uriDescription
 ++++++++++++++
 
-The value of each predicate (the object) can only be a Literal or a Resource. When it is a Resource (URI) it is 
-very difficult to obtain information from it, if the information is not indexed in ElasticSearch. Whenever 
-"uriDescription" is set, the URIs are replaced by the resource's label. The label is the first of the properties 
+The value of each predicate (the object) can only be a Literal or a Resource. When it is a Resource (URI) it is
+very difficult to obtain information from it, if the information is not indexed in ElasticSearch. Whenever
+"uriDescription" is set, the URIs are replaced by the resource's label. The label is the first of the properties
 given as arguments for "uriDescription", for which the resource has an object.
 
 ::
@@ -292,28 +297,28 @@ Note:
  "uriDescription" is used in Sync queries to *automatically* retrieve descrpition for resources.
  When using "uriDescription" without query optimization, the index speed will increase. A good practice when
  using this feature is:
- 
+
  * Add the uriDescription fields in synchronization indices
  * Add the uriDescription fields in index creation queries *AND* rewrite your queries so the SPARQL endpoint
    responds with Literals rather than Resources:
 ::
 
  SELECT ?s ?p ?o WHERE { $COND }
- 
+
 can be rewritten as:
 
 ::
- 
+
  SELECT ?s ?p ?o WHERE {
    {
      $COND . FILTER(isLiteral(?o))
-   } UNION { 
+   } UNION {
      ?s ?p ?o1 .
      $COND -- applied on ?o1 instead of ?o
      ?o1 <http://purl.org/dc/terms/title> ?o
    }
  }
- 
+
 This optimization ensures that the query will return Literals which are indexed faster than Resources.
 
 Blacklists and whitelists
@@ -344,11 +349,11 @@ The following query indexes only the rdf:type property of the resources.
 BlackMap
 ========
 
-Sometimes the user might not be interested to index some obvious or useless information. 
+Sometimes the user might not be interested to index some obvious or useless information.
 A good example can be the situation in which all the classes have a single superclass. If all
 the objects belong to this superclass, then there is no point in adding this information.
 
-A blackMap contains all the pairs property - list of objects that are not meant to be indexed. 
+A blackMap contains all the pairs property - list of objects that are not meant to be indexed.
 
 ::
 
@@ -361,12 +366,12 @@ A blackMap contains all the pairs property - list of objects that are not meant 
       "blackMap" : {"http://www.w3.org/1999/02/22-rdf-syntax-ns#type":["Tracked File"]}
    }
  }'
- 
+
 WhiteMap
 ========
 
-Sometimes the user might only be interested to index some information. A whiteMap contains 
-all the pairs property - list of objects that are meant to be indexed. 
+Sometimes the user might only be interested to index some information. A whiteMap contains
+all the pairs property - list of objects that are meant to be indexed.
 
 ::
 
@@ -379,7 +384,7 @@ all the pairs property - list of objects that are meant to be indexed.
       "whiteMap" : {"http://www.w3.org/1999/02/22-rdf-syntax-ns#type":["Assessment Part"]}
    }
  }'
- 
+
 
 Normalization
 =============
@@ -390,10 +395,10 @@ of these are the same, even if their namespaces are different.
 Properties Normalization
 ++++++++++++++++++++++++
 
-'NormProp' contains pairs of property-replacement. 
+'NormProp' contains pairs of property-replacement.
 The propertied can be replaced by one or by more properties.
 
-If you choose to replace with one value, the pair should look like: 
+If you choose to replace with one value, the pair should look like:
 
 ::
 
@@ -425,7 +430,7 @@ Moreover, all the values of the http://purl.org/dc/elements/1.1/type and
 http://example.org/pntology/typeOfData properties of each resource will be grouped
 under http://www.w3.org/1999/02/22-rdf-syntax-ns#type.
 
-If you choose to replace a property with more properties, the pair should look like: 
+If you choose to replace a property with more properties, the pair should look like:
 
 ::
 
@@ -465,7 +470,7 @@ In the normProp we will have:
 Objects Normalization
 +++++++++++++++++++++
 
-'NormObj', similar with 'NormProp', contains pairs of object-replacement. Objects are 
+'NormObj', similar with 'NormProp', contains pairs of object-replacement. Objects are
 replaced with given values no matter of the property whose value they represent.
 
 ::
@@ -504,23 +509,23 @@ this dict.
       }
    }
  }'
- 
+
 You have the possibility to set either a single string value for missing values, or a list of strings:
 
-:: 
+::
 
 "missing1": "value1",
 "missing2": ["value1", "value2", ...]
- 
- 
+
+
 Synchronization with an endpoint
 ================================
 
-It is possible to query an endpoint for the latest changes and only index these instead of 
+It is possible to query an endpoint for the latest changes and only index these instead of
 all the resources. This can be specified by setting the value of 'indexType' to 'sync' instead
-of 'full', which is the default one. A value for 'startTime' should be provided because the plugin 
-queries the endpoint for updates that occured after that moment in time. In case no value is provided, 
-the time of the last index operation will be considered. 
+of 'full', which is the default one. A value for 'startTime' should be provided because the plugin
+queries the endpoint for updates that occured after that moment in time. In case no value is provided,
+the time of the last index operation will be considered.
 
 ::
 
@@ -532,19 +537,19 @@ the time of the last index operation will be considered.
       "startTime" : "20131206T15:00:00"
    }
  }'
- 
+
 There are three possible settings for the sync river:
  * syncConditions
  * graphSyncConditions
  * syncTimeProp
- 
+
 SyncConditions
 ++++++++++++++
 
-This property allows the user to add extra filters when synchronizing with the endpoint. 
+This property allows the user to add extra filters when synchronizing with the endpoint.
 Therefore, the river will only index some information, updated after a point in time, instead
-of all the triples. This property is very useful when only some triples should be indexed. 
-The resource being indexed is always "?resource". 
+of all the triples. This property is very useful when only some triples should be indexed.
+The resource being indexed is always "?resource".
 
 ::
 
@@ -563,7 +568,7 @@ GraphSyncConditions
 
 This porperty allows the user to add extra filters on the source graph of the ?resource.
 Similar with SyncConditions this allows to filter out irrelevant triples from the index.
-The source graph of the resource being indexed is always "?graph". 
+The source graph of the resource being indexed is always "?graph".
 
 ::
 
@@ -582,7 +587,7 @@ The source graph of the resource being indexed is always "?graph".
 SyncTimeProp
 ++++++++++++
 
-Different endpoints may have different properties to present the time when some triple is harvested. 
+Different endpoints may have different properties to present the time when some triple is harvested.
 SyncTimeProp sets this property to some known URI so the sync river will only index those triples that
 **exist in graphs** which have a higher value for this property than the startTime value.
 
@@ -607,8 +612,8 @@ Note:
 SyncOldData
 +++++++++++
 
-Sometimes some information is harvested and later on it is modified but it no longer fit into the 
-first selection criteria. The initial resource wil no longer be needed into the dataset. However, 
+Sometimes some information is harvested and later on it is modified but it no longer fit into the
+first selection criteria. The initial resource wil no longer be needed into the dataset. However,
 due to the SyncConditions only resources that fit the initial (or new) conditions are synchronized,
 so the old data should be deleted as well. When this property is set to True, the modified resources
 that no longer match the conditions are deleted.
@@ -703,4 +708,3 @@ you can redistribute it and/or modify it under the terms of the GNU
 General Public License as published by the Free Software Foundation;
 either version 2 of the License, or (at your option) any later
 version.
-
