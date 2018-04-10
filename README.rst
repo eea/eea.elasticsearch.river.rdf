@@ -7,7 +7,7 @@ Introduction
 
 The EEA RDF Indexer for ElasticSearch allows to harvest metadata from
 SPARQL endpoints or plain RDF files into ElasticSearch. It is provided as a
-standalone application.
+stand-alone application.
 
 
 .. contents::
@@ -15,29 +15,49 @@ standalone application.
 Installation
 ============
 
+1. Stand-alone application using Maven
+
 Prerequisites:
 
 * ElasticSearch > 6.2. tested with 6.1 up to 6.2.
 
 * Java 8 Runtime Environment
 
-Binaries for this plugin are available at:
+* Apache Maven > 3.3
 
-https://github.com/eea/eea.elasticsearch.river.rdf/releases
 
-In order to install the plugin, you first need to have
+
+In order to install the application, you first need to have
 `Elasticsearch <http://www.elasticsearch.org/download/>`_ installed. Just
 download the latest release and extract it.
 
 .. TODO : change for docker-compose
 
-To install the RDF Indexer run from the previously extracted directory::
+To install the Maven dependencies for RDF Indexer run from the previously extracted directory::
+
+mvn install
 
 ./bin/plugin --url https://github.com/eea/eea.elasticsearch.river.rdf/releases/download/$PLUGIN_VERSION/eea-rdf-river-plugin-$PLUGIN_VERSION.zip -i eea-rdf-river
 
 Note:
  *raw.github.com* urls are deprecated and will were checked out from the source tree. Please use the url described above
  to install the plugin. You can find all of the legacy archives previously available in the source tree `here <https://github.com/eea/eea.elasticsearch.river.rdf/releases/download/v1.1/legacy-releases.zip>`_. 
+
+2. Stand-alone Java application as a JAR package
+
+Run it as a normal Java application.
+
+Binaries for this application are available at:
+
+https://github.com/eea/eea.elasticsearch.river.rdf/releases
+
+3. As a Docker container
+
+It can be run as a stand-alone Docker container using::
+
+docker-compose up
+
+
 
 Main features
 =============
@@ -57,7 +77,7 @@ Indexing
 ========
 
 Each river can index data into a specific index. The default index has the index name
-'rdfdata' and the type name 'resource'.
+'eeariver' and the type name 'resource'.
 
 Creating the RDF river can be done with:
 
