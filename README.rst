@@ -123,7 +123,7 @@ Indexing
 ========
 
 Each river can index data into a specific index. The default index has the index name
-'eeariver' and the type name 'resource'.
+'rdfriver' and the type name 'resource'.
 
 Creating the RDF river can be done with:
 
