@@ -35,15 +35,19 @@ download the latest release and extract it.
 
 .. TODO : change for docker-compose
 
-To install the Maven dependencies for RDF Indexer run from the previously extracted directory::
+To install the Maven dependencies for RDF Indexer run from the previously extracted directory:
 
-mvn install
+::
+
+  mvn install
+
+::
 
 ./bin/plugin --url https://github.com/eea/eea.elasticsearch.river.rdf/releases/download/$PLUGIN_VERSION/eea-rdf-river-plugin-$PLUGIN_VERSION.zip -i eea-rdf-river
 
 Note:
  *raw.github.com* urls are deprecated and will were checked out from the source tree. Please use the url described above
- to install the plugin. You can find all of the legacy archives previously available in the source tree `here <https://github.com/eea/eea.elasticsearch.river.rdf/releases/download/v1.1/legacy-releases.zip>`_. 
+ to install the plugin. You can find all of the legacy archives previously available in the source tree `here <https://github.com/eea/eea.elasticsearch.river.rdf/releases/download/v1.1/legacy-releases.zip>`_.
 
 2. Stand-alone Java application as a JAR package
 ````````````````````````````````````````````````
@@ -54,12 +58,14 @@ Binaries for this application are available at:
 
 https://github.com/eea/eea.elasticsearch.river.rdf/releases
 
+
 3. As a Docker container
 ````````````````````````
 
-It can be run as a stand-alone Docker container using::
+It can be run as a stand-alone Docker container using:
+::
 
-docker-compose up
+  docker-compose up
 
 
 
