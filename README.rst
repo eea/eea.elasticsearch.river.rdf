@@ -17,7 +17,7 @@ Installation
 
 
 1. Stand-alone application using Maven
-------
+======
 
 Prerequisites:
 
