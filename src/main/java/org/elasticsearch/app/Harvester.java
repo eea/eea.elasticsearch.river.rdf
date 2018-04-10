@@ -68,7 +68,7 @@ import static org.elasticsearch.index.query.QueryBuilders.termQuery;
  *
  */
 public class Harvester implements Runnable {
-	private static boolean DEBUG_TIME = true;
+	private static boolean DEBUG_TIME = false;
 
 	private boolean synced = false;
 
@@ -1086,8 +1086,6 @@ public class Harvester implements Runnable {
 
 		int modelCounter = 0;
 
-
-
 		while (true){
 			for (ArrayList<String> bulk : bulks) {
 				String syncQuery = getSyncQueryStr(bulk);
@@ -1129,6 +1127,7 @@ public class Harvester implements Runnable {
 						*/
 						if(checkRiverNotExists()){
 							logger.error("River doesn't exist anymore");
+
 							logger.error("INDEXING CANCELLED");
 							this.close();
 							return false;
