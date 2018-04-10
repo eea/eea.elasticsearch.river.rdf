@@ -17,7 +17,7 @@ Installation
 
 
 1. Stand-alone application using Maven
-``````````````````````````````````````
+++++++++++++++++++++++++++++++++++++++
 
 Prerequisites:
 
@@ -50,7 +50,7 @@ Note:
  to install the plugin. You can find all of the legacy archives previously available in the source tree `here <https://github.com/eea/eea.elasticsearch.river.rdf/releases/download/v1.1/legacy-releases.zip>`_.
 
 2. Stand-alone Java application as a JAR package
-````````````````````````````````````````````````
+++++++++++++++++++++++++++++++++++++++++++++++++
 
 Run it as a normal Java application.
 
@@ -60,7 +60,7 @@ https://github.com/eea/eea.elasticsearch.river.rdf/releases
 
 
 3. As a Docker container
-````````````````````````
+++++++++++++++++++++++++
 
 It can be run as a stand-alone Docker container using:
 ::
