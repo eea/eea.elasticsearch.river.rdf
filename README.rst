@@ -80,8 +80,8 @@ The Docker container can be configured changing the following parameters inside 
 
     elastic_host: 192.168.0.106     # the elastic host ip
     elastic_port: '9200'            # the elastic host port
-    elastic_user: 'user_rw'         # the elastic username
-    elastic_pass: 'rw_pass'         # the elastic password
+    elastic_user: 'user'         # the elastic username
+    elastic_pass: 'pass'         # the elastic password
     river_index: 'eeariver'         # the name of the index where the rivers are created
     indexer_multithreading: 'true'  # if you want multithreading; each river will have a single thread
     threads: 4                      # in case of multithreading, the max number of concurrent working threads
