@@ -78,18 +78,27 @@ The Docker container can be configured changing the following parameters inside 
 
 ::
 indexer:
+
   environment:
-    VERSION_INFO: v1
+
     elastic_host: 192.168.0.106     # the elastic host ip
+
     elastic_port: '9200'            # the elastic host port
+
     elastic_user: 'user'         # the elastic username
+
     elastic_pass: 'pass'         # the elastic password
+
     river_index: 'eeariver'         # the name of the index where the rivers are created
+
     indexer_multithreading: 'true'  # if you want multithreading; each river will have a single thread
+
     threads: 4                      # in case of multithreading, the max number of concurrent working threads
+
     LOG_LEVEL: "info"               # the log level ( info or debug)
 
   tty: true
+
   build: .
 
   volumes:
