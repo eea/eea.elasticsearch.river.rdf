@@ -77,7 +77,9 @@ Configuring the Docker container
 The Docker container can be configured changing the following parameters inside the file *docker-compose.yml* :
 
 ::
-
+indexer:
+  environment:
+    VERSION_INFO: v1
     elastic_host: 192.168.0.106     # the elastic host ip
     elastic_port: '9200'            # the elastic host port
     elastic_user: 'user'         # the elastic username
@@ -87,6 +89,11 @@ The Docker container can be configured changing the following parameters inside 
     threads: 4                      # in case of multithreading, the max number of concurrent working threads
     LOG_LEVEL: "info"               # the log level ( info or debug)
 
+  tty: true
+  build: .
+
+  volumes:
+      - .:/usr/src/river.rdf
 
 
 Main features
