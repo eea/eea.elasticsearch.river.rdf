@@ -45,7 +45,7 @@ Note:
 Execution
 ~~~~~~~~~
 
-To execute the application inside the project directory run:
+To execute the application inside the application directory run:
 
 ::
 
