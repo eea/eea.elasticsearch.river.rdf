@@ -133,7 +133,7 @@ Creating the RDF river can be done with:
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
    ...
@@ -163,7 +163,7 @@ The river is given a list of URIs from which triples are indexed into ElasticSea
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "uris" : ["http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf",
@@ -184,7 +184,7 @@ results.
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
@@ -197,7 +197,7 @@ CONSTRUCT queries are more simple.
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
@@ -213,7 +213,7 @@ DESCRIBE queries can be written as such:
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
@@ -238,7 +238,7 @@ from a SPARQL endpoint and several unrelated URIs.
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "uris" : ["http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf",
@@ -267,7 +267,7 @@ The default value for "includeResourceURI" is true.
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "uris" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
@@ -291,7 +291,7 @@ The default value for "addLanguage" is true and for "language", "en".
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "uris" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
@@ -315,7 +315,7 @@ given as arguments for "uriDescription", for which the resource has an object.
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "uris" : ["http://dd.eionet.europa.eu/vocabulary/aq/individualexceedances/rdf",
@@ -370,7 +370,7 @@ The following query indexes only the rdf:type property of the resources.
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
@@ -392,7 +392,7 @@ A blackMap contains all the pairs property - list of objects that are not meant 
 
 ::
 
- curl -XPUT 'localhost:9200/_river/asspart/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type": "eeaRDF",
    "eeaRDF" : {
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
@@ -410,7 +410,7 @@ all the pairs property - list of objects that are meant to be indexed.
 
 ::
 
- curl -XPUT 'localhost:9200/_river/asspart/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type": "eeaRDF",
    "eeaRDF" : {
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
@@ -445,7 +445,7 @@ grouped in a list.
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
@@ -510,7 +510,7 @@ replaced with given values no matter of the property whose value they represent.
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
@@ -532,7 +532,7 @@ this dict.
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "endpoint" : "http://semantic.eea.europa.eu/sparql",
@@ -564,7 +564,7 @@ the time of the last index operation will be considered.
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "indexType" : "sync",
@@ -588,7 +588,7 @@ The resource being indexed is always "?resource".
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "indexType" : "sync",
@@ -607,7 +607,7 @@ The source graph of the resource being indexed is always "?graph".
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "indexType" : "sync",
@@ -628,7 +628,7 @@ SyncTimeProp sets this property to some known URI so the sync river will only in
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "indexType" : "sync",
@@ -655,7 +655,7 @@ that no longer match the conditions are deleted.
 
 ::
 
- curl -XPUT 'localhost:9200/_river/rdf_river/_meta' -d '{
+ curl -XPUT 'localhost:9200/eeariver/river/_meta' -d '{
    "type" : "eeaRDF",
    "eeaRDF" : {
       "indexType" : "sync",
@@ -709,8 +709,8 @@ index, as in the example below:
 ::
 
  curl -XDELETE 'localhost:9200/rdfdata'
- curl -XDELETE 'localhost:9200/_river/name_of_river'
- curl -XPUT 'localhost:9200/_river/name_of_river/_meta' -d '{
+ curl -XDELETE 'localhost:9200/eeariver/name_of_river'
+ curl -XPUT 'localhost:9200/eeariver/name_of_river/_meta' -d '{
      "type" : "eeaRDF",
      "eeaRDF" : {
            ...
