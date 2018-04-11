@@ -132,8 +132,7 @@ Creating the RDF river can be done with:
 
 "eeaRDF" is the name of the river and should not be changed. It gives ElasticSearch
 the information about which river to use. Otherwise, the data provided will not be
-indexed. "rdf_river" is the name of the rdf river type. Any name can be chosen for
-the type, as long as it is unique (it has not been used for a different river).
+indexed. "river" is the name of the rdf river type.
 
 A new index name and type can be set with:
 
