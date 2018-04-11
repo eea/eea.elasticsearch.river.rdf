@@ -74,6 +74,7 @@ public class Indexer {
         logger.info("MULTITHREADING_ACTIVE: " + indexer.MULTITHREADING_ACTIVE);
         logger.info("THREADS: " + indexer.THREADS);
         logger.info("LOG_LEVEL: " + indexer.envMap.get("LOG_LEVEL") );
+        logger.info("DOCUMENT BULK: ", Integer.toString(EEASettings.DEFAULT_BULK_REQ) );
 
         if(indexer.rivers.size() == 0){
             logger.info("No rivers detected");
@@ -180,12 +181,13 @@ public class Indexer {
         ArrayList< SearchHit > searchHitsA = new ArrayList<>();
 
         final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(1L));
-        SearchRequest searchRequest = new SearchRequest(RIVER_INDEX);
+        SearchRequest searchRequest = new SearchRequest(this.RIVER_INDEX);
         searchRequest.scroll(scroll);
 
         SearchResponse searchResponse = null;
         try {
             searchResponse = client.search(searchRequest);
+            logger.info("River index {} found", this.RIVER_INDEX);
             String scrollId = searchResponse.getScrollId();
             SearchHit[] searchHits = searchResponse.getHits().getHits();
 
@@ -217,11 +219,23 @@ public class Indexer {
 
         for (SearchHit  sh: searchHitsA ){
             Map<String, Object> source = sh.getSourceAsMap();
+            //logger.debug("{}", source.containsKey("eeaRDF"));
 
-            if (!((Map)source.get("syncReq")).containsKey("eeaRDF")) {
-                System.out.println( "not has river settings: " + sh.getId() );
+            if(source.containsKey("eeaRDF")){
+                RiverSettings riverSettings = new RiverSettings(source);
+                RiverName riverName = new RiverName("eeaRDF", sh.getId());
+                River river = new River()
+                        .setRiverName( riverName.name() )
+                        .setRiverSettings( riverSettings );
+                rivers.add(river);
+                continue;
+            }
+
+            if ( !((Map)source.get("syncReq")).containsKey("eeaRDF")) {
+                logger.error( "not has river settings: " + sh.getId() );
                 throw new IllegalArgumentException(
                         "There are no eeaRDF settings in the river settings");
+
             } else {
                 RiverSettings riverSettings = new RiverSettings(source);
                 RiverName riverName = new RiverName("eeaRDF", sh.getId());
@@ -230,11 +244,15 @@ public class Indexer {
                         .setRiverSettings( riverSettings );
                 rivers.add(river);
             }
+
         }
     }
 
     private void addHarvesterSettings(Harvester harv, RiverSettings settings) {
-        if (!((HashMap)settings.getSettings().get("syncReq")).containsKey("eeaRDF")) {
+        if(settings.getSettings().containsKey("eeaRDF")){
+
+        } else if ( ! (((HashMap)settings.getSettings().get("syncReq")).containsKey("eeaRDF")) ) {
+            logger.error("There are no syncReq settings in the river settings");
             throw new IllegalArgumentException(
                     "There are no eeaRDF settings in the river settings");
         }
@@ -322,10 +340,14 @@ public class Indexer {
         }
         else {
             //TODO: don't know if is correct
-            harv.index(  ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("index").toString() );
-            harv.type( ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("type").toString() );
+            if( settings.getSettings().containsKey("syncReq")){
+                harv.index(  ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("index").toString() );
+                harv.type( ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("type").toString() );
+            } else {
+                harv.index(EEASettings.DEFAULT_INDEX_NAME);
+                harv.type( "river" );
+            }
 
-            //harvester.index(EEASettings.DEFAULT_INDEX_NAME).type(EEASettings.DEFAULT_TYPE_NAME);
         }
 
     }
@@ -334,7 +356,12 @@ public class Indexer {
     @SuppressWarnings("unchecked")
     private static Map<String, Object> extractSettings(RiverSettings settings,
                                                        String key) {
-        return (Map<String, Object>) ( (Map<String, Object>)settings.getSettings().get("syncReq")).get(key);
+        if(settings.getSettings().containsKey("eeaRDF")){
+            return (Map<String, Object>) ( (Map<String, Object>)settings.getSettings()).get(key);
+        } else {
+            return (Map<String, Object>) ( (Map<String, Object>)settings.getSettings().get("syncReq")).get(key);
+        }
+
     }
 
     @SuppressWarnings("unchecked")
