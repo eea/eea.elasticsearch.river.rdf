@@ -53,18 +53,8 @@ To execute the application inside the application directory run:
 
 *Running it this way, it can be run only once.You need to run it inside a cronjob if you want to use it continuously.*
 
-2. Stand-alone Java application as a JAR package
-++++++++++++++++++++++++++++++++++++++++++++++++
 
-Run it as a normal Java application.
-
-Binaries for this application are available at:
-
-https://github.com/eea/eea.elasticsearch.river.rdf/releases
-
- *Running it this way, it can be run only once.You need to run it inside a cronjob if you want to use it continuously.*
-
-3. As a Docker container
+2. As a Docker container
 ++++++++++++++++++++++++
 
 It can be run as a stand-alone Docker container using inside the project directory:
