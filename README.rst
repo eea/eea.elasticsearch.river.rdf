@@ -325,6 +325,7 @@ Note:
  * Add the uriDescription fields in synchronization indices
  * Add the uriDescription fields in index creation queries *AND* rewrite your queries so the SPARQL endpoint
    responds with Literals rather than Resources:
+
 ::
 
  SELECT ?s ?p ?o WHERE { $COND }
@@ -682,7 +683,7 @@ The  accepted values for each field are:
 
 The wildcard character replaces any possible value for the field it represents. It also
 helps scheduling something to run every x times (minutes, hours, day, month, day of week)
-with the syntax: "*\x".
+with the syntax: "\*x".
 
 In the example below, command is run every two months, on the 1st and 15th, at 20:00 (8:00 PM).
 
