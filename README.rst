@@ -51,6 +51,7 @@ To execute the application inside the application directory run:
 
   mvn exec:java -e -Dexec.mainClass="org.elasticsearch.app.Indexer"
 
+*Running it this way, it can be run only once.You need to run it inside a cronjob if you want to use it continuously.*
 
 2. Stand-alone Java application as a JAR package
 ++++++++++++++++++++++++++++++++++++++++++++++++
