@@ -134,6 +134,8 @@ public class Harvester implements Runnable {
 	private RestHighLevelClient client;
 	private String indexName;
 	private String typeName;
+	private String statusIndex;
+
 	private String riverName;
 	private String riverIndex;
 
@@ -495,6 +497,11 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
+	public Harvester statusIndex(String sIndex){
+		this.statusIndex = sIndex;
+		return this;
+	}
+
 	public Harvester type(String typeName) {
 		this.typeName = typeName;
 		return this;
@@ -527,8 +534,6 @@ public class Harvester implements Runnable {
 
 		try {
 			//TODO: status update
-			String statusIndex = indexName + "_status";
-
 			bulkRequest.add(new IndexRequest( statusIndex , "last_update", riverName )
                 .source(
                     jsonBuilder().startObject()
@@ -568,7 +573,7 @@ public class Harvester implements Runnable {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
 		//TODO: status update
-		GetRequest getRequest = new GetRequest(indexName + "_status", "last_update", riverName );
+		GetRequest getRequest = new GetRequest(this.statusIndex, "last_update", riverName );
 
 		//TODO: move to async ?
 		try {
