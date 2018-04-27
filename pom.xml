@@ -2,13 +2,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.elasticsearch.plugin.river.eea_rdf</groupId>
-  <artifactId>eea-rdf-river-plugin</artifactId>
-  <version>1.5.10</version>
+  <artifactId>eea-rdf-river-indexer</artifactId>
+  <version>2</version>
 
   <packaging>jar</packaging>
 
-  <name>eea-rdf-river-plugin</name>
-  <description>Elasticsearch RDF River Plugin for EEA</description>
+  <name>eea-rdf-river-indexer</name>
+  <description>Elasticsearch RDF River Indexer for EEA</description>
 
   <inceptionYear>2013</inceptionYear>
 
@@ -18,7 +18,8 @@
   </organization>
 
   <properties>
-    <elasticsearch.version>1.4.2</elasticsearch.version>
+    <elasticsearch.version>6.2.2</elasticsearch.version>
+    <jena.version>2.12.1</jena.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
@@ -32,7 +33,6 @@
 
   <build>
     <plugins>
-
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
@@ -47,8 +47,9 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.8</version>
         <configuration>
-          <skipTests>true</skipTests>
+          <skipTests>false</skipTests>
           <additionalClasspathElements>
+            <!--<additionalClasspathElement>${project.build.directory}/classes/org/app</additionalClasspathElement>-->
             <additionalClasspathElement>${project.build.directory}/classes/conf</additionalClasspathElement>
             <additionalClasspathElement>${project.build.directory}/lib</additionalClasspathElement>
           </additionalClasspathElements>
@@ -120,15 +121,15 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.0</version>
+        <version>3.2</version>
         <configuration>
-          <source>1.5</source>
-          <target>1.5</target>
+          <source>1.8</source>
+          <target>1.8</target>
+          <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>
       </plugin>
 
     </plugins>
-
 
   </build>
 
@@ -142,25 +143,39 @@
     </dependency>
 
     <dependency>
-      <groupId>org.elasticsearch</groupId>
-      <artifactId>elasticsearch</artifactId>
+      <groupId>org.elasticsearch.client</groupId>
+      <artifactId>elasticsearch-rest-high-level-client</artifactId>
       <version>${elasticsearch.version}</version>
       <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>24.0-jre</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>2.9.1</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.jena</groupId>
       <artifactId>apache-jena-libs</artifactId>
       <type>pom</type>
-      <version>2.12.1</version>
+      <version>${jena.version}</version>
     </dependency>
 
     <dependency>
     	<groupId>org.mockito</groupId>
     	<artifactId>mockito-all</artifactId>
-    	<version>1.9.5</version>
+    	<version>1.10.19</version>
     	<scope>test</scope>
     </dependency>
+
+
 
 
   </dependencies>

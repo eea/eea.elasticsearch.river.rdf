@@ -1,5 +1,10 @@
 Changelog
 =========
+v2 (unreleased)
+----------------
+*Feature: Changed from plugin for Elasticsearch 1.7 to standalone app for Elasticsearch 6.2
+
+
 v1.5 (unreleased)
 -----------------
 * Feature: Added a new option, syncAllData that, when set to true, deletes the resources that were synced in the endpoint but no longer respect the syncConditions

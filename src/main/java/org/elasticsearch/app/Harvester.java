@@ -1,4 +1,14 @@
-package org.elasticsearch.river.eea_rdf.support;
+package  org.elasticsearch.app;
+
+/*import org.apache.jena.graph.Graph;
+import org.apache.jena.graph.Node;
+import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.graph.Triple;
+import org.apache.jena.query.*;
+
+import org.apache.jena.rdf.model.*;
+import org.apache.jena.sparql.ARQException;
+import org.apache.jena.sparql.engine.http.QueryExceptionHTTP;*/
 
 import com.hp.hpl.jena.graph.Graph;
 import com.hp.hpl.jena.graph.Node;
@@ -6,31 +16,51 @@ import com.hp.hpl.jena.graph.NodeFactory;
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.*;
+import com.hp.hpl.jena.sparql.ARQException;
 import com.hp.hpl.jena.sparql.engine.http.QueryExceptionHTTP;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.RiotException;
+
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
+
+import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.search.*;
+import org.elasticsearch.action.support.replication.ReplicationResponse;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.app.logging.ESLogger;
+
+import org.elasticsearch.app.logging.Loggers;
+
+
+import org.elasticsearch.app.support.ESNormalizer;
+import org.elasticsearch.client.RestHighLevelClient;
+
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.river.eea_rdf.settings.EEASettings;
+import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.ElasticsearchIllegalStateException;
-import java.lang.NullPointerException;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 
 /**
  *
@@ -38,6 +68,9 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
  *
  */
 public class Harvester implements Runnable {
+	private static boolean DEBUG_TIME = false;
+
+	private boolean synced = false;
 
 	private enum QueryType {
 		SELECT,
@@ -45,7 +78,12 @@ public class Harvester implements Runnable {
 		DESCRIBE
 	}
 
-	private final ESLogger logger = Loggers.getLogger(Harvester.class);
+	//TODO: LOGGER - DONE
+    private final ESLogger logger = Loggers.getLogger(Harvester.class);
+
+	private Indexer indexer;
+
+
 
 	private String rdfEndpoint = "";
 
@@ -93,18 +131,44 @@ public class Harvester implements Runnable {
 	private Boolean syncOldData;
 
 	/* ES api options */
-	private Client client;
+	private RestHighLevelClient client;
 	private String indexName;
 	private String typeName;
-	private String riverName;
+	private String statusIndex;
 
-	private Boolean closed = false;
+	private String riverName;
+	private String riverIndex;
+
+
+	private volatile Boolean closed = false;
 
 	public void log(String message) { logger.info(message); }
 
-	public void close() { closed = true; }
+	public void close() {
+		closed = true;
+	}
+
+	public void indexer(Indexer indexer){
+	    this.indexer = indexer;
+    }
 
 	private HashMap<String, String> uriLabelCache = new HashMap<String, String>();
+
+	public HashMap<String, String> getUriLabelCache(){
+		return this.uriLabelCache;
+	}
+
+	public void putToUriLabelCache(String uri, String result){
+		uriLabelCache.put(uri, result);
+	}
+
+	public String getRiverName(){
+		return this.riverName;
+	}
+
+	public String getRdfEndpoint() {
+		return rdfEndpoint;
+	}
 
 	/**
  	 * Sets the {@link Harvester}'s {@link #rdfUris} parameter
@@ -154,8 +218,8 @@ public class Harvester implements Runnable {
 		try {
 			rdfQueryType = QueryType.valueOf(queryType.toUpperCase());
 		} catch (IllegalArgumentException e) {
-			logger.error("Bad query type: {}", queryType);
-
+			//TODO: LOG - DONE
+			logger.info("Bad query type: {}", queryType);
 			/* River process can't continue */
 			throw e;
 		}
@@ -207,10 +271,10 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
-        public Harvester rdfAddCounting(Boolean rdfAddCounting) {
-                addCounting = rdfAddCounting;
-                return this;
-        }
+	public Harvester rdfAddCounting(Boolean rdfAddCounting) {
+			addCounting = rdfAddCounting;
+			return this;
+	}
 	/**
 	 * Sets the {@link Harvester}'s {@link #language} parameter. The default
 	 * value is 'en"
@@ -223,8 +287,8 @@ public class Harvester implements Runnable {
 		if(!language.isEmpty()) {
 			addLanguage = true;
 			/* Quote the language str */
-			if(!language.startsWith("\""))
-				language = "\"" +  this.language + "\"";
+			/*if(!language.startsWith("\""))
+				language = "\"" +  this.language + "\"";*/
 		}
 		return this;
 	}
@@ -293,7 +357,6 @@ public class Harvester implements Runnable {
 		if(blackMap != null && !blackMap.isEmpty()) {
 			this.blackMap =  new HashMap<String,Set<String>>();
 			for(Map.Entry<String,Object> entry : blackMap.entrySet()) {
-
 				this.blackMap.put(
 					entry.getKey(), new HashSet((List<String>)entry.getValue()));
 			}
@@ -322,6 +385,10 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
+	public List<String> getUriDescriptionList() {
+		return uriDescriptionList;
+	}
+
 	/**
 	 * Sets the {@link Harvester}'s {@link #uriDescriptionList} parameter.
 	 * Whenever {@link #uriDescriptionList} is set, all the objects represented
@@ -337,6 +404,8 @@ public class Harvester implements Runnable {
 		uriDescriptionList = Arrays.asList(uriList.split(","));
 		return this;
 	}
+
+
 
 	/**
 	 * Sets the {@link Harvester}'s {@link #uriDescriptionList} parameter.
@@ -418,13 +487,18 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
-	public Harvester client(Client client) {
+	public Harvester client(RestHighLevelClient client) {
 		this.client = client;
 		return this;
 	}
 
 	public Harvester index(String indexName) {
 		this.indexName = indexName;
+		return this;
+	}
+
+	public Harvester statusIndex(String sIndex){
+		this.statusIndex = sIndex;
 		return this;
 	}
 
@@ -435,6 +509,11 @@ public class Harvester implements Runnable {
 
 	public Harvester riverName(String riverName) {
 		this.riverName = riverName;
+		return this;
+	}
+
+	public Harvester riverIndex(String riverIndex){
+		this.riverIndex = riverIndex;
 		return this;
 	}
 
@@ -449,68 +528,157 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
-
 	private void setLastUpdate(Date date) {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-		BulkRequestBuilder bulkRequest = client.prepareBulk();
+		BulkRequest bulkRequest = new BulkRequest();
+
 		try {
-			bulkRequest.add(client.prepareIndex(indexName, "stats", "1")
-					.setSource(jsonBuilder()
-							.startObject()
-							.field("last_update", sdf.format(date))
-							.endObject()));
-		} catch (IOException ioe) {
+			//TODO: status update
+			bulkRequest.add(new IndexRequest( statusIndex , "last_update", riverName )
+                .source(
+                    jsonBuilder().startObject()
+							.field("updated_at", date.getTime() / 1000 )
+							.field("name", riverName )
+							.endObject()
+				)
+            );
+        } catch (IOException e) {
 			logger.error("Could not add the stats to ES. {}",
-					ioe.getLocalizedMessage());
-		}
-		bulkRequest.execute().actionGet();
-	}
+					e.getMessage());
+        }
+
+        //TODO: move to async
+        try {
+            BulkResponse bulkResponse = client.bulk(bulkRequest);
+
+            if(!bulkResponse.hasFailures() ){
+				for (BulkItemResponse bulkItemResponse : bulkResponse) {
+					logger.debug("bulkR: [{},{},{}]", bulkItemResponse.getIndex(), bulkItemResponse.getType(), bulkItemResponse.getId() );
+				}
+			} else {
+				for (BulkItemResponse bulkItemResponse : bulkResponse) {
+					BulkItemResponse.Failure failure = bulkItemResponse.getFailure();
+					logger.debug("bulkR FAILURE: [{}]", failure.getCause() );
+				}
+			}
+        } catch (IOException e) {
+			logger.error("Bulk error: [{}]", e.getMessage());
+			e.printStackTrace();
+        }
+
+    }
 
 	private String getLastUpdate() {
-		String res;
+		String res = "";
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+
+		//TODO: status update
+		GetRequest getRequest = new GetRequest(this.statusIndex, "last_update", riverName );
+
+		//TODO: move to async ?
 		try {
-                    GetResponse response = client
-				.prepareGet(indexName, "stats", "1")
-				.setFields("last_update")
-				.execute()
-				.actionGet();
-		    if (!response.getFields().isEmpty()) {
-			res = (String) response.getField("last_update").getValue();
-		    } else {
-			res = sdf.format(new Date(0));
-		    }
-		} catch (ElasticsearchIllegalStateException ex) {
-			logger.error("Could not get last_update, use Date(0)",
-					ex.getLocalizedMessage());
-			res = sdf.format(new Date(0));
-		} catch (NullPointerException ex) {
-			logger.error("Could not get last_update, use Date(0)",
-					ex.getLocalizedMessage());
+			GetResponse getResponse = client.get(getRequest);
+
+			if(!getResponse.isSourceEmpty()){
+				Long updated = (Long) getResponse.getSource().get("updated_at");
+				res = sdf.format(updated);
+			}
+
+		} catch (IOException e) {
+			logger.error("Could not get last_update, use Date(0)", e);
 			res = sdf.format(new Date(0));
 		}
-		return res;
+        return res;
 	}
 
-
 	public void run() {
-		long currentTime = System.currentTimeMillis();
-		boolean success;
+		logger.setLevel(this.indexer.loglevel);
+		Thread.currentThread().setName(riverName);
 
-		if (startTime.isEmpty()) startTime = getLastUpdate();
+		if(checkRiverNotExists()){
+			SearchRequest searchRequest = new SearchRequest(indexer.getRIVER_INDEX());
+			SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+			searchSourceBuilder.query(QueryBuilders.matchAllQuery());
+			searchRequest.source(searchSourceBuilder);
 
-		if (indexAll)
-			success = runIndexAll();
-		else
-			success = runSync();
+			try {
+				SearchResponse searchResponse = client.search(searchRequest);
+				SearchHits hits = searchResponse.getHits();
+				long totalHits = hits.getTotalHits();
+				if(totalHits == 0 ){
+					indexer.close();
+				}
+			} catch (IOException e) {
+				indexer.close();
+				e.printStackTrace();
+			}
 
-		if (success) {
-			setLastUpdate(new Date(currentTime));
+			this.close();
 		}
 
-		client.admin().indices()
-			  .prepareDeleteMapping("_river").setType(riverName)
-			  .execute();
+	    while(!this.closed && !synced){
+            long currentTime = System.currentTimeMillis();
+			boolean success = false;
+
+            /*SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+            Long ts = Long.valueOf(0);
+            try {
+                ts = sdf.parse(startTime).getTime() / 1000;
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }*/
+
+            if ( startTime.isEmpty() ) startTime = getLastUpdate();
+
+			if (indexAll && !synced)
+                success = runIndexAll();
+            else
+                success = runSync();
+
+            //TODO: remove
+            //success = true;
+
+            //TODO: async ?
+            if (success) {
+
+                setLastUpdate(new Date(currentTime));
+
+                success = false;
+				synced = true;
+                // deleting river cluster from riverIndex
+                DeleteRequest deleteRequest = new DeleteRequest(riverIndex, "river", riverName);
+
+                Harvester that = this;
+
+				logger.info("===============================================================================");
+				logger.info("TOTAL TIME:  {} ms", System.currentTimeMillis() - currentTime );
+				logger.info("===============================================================================");
+
+                client.deleteAsync(deleteRequest, new ActionListener<DeleteResponse>() {
+                    @Override
+                    public void onResponse(DeleteResponse deleteResponse) {
+                        logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
+						//setClusterStatus("synced");
+                        that.close();
+                        indexer.closeHarvester(that);
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        logger.error("Could not delete river :" +  riverIndex + "/" +  riverName);
+						//setClusterStatus("synced");
+                        logger.error("Reason: [{}]", e.getMessage());
+                        that.close();
+                        indexer.closeHarvester(that);
+                    }
+                });
+
+            }
+        }
+
+        if(this.closed){
+			logger.info("Thread closed");
+		}
 		/* Any code after this step would not be executed as
 		   the master will interrupt the harvester thread after
 		   deleting the _river.
@@ -518,17 +686,19 @@ public class Harvester implements Runnable {
 	}
 
 	public boolean runSync() {
+		//TODO: LOG - DONE
 		logger.info("Starting RDF synchronization: endpoint [{}], " +
 				    "index name [{}], type name [{}]",
 					rdfEndpoint, indexName, typeName);
 
+		//setClusterStatus("indexing");
 		boolean success = sync();
-		closed = true;
 
 		logger.info("Ended synchronization from [{}], for endpoint [{}]," +
 					"index name [{}], type name [{}] with status {}",
 					startTime, rdfEndpoint, indexName, typeName,
 					success ? "Success": "Failure");
+
 		return success;
 	}
 
@@ -540,10 +710,12 @@ public class Harvester implements Runnable {
 	 * @param queryObjName name of the object returned
 	 * @return set of values for queryObjectName in the rdfQuery result
 	 */
-	HashSet<String> executeSyncQuery(String rdfQuery, String queryObjName) {
-                logger.info("Start executeSyncQuery");
-                logger.info("QUERY:");
-                logger.info(rdfQuery);
+	HashSet<String> executeSyncQuery(String rdfQuery, String queryObjName, int syncQueryCounter) {
+		long startTime = System.currentTimeMillis();
+
+		logger.info("Start executeSyncQuery");
+		logger.info("QUERY:");
+		logger.info(rdfQuery);
 		HashSet<String> rdfUrls = new HashSet<String>();
 
 		Query query;
@@ -555,9 +727,10 @@ public class Harvester implements Runnable {
 					rdfQuery, qpe.getLocalizedMessage());
 			return null;
 		}
-
+		//TODO: async?
 		QueryExecution qExec = QueryExecutionFactory.sparqlService(
 				rdfEndpoint, query);
+
 		try {
 			ResultSet results = qExec.execSelect();
 
@@ -567,6 +740,7 @@ public class Harvester implements Runnable {
 					String value = sol.getResource(queryObjName).toString();
 					rdfUrls.add(value);
 				} catch (NoSuchElementException e) {
+					//TODO: LOG - DONE
 					logger.error(
 							"Encountered a NoSuchElementException: "
 							+ e.getLocalizedMessage());
@@ -574,6 +748,7 @@ public class Harvester implements Runnable {
 				}
 			}
 		} catch (Exception e) {
+			//TODO: LOG - DONE
 			logger.error(
 					"Encountered a [{}] while querying the endpoint for sync",
 					e.getLocalizedMessage());
@@ -581,6 +756,13 @@ public class Harvester implements Runnable {
 		} finally {
 			qExec.close();
 		}
+
+
+		long endTime = System.currentTimeMillis();
+		if(DEBUG_TIME){
+			logger.info("timeQuery: #" + syncQueryCounter + " : executeSyncQuery for rdfUrls took : {} ms" , endTime - startTime);
+		}
+
 
 		return rdfUrls;
 	}
@@ -678,36 +860,151 @@ public class Harvester implements Runnable {
 	private int removeMissingUris(Set<String> uris, String clusterId) {
 		int searchKeepAlive = 60000;
 		int count = 0;
-		SearchResponse response = client.prepareSearch()
-				.setIndices(indexName)
-				.setTypes(typeName)
-				.setScroll(new TimeValue(searchKeepAlive))
-				.setQuery(QueryBuilders.matchAllQuery())
-				.execute()
-				.actionGet();
-		while (response.getHits().getHits().length > 0) {
-			for (SearchHit hit : response.getHits()) {
 
-                String hitClusterId = (String)hit.getSource().getOrDefault("cluster_id", clusterId);
-                if (hitClusterId != clusterId){
-                    continue;
-                }
+		// TODO: async?
+		final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(1L));
+		SearchRequest searchRequest = new SearchRequest();
+		searchRequest.indices(indexName).types(typeName);
+
+		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+		searchSourceBuilder.query(termQuery("cluster_id", riverName));
+		searchRequest.source(searchSourceBuilder);
+
+		searchRequest.scroll(scroll);
+
+		SearchResponse searchResponse = null;
+		try {
+			searchResponse = client.search(searchRequest);
+			String scrollId = searchResponse.getScrollId();
+			SearchHit[] searchHits = searchResponse.getHits().getHits();
+
+			//process the hits
+			//noinspection Duplicates
+			for(SearchHit hit : searchHits){
+				String hitClusterId;
+				if( hit.getSourceAsMap().getOrDefault("cluster_id", clusterId).getClass() == ArrayList.class ){
+					 ArrayList<String> arr = (ArrayList<String>) hit.getSourceAsMap().getOrDefault("cluster_id", clusterId);
+					 hitClusterId = arr.get(0);
+
+				} else {
+					hitClusterId = (String)hit.getSourceAsMap().getOrDefault("cluster_id", clusterId);
+				}
+
+				if (hitClusterId != clusterId){
+					continue;
+				}
 				if (uris.contains(hit.getId()))
 					continue;
 
-				DeleteResponse deleteResponse =
-						client.prepareDelete(indexName, typeName, hit.getId())
-								.execute()
-								.actionGet();
-				if (deleteResponse.isFound()) count++;
+				DeleteRequest deleteRequest = new DeleteRequest(indexName, typeName, hit.getId());
+				DeleteResponse deleteResponse = client.delete(deleteRequest);
+
+				ReplicationResponse.ShardInfo shardInfo = deleteResponse.getShardInfo();
+				if (shardInfo.getTotal() != shardInfo.getSuccessful()) {
+
+				}
+				if (shardInfo.getFailed() > 0) {
+					for (ReplicationResponse.ShardInfo.Failure failure : shardInfo.getFailures()) {
+						String reason = failure.reason();
+						logger.warn("Deletion failure: " + reason);
+					}
+				}
+				if (deleteResponse.getResult() == DocWriteResponse.Result.DELETED) {
+					count++;
+				}
 			}
 
-			response = client.prepareSearchScroll(response.getScrollId())
-					.setScroll(new TimeValue(searchKeepAlive))
-					.execute()
-					.actionGet();
+			while (searchHits != null && searchHits.length > 0) {
+				SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+				scrollRequest.scroll(scroll);
+				searchResponse = client.searchScroll(scrollRequest);
+				scrollId = searchResponse.getScrollId();
+				searchHits = searchResponse.getHits().getHits();
+
+				//process the hits
+				//noinspection Duplicates
+				for(SearchHit hit : searchHits){
+					String hitClusterId;
+					if( hit.getSourceAsMap().getOrDefault("cluster_id", clusterId).getClass() == ArrayList.class ){
+						ArrayList<String> arr = (ArrayList<String>) hit.getSourceAsMap().getOrDefault("cluster_id", clusterId);
+						hitClusterId = arr.get(0);
+					} else {
+						hitClusterId = (String)hit.getSourceAsMap().getOrDefault("cluster_id", clusterId);
+					}
+
+					if (hitClusterId != clusterId){
+						continue;
+					}
+					if (uris.contains(hit.getId()))
+						continue;
+
+					DeleteRequest deleteRequest = new DeleteRequest(indexName, typeName, hit.getId());
+					DeleteResponse deleteResponse = client.delete(deleteRequest);
+
+					ReplicationResponse.ShardInfo shardInfo = deleteResponse.getShardInfo();
+					if (shardInfo.getTotal() != shardInfo.getSuccessful()) {
+
+					}
+					if (shardInfo.getFailed() > 0) {
+						for (ReplicationResponse.ShardInfo.Failure failure : shardInfo.getFailures()) {
+							String reason = failure.reason();
+							logger.warn("Deletion failure: " + reason);
+						}
+					}
+					if (deleteResponse.getResult() == DocWriteResponse.Result.DELETED) {
+						count++;
+					}
+				}
+			}
+
+			ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+			clearScrollRequest.addScrollId(scrollId);
+			ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest);
+			boolean succeeded = clearScrollResponse.isSucceeded();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ElasticsearchStatusException es){
+			logger.warn("Index not found: [{}]", es.getMessage() );
+		} catch (ElasticsearchException exception) {
+			if (exception.status() == RestStatus.CONFLICT) {
+				logger.warn("There was a conflict: [{}]", exception.getMessage());
+			} else {
+				exception.printStackTrace();
+			}
 		}
+
 		return count;
+	}
+
+	private void setClusterStatus(String status) {
+		String statusIndex = indexName + "_status";
+		boolean indexing = false;
+
+		GetRequest getRequest = new GetRequest(statusIndex, "last_update" , riverName);
+		try {
+			GetResponse getResponse = client.get(getRequest);
+			if(getResponse.getSource().get("status") == "indexing"){
+				indexing = true;
+			}
+		} catch (IOException e) {
+			//e.printStackTrace();
+		}
+
+		if(!indexing){
+			Map<String, Object> jsonMap = new HashMap<>();
+			jsonMap.put("status", status);
+			UpdateRequest request = new UpdateRequest( statusIndex, "last_update", riverName)
+					.doc(jsonMap);
+			try {
+				UpdateResponse updateResponse = client.update(request);
+				logger.info("Updating index {} status to: indexing", riverName);
+			} catch (IOException e) {
+				logger.error("{}", e);
+			}
+		} else {
+
+		}
+
 	}
 
 	/**
@@ -715,7 +1012,10 @@ public class Harvester implements Runnable {
 	 * changes from the SPARQL endpoint
 	 */
 	public boolean sync() {
+		//TODO: LOG
 		logger.info("Sync resources newer than {}", startTime);
+		int rdfUrlssyncQueryCounter = 0;
+		int modelSyncQueryCounter = 0;
 
 		String rdfQueryTemplate =
 				"PREFIX xsd:<http://www.w3.org/2001/XMLSchema#> "
@@ -727,10 +1027,13 @@ public class Harvester implements Runnable {
 		String queryStr = String.format(rdfQueryTemplate, syncConditions,
 										syncTimeProp, graphSyncConditions,
 										startTime);
-		Set<String> syncUris = executeSyncQuery(queryStr, "resource");
 
+		Set<String> syncUris = executeSyncQuery(queryStr, "resource", rdfUrlssyncQueryCounter);
+		rdfUrlssyncQueryCounter++;
+		//TODO : if error retry
 		if (syncUris == null) {
 			logger.error("Errors occurred during sync procedure. Aborting!");
+
 			return false;
 		}
 
@@ -754,7 +1057,8 @@ public class Harvester implements Runnable {
 									 syncTimeProp, graphSyncConditions,
 									 sdf.format(new Date(0)));
 
-			HashSet<String> allIndexURIs = executeSyncQuery(queryStr, "resource");
+			HashSet<String> allIndexURIs = executeSyncQuery(queryStr, "resource", rdfUrlssyncQueryCounter);
+			rdfUrlssyncQueryCounter++;
 
 			if (allIndexURIs == null) {
 				logger.error("Errors occurred during modified content sync query. Aborting!");
@@ -780,114 +1084,193 @@ public class Harvester implements Runnable {
 		if (currentBulk.size() > 0) {
 			bulks.add(currentBulk);
 		}
+
 		/* Execute RDF queries for the resources in each bulk */
 		ArrayList<ArrayList<String>> bulksWithErrors = new ArrayList<ArrayList<String>>();
-                boolean isBulkWithErrors = false;
-                ArrayList<String> urisWithErrors = new ArrayList<String>();
-                ArrayList<String> urisUpdatedWithSuccess = new ArrayList<String>();
-                while (true){
-		    for (ArrayList<String> bulk : bulks) {
-			String syncQuery = getSyncQueryStr(bulk);
-                        logger.info("QUERY:");
-                        logger.info(syncQuery);
+		boolean isBulkWithErrors = false;
+		ArrayList<String> urisWithErrors = new ArrayList<String>();
+		ArrayList<String> urisUpdatedWithSuccess = new ArrayList<String>();
 
-			try {
-				Query query = QueryFactory.create(syncQuery);
-				QueryExecution qExec = QueryExecutionFactory.sparqlService(
-						rdfEndpoint, query);
+		int modelCounter = 0;
+
+		while (true){
+			for (ArrayList<String> bulk : bulks) {
+				String syncQuery = getSyncQueryStr(bulk);
+				logger.info("QUERY:");
+				logger.info(syncQuery);
+
 				try {
-					Model constructModel = ModelFactory.createDefaultModel();
-					qExec.execConstruct(constructModel);
-					BulkRequestBuilder bulkRequest = client.prepareBulk();
+					Query query = QueryFactory.create(syncQuery );
 
-					/**
-					 *  When adding the model to ES do not use toDescribeURIs
-					 *  as the query already returned the correct labels.
-					 */
-					addModelToES(constructModel, bulkRequest, false);
-					count += bulk.size();
-                                        for (String uri : bulk){
-                                            urisUpdatedWithSuccess.add(uri);
-                                        }
-				} catch (Exception e) {
-					logger.error(
-						"Error while querying for modified content. {}",
-						e.getLocalizedMessage());
-                                        if (! isBulkWithErrors){
-                                            for (String uri : bulk){
-                                                ArrayList<String> currentErrorBulk = new ArrayList<String>();
-                                                currentErrorBulk.add(uri);
-                                                bulksWithErrors.add(currentErrorBulk);
-                                            }
-                                        }
-                                        else{
-                                            for (String uri : bulk){
-                                                urisWithErrors.add(String.format("%s %s", uri, e.getLocalizedMessage()));
-                                            }
-                                        }
-                                        if (e.getMessage() == "Future got interrupted"){
-                                            return false;
+					long startTime = System.currentTimeMillis();
+					QueryExecution qExec = QueryExecutionFactory.sparqlService(rdfEndpoint, query);
 
-                                        }
-				} finally {
-					qExec.close();
+					qExec.setTimeout(-1);
+
+					try {
+						Model constructModel =  ModelFactory.createDefaultModel();
+
+						try {
+							qExec.execConstruct(constructModel);
+						} catch (ARQException exc ){
+							logger.error("com.hp.hpl.jena.sparql.ARQException: [{}]", exc);
+						}
+
+						long endTime = System.currentTimeMillis();
+
+						if(DEBUG_TIME){
+							logger.info("timeQuery: " + modelSyncQueryCounter + " : modelSyncQuery took : {} ms" ,
+									endTime - startTime
+							);
+						}
+
+						modelSyncQueryCounter++;
+
+						BulkRequest bulkRequest = new BulkRequest();
+
+						/**
+						*  When adding the model to ES do not use toDescribeURIs
+						*  as the query already returned the correct labels.
+						*/
+						if(checkRiverNotExists()){
+							logger.error("River doesn't exist anymore");
+
+							logger.error("INDEXING CANCELLED");
+							this.close();
+							return false;
+						}
+
+						addModelToES(constructModel, bulkRequest, false, modelCounter);
+
+						count += bulk.size();
+
+						for (String uri : bulk){
+							urisUpdatedWithSuccess.add(uri);
+						}
+
+					} catch (Exception e){
+						//TODO: LOG - DONE
+						logger.error("Error while querying for modified content. {}", e.getLocalizedMessage());
+
+						if (! isBulkWithErrors){
+							for (String uri : bulk){
+								ArrayList<String> currentErrorBulk = new ArrayList<String>();
+								currentErrorBulk.add(uri);
+								bulksWithErrors.add(currentErrorBulk);
+							}
+						} else{
+							for (String uri : bulk){
+								urisWithErrors.add(String.format("%s %s", uri, e.getLocalizedMessage()));
+							}
+						}
+
+						if (e.getMessage().equals("Future got interrupted")){
+							return false;
+						}
+						if( e instanceof ElasticsearchStatusException ){
+							RestStatus restStatus = ((ElasticsearchStatusException) e).status();
+							if(restStatus.getStatus() == 404){
+								logger.error("River doesn't exist anymore");
+								logger.error("INDEXING CANCELLED");
+								this.close();
+								return false;
+							}
+						}
+
+						e.printStackTrace();
+
+					} finally {
+						qExec.close();
+					}
+				} catch (QueryParseException  qpe) {
+					//TODO: LOG - DONE
+					logger.warn("Could not parse Sync query. Please provide a relevant query. {}", qpe.getLocalizedMessage());
+					if (! isBulkWithErrors){
+						for (String uri : bulk){
+							ArrayList<String> currentErrorBulk = new ArrayList<String>();
+							currentErrorBulk.add(uri);
+							bulksWithErrors.add(currentErrorBulk);
+						}
+					} else {
+						for (String uri : bulk){
+							ArrayList<String> currentErrorBulk = new ArrayList<String>();
+							urisWithErrors.add(String.format("%s %s", uri, qpe.getLocalizedMessage()));
+						}
+					}
+					return false;
 				}
-			} catch (QueryParseException  qpe) {
-				logger.warn(
-					"Could not parse Sync query. Please provide a relevant query. {}",
-					qpe.getLocalizedMessage());
-                                if (! isBulkWithErrors){
-                                    for (String uri : bulk){
-                                        ArrayList<String> currentErrorBulk = new ArrayList<String>();
-                                        currentErrorBulk.add(uri);
-                                        bulksWithErrors.add(currentErrorBulk);
-                                    }
-                                }
-                                else{
-                                    for (String uri : bulk){
-                                        ArrayList<String> currentErrorBulk = new ArrayList<String>();
-                                        urisWithErrors.add(String.format("%s %s", uri, qpe.getLocalizedMessage()));
-                                    }
-                                }
-				//return false;
+
 			}
-		    }
-                    
-                    if (bulksWithErrors.size() == 0){
-                        break;
-                    }
-                    if (isBulkWithErrors){
-                        break;
-                    }
-                    logger.warn("There were bulks with errors. Try again each resource one by one.");
-                    logger.warn("Resources with possible errors:");
-                    for (ArrayList<String> bulk : bulksWithErrors){
-                        for (String uri : bulk) {
-                            logger.warn(uri);
-                        }
-                    }
-                    isBulkWithErrors = true;
-                    bulks = bulksWithErrors;
-                }
+
+			if (bulksWithErrors.size() == 0){
+				break;
+			}
+
+			if (isBulkWithErrors){
+				break;
+			}
+
+			logger.warn("There were bulks with errors. Try again each resource one by one.");
+			logger.warn("Resources with possible errors:");
+			for (ArrayList<String> bulk : bulksWithErrors){
+				for (String uri : bulk) {
+					logger.warn(uri);
+				}
+			}
+
+			isBulkWithErrors = true;
+			bulks = bulksWithErrors;
+		}
+
+		//TODO: LOG - DONE
 		logger.info("Finished synchronisation: Deleted {}, Updated {}/{}",
 				deleted, count, syncUris.size());
-                logger.info("Uris updated with success:");
-                for (String uri : urisUpdatedWithSuccess) {
-                    logger.info(uri);
-                }
-                if (urisWithErrors.size() > 0){
-                    logger.error("There were {} uris with errors:", urisWithErrors.size());
-                    for (String uri : urisWithErrors) {
-                        logger.error(uri);
-                    }
-                }
+
+		logger.info("Uris updated with success:");
+
+		for (String uri : urisUpdatedWithSuccess) {
+			logger.info(uri);
+		}
+
+        if (urisWithErrors.size() > 0){
+
+		//TODO: LOG - DONE
+        logger.error("There were {} uris with errors:", urisWithErrors.size());
+			for (String uri : urisWithErrors) {
+				logger.error(uri);
+			}
+		}
 		return true;
 	}
+
+	private boolean checkRiverNotExists() {
+		GetRequest getRequest = new GetRequest(indexer.getRIVER_INDEX(), "river", riverName);
+		try {
+			GetResponse getResponse = client.get(getRequest);
+			if (getResponse.isExists()) {
+				return false;
+			} else {
+				logger.error("River doesn't exist anymore");
+				logger.error("INDEXING CANCELLED");
+				//TODO: update global-search_status ? or remove indexed cluster?
+				this.close();
+				return true;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			logger.error("River doesn't exist anymore");
+			logger.error("INDEXING CANCELLED");
+			this.close();
+			return true;
+		}
+	}
+
 
 	/**
 	 * Starts the harvester for queries and/or URLs
 	 */
 	public boolean runIndexAll() {
+		//TODO: LOG - DONE
 		logger.info(
 				"Starting RDF harvester: endpoint [{}], queries [{}]," +
 				"URIs [{}], index name [{}], typeName [{}]",
@@ -895,6 +1278,7 @@ public class Harvester implements Runnable {
 
 		while (true) {
 			if (this.closed){
+				//TODO: LOG - DONE
 				logger.info("Ended harvest for endpoint [{}], queries [{}]," +
 							"URIs [{}], index name {}, type name {}",
 							rdfEndpoint, rdfQueries, rdfUris, indexName, typeName);
@@ -905,6 +1289,7 @@ public class Harvester implements Runnable {
 			 * Harvest from a SPARQL endpoint
 			 */
 			if(!rdfQueries.isEmpty()) {
+				//TODO: not updated for ES6
 				harvestFromEndpoint();
 			}
 
@@ -1002,7 +1387,12 @@ public class Harvester implements Runnable {
 			retry = false;
 			try {
 				Model model = getModel(qExec);
-				addModelToES(model, client.prepareBulk(), true);
+
+				//TODO: prepareBulk - DONE
+				BulkRequest bulkRequest = new BulkRequest();
+				if(model != null) {
+					addModelToES(model, bulkRequest, true);
+				}
 			} catch (QueryExceptionHTTP e) {
 				if (e.getResponseCode() >= 500) {
 					retry = true;
@@ -1021,22 +1411,24 @@ public class Harvester implements Runnable {
 	 */
 	private void harvestFromEndpoint() {
 
-                logger.info("harvestFromEndpoint");
+		logger.info("harvestFromEndpoint");
 		Query query;
 		QueryExecution qExec;
 
 		for (String rdfQuery : rdfQueries) {
 			if (closed) break;
 
+			//TODO:LOG - DONE
 			logger.info(
 				"Harvesting with query: [{}] on index [{}] and type [{}]",
  				rdfQuery, indexName, typeName);
 
 			try {
-                                logger.info("QUERY:");
-                                logger.info(rdfQuery);
+				logger.info("QUERY:");
+				logger.info(rdfQuery);
 				query = QueryFactory.create(rdfQuery);
 			} catch (QueryParseException qpe) {
+				//TODO:LOG - DONE
 				logger.error(
 						"Could not parse [{}]. Please provide a relevant query. {}",
 						rdfQuery, qpe);
@@ -1044,12 +1436,12 @@ public class Harvester implements Runnable {
 			}
 
 			qExec = QueryExecutionFactory.sparqlService(rdfEndpoint, query);
-
+            qExec.setTimeout(-1);
 			try {
 				harvest(qExec);
 			} catch (Exception e) {
-				logger.error("Exception [{}] occurred while harvesting",
-							 e.getLocalizedMessage());
+				//TODO:LOG - DONE
+				logger.error("Exception [{}] occurred while harvesting", e.getLocalizedMessage());
 			} finally {
 				qExec.close();
 			}
@@ -1063,38 +1455,55 @@ public class Harvester implements Runnable {
 		for(String uri : rdfUris) {
 			if(uri.isEmpty()) continue;
 
+			//TODO:LOG - DONE
 			logger.info("Harvesting uri [{}]", uri);
 
 			Model model = ModelFactory.createDefaultModel();
 			try {
 				RDFDataMgr.read(model, uri.trim(), RDFLanguages.RDFXML);
-				BulkRequestBuilder bulkRequest = client.prepareBulk();
+				//TODO: prepareBulk - DONE
+				BulkRequest bulkRequest = new BulkRequest();
+
 				addModelToES(model, bulkRequest, true);
 			}
 			catch (RiotException re) {
+                //TODO:LOG - DONE
 				logger.error("Illegal xml character [{}]", re.getLocalizedMessage());
 			}
 			catch (Exception e) {
+                //TODO:LOG - DONE
 				logger.error("Exception when harvesting url: {}. Details: {}",
 					uri, e.getLocalizedMessage());
 			}
 		}
 	}
 
-        private Map<String, ArrayList<String>> addCountingToJsonMap(Map<String, ArrayList<String>> jsonMap){
-            Iterator it = jsonMap.entrySet().iterator();
-            Map<String, ArrayList<String>> countingMap = new HashMap<String, ArrayList<String>>();
-            ArrayList<String> itemsCount = new ArrayList<String>();
-            while (it.hasNext()) {
-                itemsCount = new ArrayList<String>();
-                Map.Entry<String, ArrayList<String>> pair = (Map.Entry<String, ArrayList<String>>)it.next();
-                itemsCount.add(Integer.toString(pair.getValue().size()));
-                countingMap.put("items_count_" + pair.getKey(), itemsCount);
-            }
-            jsonMap.putAll(countingMap);
-            return jsonMap;
+    private Map<String, Object> addCountingToJsonMap(Map<String, Object> jsonMap){
+        Iterator it = jsonMap.entrySet().iterator();
+        Map<String, Object> countingMap = new HashMap<String, Object>();
+        ArrayList<Object> itemsCount = new ArrayList<Object>();
+
+        //TODO: fix
+        while (it.hasNext()) {
+            itemsCount = new ArrayList<Object>();
+            Map.Entry<String, Object> pair = (Map.Entry<String, Object>)it.next();
+
+            if(pair.getValue() instanceof List<?>){
+					countingMap.put("items_count_" + pair.getKey(), ((List) pair.getValue()).size());
+			} else {
+            	if((pair.getValue() instanceof Number) ){
+            		countingMap.put("items_count_" + pair.getKey(), pair.getValue());
+				} else {
+					itemsCount.add( pair.getValue());
+					countingMap.put("items_count_" + pair.getKey(), itemsCount.size());
+				}
+			}
         }
-	/**
+        jsonMap.putAll(countingMap);
+        return jsonMap;
+    }
+
+    /**
 	 * Get JSON map for a given resource by applying the river settings
 	 * @param rs resource being processed
 	 * @param properties properties to be indexed
@@ -1104,26 +1513,118 @@ public class Harvester implements Runnable {
 	 *                     one of the properties set in {@link #uriDescriptionList}.
 	 * @return map of properties to be indexed for res
 	 */
-	private Map<String, ArrayList<String>> getJsonMap(Resource rs, Set<Property> properties, Model model,
-													  boolean getPropLabel) {
-		Map<String, ArrayList<String>> jsonMap = new HashMap<String, ArrayList<String>>();
-		ArrayList<String> results = new ArrayList<String>();
+	private Map<String, Object> getJsonMap(Resource rs, Set<Property> properties, Model model,
+										   boolean getPropLabel) {
+
+		ESNormalizer esNormalizer = new ESNormalizer(rs, properties, model, getPropLabel, this);
+		esNormalizer.setAddUriForResource(addUriForResource);
+		esNormalizer.setNormalizeProp(normalizeProp);
+		esNormalizer.setWhiteMap(whiteMap);
+		esNormalizer.setBlackMap(blackMap);
+		esNormalizer.setNormalizeObj(normalizeObj);
+		esNormalizer.setAddLanguage(addLanguage);
+		esNormalizer.setNormalizeMissing(normalizeMissing);
+		esNormalizer.setLanguage(language);
+
+		esNormalizer.process();
+
+		return esNormalizer.getJsonMap();
+
+		/*ArrayList<Object> results = new ArrayList<Object>();
 
 		if(addUriForResource) {
-			results.add("\"" + rs.toString() + "\"");
-			jsonMap.put(
-					"http://www.w3.org/1999/02/22-rdf-syntax-ns#about",
-					results);
+			results.add( rs.toString() );
+			//jsonMap.put("http://www.w3.org/1999/02/22-rdf-syntax-ns#about", results);
+			jsonMap.put("about", results);
 		}
 
 		Set<String> rdfLanguages = new HashSet<String>();
+
 		for(Property prop: properties) {
 			NodeIterator niter = model.listObjectsOfProperty(rs,prop);
 			String property = prop.toString();
-			results = new ArrayList<String>();
-
+			results = new ArrayList<Object>();
 
 			String currValue;
+
+			if (normalizeProp.containsKey(property)) {
+				Object norm_property = normalizeProp.get(property);
+				if (norm_property instanceof String){
+					property = norm_property.toString();
+					if (jsonMap.containsKey(property)) {
+						Object temp = jsonMap.get(property);
+
+						if(temp instanceof List){
+							if(((List) results).size() == 1)
+								jsonMap.put(property,results.get(0));
+							else
+								jsonMap.put(property,results.toArray() );
+						} else {
+							jsonMap.put(property, results);
+						}
+					} else {
+						if(results.size() == 1)
+							jsonMap.put(property, results.get(0));
+						else
+							jsonMap.put(property, results);
+					}
+				} else {
+					if (norm_property instanceof List<?>){
+
+						for (String norm_prop : ((List<String>) norm_property)) {
+							Object temp = jsonMap.get(norm_prop);
+							//TODO:
+							if (jsonMap.containsKey(norm_prop)) {
+								if(temp instanceof List){
+									//((List) temp).addAll(results);
+									if(results.size() == 1)
+										jsonMap.put(norm_prop, results.get(0));
+									else
+										jsonMap.put(norm_prop, temp);
+								} else {
+
+									jsonMap.put(norm_prop, results);
+								}
+							} else {
+								if(results.size() == 1)
+									jsonMap.put(norm_prop, results.get(0));
+								else
+									jsonMap.put(norm_prop, results);
+							}
+						}
+
+					} else {
+						property = norm_property.toString();
+						if (jsonMap.containsKey(property)) {
+							Object temp = jsonMap.get(property);
+							//TODO:
+							if(temp instanceof List){
+								//((List) temp).addAll(results);
+								if(results.size() == 1)
+									jsonMap.put(property, results.get(0));
+								else
+									jsonMap.put(property, results.toArray());
+							} else {
+								if(results.size() == 1)
+									jsonMap.put(property, results.get(0));
+								else
+									jsonMap.put(property, results);
+
+							}
+							//jsonMap.get(property).addAll(results);
+						} else {
+							if(results.size() == 1)
+								jsonMap.put(property, results.get(0));
+							else
+								jsonMap.put(property, results);
+
+						}
+						logger.error("Normalizer error:" , norm_property);
+					}
+				}
+			} else {
+				jsonMap.put(property, results);
+			}
 
 			while (niter.hasNext()) {
 				RDFNode node = niter.next();
@@ -1148,101 +1649,84 @@ public class Harvester implements Runnable {
 					continue;
 				}
 				if (normalizeObj.containsKey(shortValue)) {
-                                        if (!results.contains("\"" + normalizeObj.get(shortValue) + "\"")){
-					    results.add("\"" + normalizeObj.get(shortValue) + "\"");
-                                        }
+					if (!results.contains( normalizeObj.get(shortValue)  )){
+						results.add( normalizeObj.get(shortValue) );
+					}
 				} else {
-                                        if (!results.contains(currValue)){
-					    results.add(currValue);
-                                        }
+					if (!results.contains(currValue)){
+						results.add(currValue);
+					}
 				}
 			}
 
 			// Do not index empty properties
 			if (results.isEmpty()) continue;
 
-			if (normalizeProp.containsKey(property)) {
-				Object norm_property = normalizeProp.get(property);
-                                if (norm_property instanceof String){
-                                    property = norm_property.toString();
-				    if (jsonMap.containsKey(property)) {
-					    jsonMap.get(property).addAll(results);
-				    } else {
-					    jsonMap.put(property, results);
-				    }
-                                }
-                                else {
-                                    if (norm_property instanceof List<?>){
-                                        for (String norm_prop : ((List<String>) norm_property)) {
-                                            if (jsonMap.containsKey(norm_prop)) {
-                                                jsonMap.get(norm_prop).addAll(results);
-                                            } else {
-                                                jsonMap.put(norm_prop, results);
-                                            }
-                                        }
-                                    }
-                                }
-			} else {
-				jsonMap.put(property, results);
+
+		}*/
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		/*if(addLanguage) {
+			HashSet<Property> allProperties = new HashSet<Property>();
+
+            StmtIterator it = model.listStatements();
+            while(it.hasNext()) {
+            	Statement st = it.nextStatement();
+                Property prop = st.getPredicate();
+
+                allProperties.add(prop);
+            }
+
+            for(Property prop: allProperties) {
+            	String property = prop.toString();
+                NodeIterator niter = model.listObjectsOfProperty(rs,prop);
+                String lang;
+
+                while (niter.hasNext()) {
+                	RDFNode node = niter.next();
+                	if (addLanguage) {
+                    	if (node.isLiteral()) {
+                        	lang = node.asLiteral().getLanguage();
+                            if (!lang.isEmpty()) {
+                            	rdfLanguages.add( lang );
+						    }
+						}
+                    }
+			    }
 			}
-		}
-
-		if(addLanguage) {
-                    HashSet<Property> allProperties = new HashSet<Property>();
-
-                    StmtIterator it = model.listStatements();
-                    while(it.hasNext()) {
-                        Statement st = it.nextStatement();
-                        Property prop = st.getPredicate();
-
-                        allProperties.add(prop);
-                    }
-
-
-                    for(Property prop: allProperties) {
-                        String property = prop.toString();
-                        NodeIterator niter = model.listObjectsOfProperty(rs,prop);
-                        String lang;
-
-                        while (niter.hasNext()) {
-                            RDFNode node = niter.next();
-                            if (addLanguage) {
-                                if (node.isLiteral()) {
-                                    lang = node.asLiteral().getLanguage();
-                                    if (!lang.isEmpty()) {
-                                        rdfLanguages.add("\"" + lang + "\"");
-                                    }
-                                }
-                            }
-                        }
-                    }
 
 		    if(rdfLanguages.isEmpty() && !language.isEmpty())
 		        rdfLanguages.add(language);
 			if(!rdfLanguages.isEmpty())
 			    jsonMap.put(
 			        "language", new ArrayList<String>(rdfLanguages));
-	        }
+	    }*/
 
-		for (Map.Entry<String, Object> it : normalizeMissing.entrySet()) {
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		/*for (Map.Entry<String, Object> it : normalizeMissing.entrySet()) {
 			if (!jsonMap.containsKey(it.getKey())) {
-				ArrayList<String> res = new ArrayList<String>();
-                                Object miss_values = it.getValue();
-                                if (miss_values instanceof String){
-				    res.add("\"" + (String)miss_values + "\"");
-                                }
-                                else {
-                                    if (miss_values instanceof List<?>){
-                                        for (String miss_value: ((List<String>)miss_values)){
-                                            res.add("\"" + miss_value + "\"");
-                                        }
-                                    }
-                                }
+				ArrayList<Object> res = new ArrayList<Object>();
+				Object miss_values = it.getValue();
+                if (miss_values instanceof String){
+				    res.add( (String) miss_values );
+                } else {
+		            if (miss_values instanceof List<?>){
+        	            for (String miss_value: ((List<String>)miss_values)){
+            	            res.add( miss_value );
+                        }
+                    } else if(miss_values instanceof Number){
+						res.add( miss_values );
+					} else {
+						res.add( miss_values.toString() );
+					}
+	            }
 				jsonMap.put(it.getKey(), res);
 			}
-		}
+		}*/
 
-		return jsonMap;
+		//return jsonMap;
 	}
 
 	/**
@@ -1254,7 +1738,8 @@ public class Harvester implements Runnable {
 	 *                     as their label. The label is taken as the value of
 	 *                     one of the properties set in {@link #uriDescriptionList}.
 	 */
-	private void addModelToES(Model model, BulkRequestBuilder bulkRequest, boolean getPropLabel) {
+	@SuppressWarnings("Duplicates")
+	private void addModelToES(Model model, BulkRequest bulkRequest, boolean getPropLabel) {
 		long startTime = System.currentTimeMillis();
 		long bulkLength = 0;
 		HashSet<Property> properties = new HashSet<Property>();
@@ -1277,42 +1762,163 @@ public class Harvester implements Runnable {
 
 		while(resIt.hasNext()) {
 			Resource rs = resIt.nextResource();
-			Map<String, ArrayList<String>> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
-                        if (addCounting){
-                            jsonMap = addCountingToJsonMap(jsonMap);
-                        }
-			bulkRequest.add(client.prepareIndex(indexName, typeName, rs.toString())
-					.setSource(mapToString(jsonMap)));
+			Map<String, Object> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
+			if (addCounting){
+				jsonMap = addCountingToJsonMap(jsonMap);
+			}
+
+			//TODO: prepareIndex - DONE ; make request async?
+			bulkRequest.add( new IndexRequest(indexName, typeName, rs.toString())
+					//.source(mapToString(jsonMap)));
+					.source(jsonMap));
+
 			bulkLength++;
 
 			// We want to execute the bulk for every  DEFAULT_BULK_SIZE requests
 			if(bulkLength % EEASettings.DEFAULT_BULK_SIZE == 0) {
-				BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-				// After executing, flush the BulkRequestBuilder.
-				bulkRequest = client.prepareBulk();
+				BulkResponse bulkResponse = null;
+
+				//TODO: make request async
+				try {
+					bulkResponse = client.bulk(bulkRequest);
+				} catch (IOException e) {
+					e.printStackTrace();
+
+				}
 
 				if (bulkResponse.hasFailures()) {
 					processBulkResponseFailure(bulkResponse);
 				}
+
+				// After executing, flush the BulkRequestBuilder.
+				//TODO: prepareBulk - DONE
+				bulkRequest = new BulkRequest();
 			}
 		}
 
 		// Execute remaining requests
 		if(bulkRequest.numberOfActions() > 0) {
-			BulkResponse response = bulkRequest.execute().actionGet();
+			//BulkResponse response = bulkRequest.execute().actionGet();
+			BulkResponse response = null;
+			try {
+				response = client.bulk(bulkRequest);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
 			// Handle failure by iterating through each bulk response item
-			if(response.hasFailures()) {
+			if(response != null && response.hasFailures()) {
 				processBulkResponseFailure(response);
 			}
-                     
 		}
 
         // Show time taken to index the documents
+        //TODO:LOG - DONE
 		logger.info("Indexed {} documents on {}/{} in {} seconds",
 					bulkLength, indexName, typeName,
 					(System.currentTimeMillis() - startTime)/ 1000.0);
 	}
-        
+
+
+	@SuppressWarnings("Duplicates")
+	private void addModelToES(Model model, BulkRequest bulkRequest, boolean getPropLabel, int modelCounter) {
+		long startTime = System.currentTimeMillis();
+		long bulkLength = 0;
+		HashSet<Property> properties = new HashSet<Property>();
+
+		StmtIterator it = model.listStatements();
+		while(it.hasNext()) {
+			Statement st = it.nextStatement();
+			Property prop = st.getPredicate();
+			String property = prop.toString();
+
+			if (rdfPropList.isEmpty()
+					|| (isWhitePropList && rdfPropList.contains(property))
+					|| (!isWhitePropList && !rdfPropList.contains(property))
+					|| (normalizeProp.containsKey(property))) {
+				properties.add(prop);
+			}
+		}
+
+		ResIterator resIt = model.listSubjects();
+
+		int jsonMapCounter = 0;
+		while(resIt.hasNext()) {
+			Resource rs = resIt.nextResource();
+
+			long startJsonMap = System.currentTimeMillis();
+
+			Map<String, Object> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
+			long endJsonMap = System.currentTimeMillis();
+
+			if(DEBUG_TIME){
+				logger.info("jsonMapTime : #" + modelCounter + "|" + jsonMapCounter + " : " + "{}",
+						endJsonMap - startJsonMap
+				);
+			}
+
+
+			jsonMapCounter++;
+
+
+			if (addCounting){
+				jsonMap = addCountingToJsonMap(jsonMap);
+			}
+
+			//TODO: prepareIndex - DONE ; make request async?
+			bulkRequest.add( new IndexRequest(indexName, typeName, rs.toString())
+					//.source(mapToString(jsonMap)));
+					.source(jsonMap));
+
+			bulkLength++;
+
+			// We want to execute the bulk for every  DEFAULT_BULK_SIZE requests
+			if(bulkLength % EEASettings.DEFAULT_BULK_SIZE == 0) {
+				BulkResponse bulkResponse = null;
+
+				//TODO: make request async
+				try {
+					bulkResponse = client.bulk(bulkRequest);
+
+				} catch (IOException e) {
+					e.printStackTrace();
+
+				}
+
+				if (bulkResponse.hasFailures()) {
+					processBulkResponseFailure(bulkResponse);
+				}
+
+				// After executing, flush the BulkRequestBuilder.
+				//TODO: prepareBulk - DONE
+				bulkRequest = new BulkRequest();
+			}
+		}
+
+		// Execute remaining requests
+		if(bulkRequest.numberOfActions() > 0) {
+			//BulkResponse response = bulkRequest.execute().actionGet();
+			BulkResponse response = null;
+			try {
+				response = client.bulk(bulkRequest);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			// Handle failure by iterating through each bulk response item
+			if(response != null && response.hasFailures()) {
+				processBulkResponseFailure(response);
+			}
+		}
+
+
+
+		// Show time taken to index the documents
+		//TODO:LOG - DONE
+		logger.info("Indexed {} documents on {}/{} in {} seconds",
+				bulkLength, indexName, typeName,
+				(System.currentTimeMillis() - startTime)/ 1000.0);
+	}
         
 	/**
 	 *  This method processes failures by iterating through each bulk response item
@@ -1325,6 +1931,7 @@ public class Harvester implements Runnable {
 
 		for(BulkItemResponse item: response.getItems()) {
 			if (item.isFailed()) {
+                //TODO:LOG - DONE
 				logger.debug("Error {} occurred on index {}, type {}, id {} for {} operation "
 							, item.getFailureMessage(), item.getIndex(), item.getType(), item.getId()
 							, item.getOpType());
@@ -1354,116 +1961,6 @@ public class Harvester implements Runnable {
 		return result.toString();
 	}
 
-	/**
-	 * Builds a String result for Elastic Search from an RDFNode
-	 * @param node An RDFNode representing the value of a property for a given
-	 * resource
-	 * @return If the RDFNode has a Literal value, among Boolean, Byte, Double,
-	 * Float, Integer Long, Short, this value is returned, converted to String
-	 * <p>If the RDFNode has a String Literal value, this value will be
-	 * returned, surrounded by double quotes </p>
-	 * <p>If the RDFNode has a Resource value (URI) and toDescribeURIs is set
-	 * to true, the value of @getLabelForUri for the resource is returned,
-	 * surrounded by double quotes.</p>
-	 * Otherwise, the URI will be returned
-	 */
-	private String getStringForResult(RDFNode node, boolean getNodeLabel) {
-		String result = "";
-		boolean quote = false;
-
-		if(node.isLiteral()) {
-			Object literalValue = node.asLiteral().getValue();
-			try {
-				Class<?> literalJavaClass = node.asLiteral()
-					.getDatatype()
-					.getJavaClass();
-
-				if (literalJavaClass.equals(Boolean.class)
-					|| Number.class.isAssignableFrom(literalJavaClass)) {
-
-					result += literalValue;
-				}	else {
-					result =	EEASettings.parseForJson(
-							node.asLiteral().getLexicalForm());
-					quote = true;
-				}
-			} catch (java.lang.NullPointerException npe) {
-				result = EEASettings.parseForJson(
-						node.asLiteral().getLexicalForm());
-				quote = true;
-			}
-
-		} else if(node.isResource()) {
-			result = node.asResource().getURI();
-			if(getNodeLabel) {
-				result = getLabelForUri(result);
-			}
-			quote = true;
-		}
-		if(quote) {
-			result = "\"" + result + "\"";
-		}
-		return result;
-	}
 
 
-	/**
-	 * Returns the string value of the first of the properties in the
-	 * uriDescriptionList for the given resource (as an URI). In case the
-	 * resource does not have any of the properties mentioned, its URI is
-	 * returned. The value is obtained by querying the endpoint and the
-	 * endpoint is queried repeatedly until it gives a response (value or the
-	 * lack of it)
-	 *
-	 * It is highly recommended that the list contains properties like labels
-	 * or titles, with test values.
-	 *
-	 * @param uri - the URI for which a label is required
-	 * @return a String value, either a label for the parameter or its value
-	 * if no label is obtained from the endpoint
-	 */
-	private String getLabelForUri(String uri) {
-		String result;
-
-		if (uriLabelCache.containsKey(uri)) {
-			return uriLabelCache.get(uri);
-		}
-
-		for(String prop:uriDescriptionList) {
-			String innerQuery = "SELECT ?r WHERE {<" + uri + "> <" +
-				prop + "> ?r } LIMIT 1";
-
-			try {
-				Query query = QueryFactory.create(innerQuery);
-				QueryExecution qExec = QueryExecutionFactory.sparqlService(
-						rdfEndpoint,
-						query);
-				boolean keepTrying = true;
-				while(keepTrying) {
-					keepTrying = false;
-					try {
-						ResultSet results = qExec.execSelect();
-
-						if(results.hasNext()) {
-							QuerySolution sol = results.nextSolution();
-							result = EEASettings.parseForJson(
-									sol.getLiteral("r").getLexicalForm());
-							if(!result.isEmpty()) {
-								uriLabelCache.put(uri, result);
-								return result;
-							}
-						}
-					} catch(Exception e) {
-						keepTrying = true;
-						logger.warn("Could not get label for uri {}. Retrying.",
-									uri);
-					} finally { qExec.close();}
-				}
-			} catch (QueryParseException qpe) {
-				logger.error("Exception for query {}. The label cannot be obtained",
-							 innerQuery);
-			}
-		}
-		return uri;
-	}
 }

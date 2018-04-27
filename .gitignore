@@ -9,3 +9,5 @@ pom.xml.releaseBackup
 .classpath
 .project
 
+\.idea/
+\IGNORE/

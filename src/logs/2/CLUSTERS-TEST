@@ -1,0 +1,36 @@
+Clusters: ORIGINAL / NEW
+- eea_articles -  2,341 /  2,341
+- eea_sparql - 1,046 / 1,046
+- eea_files - 6,610 / 6,610
+- eea_documents - 5,038 / 5,038
+- eea_terms -  10,761 /  10,761
+- eea_indicators - 728 / 728
+- eea_highlights - 944 / 944
+- eea_fiches - 182 / 182
+- eea_infographics - 848 / 848
+- eea_folders - 6,957 / 6,957
+- eea_contracts - 63 / 63
+- eea_reports - 2,150 / 2,150
+- eea_daviz - 1,377 / 1,377
+- eea_dataexternal - 1,354 / 1,354
+- eea_data - 497 / 497
+- eea_copernicus  - 77 / 77
+- eea_figures  -  5,966 / 5,966
+- eea_content - 16,788 /  16,788
+- eea_vacancies - 95 / 95
+- rod_instruments - 184 / 184
+- rod_obligations_expired - 196 / 196
+- rod_obligations_active - 394 / 394
+- rod_clients - 72 / 72
+- eea_organisations - 643 / 643
+- eea_messages - 733 / 733
+- bise_factsheets - 28 / 28
+
+//TOTAL : 65429(from calculations) / 65,643
+
+TOTAL : 65429 / 65,643
+
+//FULL INDEXES TEST:
+    - debug enabled
+    - started at 11:02
+    - ended at

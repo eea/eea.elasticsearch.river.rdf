@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+        </Console>
+
+        <Routing name="RoutingAppender">
+            <Routes pattern="$${ctx:logFilename}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:logFilename}" fileName="logs/${ctx:logFilename}/test.log"
+                                 filePattern="logs/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
+                        <PatternLayout pattern="%d{ABSOLUTE} %level{length=5} [%thread] %logger{1} - %msg%n"/>
+                        <SizeBasedTriggeringPolicy size="512" />
+                    </RollingFile>
+                </Route>
+
+                <!-- By having this set to ${ctx:logFileName} it will match when filename
+                     is not set in the context -->
+                <Route ref="Console" key="${ctx:logFileName}"/>
+            </Routes>
+        </Routing>
+    </Appenders>
+    <Loggers>
+        <Root level="trace">
+            <AppenderRef ref="RoutingAppender"/>
+        </Root>
+    </Loggers>
+</Configuration>
