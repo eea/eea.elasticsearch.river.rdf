@@ -524,8 +524,9 @@ public class Harvester implements Runnable {
 	private void setLastUpdate(Date date) {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 		BulkRequest bulkRequest = new BulkRequest();
-		//TODO: bulkRequest - DONE
+
 		try {
+			//TODO: status update
 			String statusIndex = indexName + "_status";
 
 			bulkRequest.add(new IndexRequest( statusIndex , "last_update", riverName )
@@ -566,6 +567,7 @@ public class Harvester implements Runnable {
 		String res = "";
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
+		//TODO: status update
 		GetRequest getRequest = new GetRequest(indexName + "_status", "last_update", riverName );
 
 		//TODO: move to async ?
