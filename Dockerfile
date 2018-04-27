@@ -25,7 +25,7 @@ RUN cd /usr/src/river.rdf && /usr/bin/mvn compile
 RUN sed -i '/#cron./c\cron.*                          \/proc\/1\/fd\/1'  /etc/rsyslog.conf \
      && sed -i '/cron.*/a local2.*                          \/proc\/1\/fd\/1' /etc/rsyslog.conf
 
-RUN service cron start && service rsyslog start
+#RUN service cron start && service rsyslog start
 
 #CMD cd /usr/src/river.rdf &&  mvn clean && mvn compile && mvn exec:java -Dexec.mainClass="org.elasticsearch.app.Indexer"
 
