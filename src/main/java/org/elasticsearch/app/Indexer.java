@@ -333,26 +333,19 @@ public class Indexer {
             Map<String, Object> indexSettings = extractSettings(settings, "index");
             harv.index(XContentMapValues.nodeStringValue(
                     indexSettings.get("index"),
-                    EEASettings.DEFAULT_INDEX_NAME)
-            )
+                    EEASettings.DEFAULT_INDEX_NAME))
                     .type(XContentMapValues.nodeStringValue(
                             indexSettings.get("type"),
-                            EEASettings.DEFAULT_TYPE_NAME)
-
-            )
-                    .statusIndex(XContentMapValues.nodeStringValue(indexSettings.get("statusIndex"),"status")
-            );
+                            EEASettings.DEFAULT_TYPE_NAME));
         }
         else {
             //TODO: don't know if is correct
             if( settings.getSettings().containsKey("syncReq")){
                 harv.index(  ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("index").toString() );
                 harv.type( ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("type").toString() );
-                harv.statusIndex(  ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("statusIndex").toString() );
             } else {
                 harv.index(EEASettings.DEFAULT_INDEX_NAME);
                 harv.type( "river" );
-                harv.statusIndex("status");
             }
 
         }
