@@ -29,4 +29,4 @@ RUN sed -i '/#cron./c\cron.*                          \/proc\/1\/fd\/1'  /etc/rs
 
 #CMD cd /usr/src/river.rdf &&  mvn clean && mvn compile && mvn exec:java -Dexec.mainClass="org.elasticsearch.app.Indexer"
 
-ENTRYPOINT sh /usr/src/river.rdf/startup.sh
+CMD ["sh", "/usr/src/river.rdf/startup.sh"]
