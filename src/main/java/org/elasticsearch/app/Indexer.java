@@ -66,16 +66,6 @@ public class Indexer {
         Indexer indexer = new Indexer();
         logger.setLevel(indexer.loglevel);
 
-        logger.info("Username:" + indexer.envMap.get("elastic_user"));
-        logger.info("Password: " + indexer.envMap.get("elastic_pass"));
-        logger.info("HOST: " + indexer.envMap.get("elastic_host"));
-        logger.info("PORT: " + indexer.envMap.get("elastic_port"));
-        logger.info("RIVER INDEX: " + indexer.RIVER_INDEX);
-        logger.info("MULTITHREADING_ACTIVE: " + indexer.MULTITHREADING_ACTIVE);
-        logger.info("THREADS: " + indexer.THREADS);
-        logger.info("LOG_LEVEL: " + indexer.envMap.get("LOG_LEVEL") );
-        logger.info("DOCUMENT BULK: ", Integer.toString(EEASettings.DEFAULT_BULK_REQ) );
-
         if(indexer.rivers.size() == 0){
             logger.info("No rivers detected");
             logger.info("No rivers added in " + indexer.RIVER_INDEX + " index.Stopping...");
@@ -168,6 +158,15 @@ public class Indexer {
             })
         );
 
+        logger.info("Username: " + this.envMap.get("elastic_user"));
+        logger.info("Password: " + this.envMap.get("elastic_pass"));
+        logger.info("HOST: " + this.envMap.get("elastic_host"));
+        logger.info("PORT: " + this.envMap.get("elastic_port"));
+        logger.info("RIVER INDEX: " + this.RIVER_INDEX);
+        logger.info("MULTITHREADING_ACTIVE: " + this.MULTITHREADING_ACTIVE);
+        logger.info("THREADS: " + this.THREADS);
+        logger.info("LOG_LEVEL: " + this.envMap.get("LOG_LEVEL") );
+        logger.info("DOCUMENT BULK: ", Integer.toString(EEASettings.DEFAULT_BULK_REQ) );
         getAllRivers();
     }
 
@@ -186,6 +185,7 @@ public class Indexer {
 
         SearchResponse searchResponse = null;
         try {
+            logger.info(searchRequest.toString());
             searchResponse = client.search(searchRequest);
             logger.info("River index {} found", this.RIVER_INDEX);
             String scrollId = searchResponse.getScrollId();
@@ -213,6 +213,7 @@ public class Indexer {
             logger.info("River index " + this.RIVER_INDEX + " not found");
             System.exit(0);
         } catch (ElasticsearchStatusException ex){
+            logger.info(ex.toString());
             logger.info("River index " + this.RIVER_INDEX + " not found");
             System.exit(0);
         }
