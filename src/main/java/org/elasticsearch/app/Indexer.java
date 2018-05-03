@@ -11,6 +11,8 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.*;
 import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
@@ -118,6 +120,25 @@ public class Indexer {
             logger.info("Tasks interrupted.");
         }
         logger.info("All tasks completed.");
+
+        logger.debug("{}", indexer);
+
+        // Switching alias
+
+        if(indexer.rivers.size() > 0){
+            River riv = indexer.rivers.get(0);
+
+            GetRequest getRequest = new GetRequest(riv.getRiverSettings().getSettings().get("index").toString(),"_mappings", "");
+
+            GetResponse getResponse = indexer.client.get(getRequest);
+
+            if (getResponse.isExists()) {
+                logger.debug("{}", getResponse);
+            } else {
+                logger.debug("{}", getResponse);
+            }
+        }
+
         indexer.close();
 
     }

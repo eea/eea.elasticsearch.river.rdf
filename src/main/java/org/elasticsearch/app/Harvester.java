@@ -132,6 +132,11 @@ public class Harvester implements Runnable {
 
 	/* ES api options */
 	private RestHighLevelClient client;
+
+	public String getIndexName() {
+		return indexName;
+	}
+
 	private String indexName;
 	private String typeName;
 	private String statusIndex;
