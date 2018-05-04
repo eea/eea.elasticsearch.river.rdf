@@ -1,14 +1,28 @@
 package  org.elasticsearch.app;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.org.apache.xpath.internal.operations.Bool;
+import jdk.nashorn.internal.parser.JSONParser;
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
+import org.apache.http.RequestLine;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 
+import org.apache.http.nio.entity.NStringEntity;
+import org.apache.http.util.EntityUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse;
+import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 
 import org.elasticsearch.action.get.GetRequest;
@@ -21,6 +35,8 @@ import org.elasticsearch.app.river.RiverName;
 import org.elasticsearch.app.river.RiverSettings;
 import org.elasticsearch.client.*;
 
+import org.elasticsearch.cluster.metadata.AliasMetaData;
+import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.rest.RestStatus;
@@ -128,15 +144,82 @@ public class Indexer {
         if(indexer.rivers.size() > 0){
             River riv = indexer.rivers.get(0);
 
-            GetRequest getRequest = new GetRequest(riv.getRiverSettings().getSettings().get("index").toString(),"_mappings", "");
+            HashMap set = (HashMap) riv.getRiverSettings().getSettings().get("syncReq");
+            HashMap ind = (HashMap) set.get("index");
 
-            GetResponse getResponse = indexer.client.get(getRequest);
+            if(ind != null){
+                Boolean switchA = (Boolean) ind.get("switchAlias");
 
-            if (getResponse.isExists()) {
-                logger.debug("{}", getResponse);
-            } else {
-                logger.debug("{}", getResponse);
+                if(switchA != null && switchA){
+                    RestClient lowclient = indexer.client.getLowLevelClient();
+
+                    //TODO: remove hardcoding
+                    Response response = lowclient.performRequest("GET", "global-search/_mappings");
+
+                    RequestLine requestLine = response.getRequestLine();
+                    HttpHost host = response.getHost();
+                    int statusCode = response.getStatusLine().getStatusCode();
+                    Header[] headers = response.getHeaders();
+                    String responseBody = EntityUtils.toString(response.getEntity());
+
+                    HashMap myMap = new HashMap<String, String>();
+
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    try {
+                        myMap = objectMapper.readValue(responseBody, HashMap.class);
+                        String indexA = "";
+                        String reali = (String) myMap.keySet().toArray()[0].toString();
+
+                        String alias = reali.replace("_green", "").replace("_blue", "");
+
+                        // switching aliases
+                        if(reali.contains("_green")){
+                            indexA = reali.replace("_green", "_blue");
+                        } else if(reali.contains("_blue")){
+                            indexA = reali.replace("_blue", "_green");
+                        }
+
+                        Map<String, String> params = Collections.emptyMap();
+
+                        String jsonString = "{ " +
+                                "\"actions\" : [ " +
+                                  "{ \"remove\" : {" +
+                                     "\"index\" : \""+ alias +"\"," +
+                                     "\"alias\" : \""+ reali +"\"" +
+                                    "}" +
+                                  " }" +
+                                "]}";
+
+                        //TODO: WIP
+                        logger.info(jsonString);
+                         /*HttpEntity entity = new NStringEntity(jsonString, ContentType.APPLICATION_JSON);
+                        Response responseRemove = lowclient.performRequest("POST", "/_aliases", params, entity);
+
+                        if(responseRemove.getStatusLine().getStatusCode() == 200){
+                            logger.info("{}", EntityUtils.toString(responseRemove.getEntity()) );
+                        }*/
+
+
+                    } catch (JsonParseException ex){
+
+                    }
+
+
+                }
+
             }
+            /*if(set.get("synqReq") != null ){
+                GetRequest getRequest = new GetRequest(set.get("syncReq").get("index").get("index").toString(),"_mappings", "");
+
+                GetResponse getResponse = indexer.client.get(getRequest);
+
+                if (getResponse.isExists()) {
+                    logger.debug("{}", getResponse);
+                } else {
+                    logger.debug("{}", getResponse);
+                }
+            }*/
+
         }
 
         indexer.close();
@@ -206,7 +289,7 @@ public class Indexer {
 
         SearchResponse searchResponse = null;
         try {
-            logger.info(searchRequest.toString());
+            logger.info("{}",searchRequest);
             searchResponse = client.search(searchRequest);
             logger.info("River index {} found", this.RIVER_INDEX);
             String scrollId = searchResponse.getScrollId();
