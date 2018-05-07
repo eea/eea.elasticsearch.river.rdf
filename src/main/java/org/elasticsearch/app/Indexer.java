@@ -137,10 +137,7 @@ public class Indexer {
         }
         logger.info("All tasks completed.");
 
-        logger.debug("{}", indexer);
-
         // Switching alias
-
         if(indexer.rivers.size() > 0){
             River riv = indexer.rivers.get(0);
 
@@ -153,77 +150,99 @@ public class Indexer {
                 if(switchA != null && switchA){
                     RestClient lowclient = indexer.client.getLowLevelClient();
 
-                    //TODO: remove hardcoding
-                    Response response = lowclient.performRequest("GET", "global-search/_mappings");
-
-                    RequestLine requestLine = response.getRequestLine();
-                    HttpHost host = response.getHost();
-                    int statusCode = response.getStatusLine().getStatusCode();
-                    Header[] headers = response.getHeaders();
-                    String responseBody = EntityUtils.toString(response.getEntity());
-
-                    HashMap myMap = new HashMap<String, String>();
-
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    try {
-                        myMap = objectMapper.readValue(responseBody, HashMap.class);
-                        String indexA = "";
-                        String reali = (String) myMap.keySet().toArray()[0].toString();
-
-                        String alias = reali.replace("_green", "").replace("_blue", "");
-
-                        // switching aliases
-                        if(reali.contains("_green")){
-                            indexA = reali.replace("_green", "_blue");
-                        } else if(reali.contains("_blue")){
-                            indexA = reali.replace("_blue", "_green");
-                        }
-
-                        Map<String, String> params = Collections.emptyMap();
-
-                        String jsonString = "{ " +
-                                "\"actions\" : [ " +
-                                  "{ \"remove\" : {" +
-                                     "\"index\" : \""+ alias +"\"," +
-                                     "\"alias\" : \""+ reali +"\"" +
-                                    "}" +
-                                  " }" +
-                                "]}";
-
-                        //TODO: WIP
-                        logger.info(jsonString);
-                         /*HttpEntity entity = new NStringEntity(jsonString, ContentType.APPLICATION_JSON);
-                        Response responseRemove = lowclient.performRequest("POST", "/_aliases", params, entity);
-
-                        if(responseRemove.getStatusLine().getStatusCode() == 200){
-                            logger.info("{}", EntityUtils.toString(responseRemove.getEntity()) );
-                        }*/
-
-
-                    } catch (JsonParseException ex){
-
-                    }
-
-
+                    switchAliases(lowclient, indexer);
                 }
 
             }
-            /*if(set.get("synqReq") != null ){
-                GetRequest getRequest = new GetRequest(set.get("syncReq").get("index").get("index").toString(),"_mappings", "");
-
-                GetResponse getResponse = indexer.client.get(getRequest);
-
-                if (getResponse.isExists()) {
-                    logger.debug("{}", getResponse);
-                } else {
-                    logger.debug("{}", getResponse);
-                }
-            }*/
-
         }
-
         indexer.close();
 
+    }
+
+    private static void switchAliases(RestClient lowclient, Indexer indexer) {
+        Response response = null;
+        String indexA = "";
+
+        try {
+            response = lowclient.performRequest("GET", "global-search/_mappings");
+            String responseBody = EntityUtils.toString(response.getEntity());
+
+            HashMap myMap = new HashMap<String, String>();
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            String reali = "";
+
+            try {
+                myMap = objectMapper.readValue(responseBody, HashMap.class);
+                reali = (String) myMap.keySet().toArray()[0].toString();
+
+                String alias = reali.replace("_green", "").replace("_blue", "");
+                // switching aliases
+                if(reali.contains("_green")){
+                    indexA = reali.replace("_green", "_blue");
+                } else if(reali.contains("_blue")){
+                    indexA = reali.replace("_blue", "_green");
+                }
+
+                Map<String, String> params = Collections.emptyMap();
+
+                String jsonStringRemove = "{ " +
+                        "\"actions\" : [ " +
+                            "{ \"remove\" : {" +
+                                "\"index\" : \""+ reali +"\"," +
+                                "\"alias\" : \""+ alias +"\"" +
+                                "}" +
+                            " }" + "," +
+                            "{ \"remove\" : {" +
+                                "\"index\" : \""+ reali + "_status" +"\"," +
+                                "\"alias\" : \""+ alias + "_status" +"\"" +
+                                "}" +
+                            " }" +
+                        "]}";
+
+                HttpEntity entityR = new NStringEntity(jsonStringRemove, ContentType.APPLICATION_JSON);
+                Response responseRemove = lowclient.performRequest("POST", "/_aliases", params, entityR);
+
+                if(responseRemove.getStatusLine().getStatusCode() == 200){
+                    logger.info("{}", EntityUtils.toString(responseRemove.getEntity()) );
+                    logger.info("Removed alias from index: " + reali);
+                }
+
+                String jsonStringAdd = "{ " +
+                        "\"actions\" : [ " +
+                            "{ \"add\" : {" +
+                                "\"index\" : \""+ indexA +"\"," +
+                                "\"alias\" : \""+ alias +"\"" +
+                                "}" +
+                            " }" + "," +
+                        "{ \"add\" : {" +
+                                "\"index\" : \""+ indexA + "_status" +"\"," +
+                                "\"alias\" : \""+ alias + "_status" +"\"" +
+                                "}" +
+                            " }" +
+                        "]}";
+
+                HttpEntity entityAdd = new NStringEntity(jsonStringAdd, ContentType.APPLICATION_JSON);
+                try {
+                    Response responseAdd = lowclient.performRequest("POST", "/_aliases", params, entityAdd);
+
+                    if(responseAdd.getStatusLine().getStatusCode() == 200){
+                        logger.info("{}", EntityUtils.toString(responseAdd.getEntity()) );
+                        logger.info("Added alias to index: " + indexA);
+                    }
+
+                } catch (IOException exe){
+                    logger.error("Could not add alias to index : {}; reason: {}", indexA, exe.getMessage());
+                }
+
+
+            } catch (IOException ex){
+                logger.error("Could not remove alias from index : {}; reason: {}", reali, ex.getMessage());
+            }
+
+        } catch (IOException e){
+            logger.error("Could not get aliases from index; reason: {}", e.getMessage());
+        }
     }
 
     public Indexer() {
