@@ -472,7 +472,12 @@ public class Indexer {
             if( settings.getSettings().containsKey("syncReq")){
                 harv.index(  ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("index").toString() );
                 harv.type( ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("type").toString() );
-                harv.statusIndex(  ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("statusIndex").toString() );
+
+                String indexName = ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("index").toString();
+
+                HashMap indexMap = ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index"));
+                String statusI = indexMap.get("statusIndex") != null ? indexMap.get("statusIndex").toString() : indexName + "_status";
+                harv.statusIndex( statusI );
             } else {
                 harv.index(EEASettings.DEFAULT_INDEX_NAME);
                 harv.type( "river" );

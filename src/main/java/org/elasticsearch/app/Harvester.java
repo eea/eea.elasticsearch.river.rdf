@@ -503,7 +503,8 @@ public class Harvester implements Runnable {
 	}
 
 	public Harvester statusIndex(String sIndex){
-		this.statusIndex = sIndex;
+		if(sIndex != null) this.statusIndex = sIndex;
+		else this.statusIndex = this.indexName + "_status";
 		return this;
 	}
 
