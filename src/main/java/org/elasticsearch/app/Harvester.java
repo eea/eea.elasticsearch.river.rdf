@@ -1100,6 +1100,7 @@ public class Harvester implements Runnable {
 
 		while (true){
 			for (ArrayList<String> bulk : bulks) {
+				//TODO: break in 3 parts
 				String syncQuery = getSyncQueryStr(bulk);
 				logger.info("QUERY:");
 				logger.info(syncQuery);
