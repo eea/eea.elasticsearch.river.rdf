@@ -1121,6 +1121,7 @@ public class Harvester implements Runnable {
 							qExec.execConstruct(constructModel);
 						} catch (ARQException exc ){
 							logger.error("com.hp.hpl.jena.sparql.ARQException: [{}]", exc);
+							return false;
 						}
 
 						long endTime = System.currentTimeMillis();
