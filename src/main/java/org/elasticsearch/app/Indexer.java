@@ -1,16 +1,32 @@
 package  org.elasticsearch.app;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.org.apache.xpath.internal.operations.Bool;
+import jdk.nashorn.internal.parser.JSONParser;
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
+import org.apache.http.RequestLine;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 
+import org.apache.http.nio.entity.NStringEntity;
+import org.apache.http.util.EntityUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse;
+import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.*;
 import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
@@ -19,6 +35,8 @@ import org.elasticsearch.app.river.RiverName;
 import org.elasticsearch.app.river.RiverSettings;
 import org.elasticsearch.client.*;
 
+import org.elasticsearch.cluster.metadata.AliasMetaData;
+import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.rest.RestStatus;
@@ -118,8 +136,113 @@ public class Indexer {
             logger.info("Tasks interrupted.");
         }
         logger.info("All tasks completed.");
+
+        // Switching alias
+        if(indexer.rivers.size() > 0){
+            River riv = indexer.rivers.get(0);
+
+            HashMap set = (HashMap) riv.getRiverSettings().getSettings().get("syncReq");
+            HashMap ind = (HashMap) set.get("index");
+
+            if(ind != null){
+                Boolean switchA = (Boolean) ind.get("switchAlias");
+
+                if(switchA != null && switchA){
+                    RestClient lowclient = indexer.client.getLowLevelClient();
+
+                    switchAliases(lowclient, indexer);
+                }
+
+            }
+        }
         indexer.close();
 
+    }
+
+    private static void switchAliases(RestClient lowclient, Indexer indexer) {
+        Response response = null;
+        String indexA = "";
+
+        try {
+            response = lowclient.performRequest("GET", "global-search/_mappings");
+            String responseBody = EntityUtils.toString(response.getEntity());
+
+            HashMap myMap = new HashMap<String, String>();
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            String reali = "";
+
+            try {
+                myMap = objectMapper.readValue(responseBody, HashMap.class);
+                reali = (String) myMap.keySet().toArray()[0].toString();
+
+                String alias = reali.replace("_green", "").replace("_blue", "");
+                // switching aliases
+                if(reali.contains("_green")){
+                    indexA = reali.replace("_green", "_blue");
+                } else if(reali.contains("_blue")){
+                    indexA = reali.replace("_blue", "_green");
+                }
+
+                Map<String, String> params = Collections.emptyMap();
+
+                String jsonStringRemove = "{ " +
+                        "\"actions\" : [ " +
+                            "{ \"remove\" : {" +
+                                "\"index\" : \""+ reali +"\"," +
+                                "\"alias\" : \""+ alias +"\"" +
+                                "}" +
+                            " }" + "," +
+                            "{ \"remove\" : {" +
+                                "\"index\" : \""+ reali + "_status" +"\"," +
+                                "\"alias\" : \""+ alias + "_status" +"\"" +
+                                "}" +
+                            " }" +
+                        "]}";
+
+                HttpEntity entityR = new NStringEntity(jsonStringRemove, ContentType.APPLICATION_JSON);
+                Response responseRemove = lowclient.performRequest("POST", "/_aliases", params, entityR);
+
+                if(responseRemove.getStatusLine().getStatusCode() == 200){
+                    logger.info("{}", EntityUtils.toString(responseRemove.getEntity()) );
+                    logger.info("Removed alias from index: " + reali);
+                }
+
+                String jsonStringAdd = "{ " +
+                        "\"actions\" : [ " +
+                            "{ \"add\" : {" +
+                                "\"index\" : \""+ indexA +"\"," +
+                                "\"alias\" : \""+ alias +"\"" +
+                                "}" +
+                            " }" + "," +
+                        "{ \"add\" : {" +
+                                "\"index\" : \""+ indexA + "_status" +"\"," +
+                                "\"alias\" : \""+ alias + "_status" +"\"" +
+                                "}" +
+                            " }" +
+                        "]}";
+
+                HttpEntity entityAdd = new NStringEntity(jsonStringAdd, ContentType.APPLICATION_JSON);
+                try {
+                    Response responseAdd = lowclient.performRequest("POST", "/_aliases", params, entityAdd);
+
+                    if(responseAdd.getStatusLine().getStatusCode() == 200){
+                        logger.info("{}", EntityUtils.toString(responseAdd.getEntity()) );
+                        logger.info("Added alias to index: " + indexA);
+                    }
+
+                } catch (IOException exe){
+                    logger.error("Could not add alias to index : {}; reason: {}", indexA, exe.getMessage());
+                }
+
+
+            } catch (IOException ex){
+                logger.error("Could not remove alias from index : {}; reason: {}", reali, ex.getMessage());
+            }
+
+        } catch (IOException e){
+            logger.error("Could not get aliases from index; reason: {}", e.getMessage());
+        }
     }
 
     public Indexer() {
@@ -185,7 +308,7 @@ public class Indexer {
 
         SearchResponse searchResponse = null;
         try {
-            logger.info(searchRequest.toString());
+            logger.info("{}",searchRequest);
             searchResponse = client.search(searchRequest);
             logger.info("River index {} found", this.RIVER_INDEX);
             String scrollId = searchResponse.getScrollId();
@@ -334,19 +457,31 @@ public class Indexer {
             Map<String, Object> indexSettings = extractSettings(settings, "index");
             harv.index(XContentMapValues.nodeStringValue(
                     indexSettings.get("index"),
-                    EEASettings.DEFAULT_INDEX_NAME))
+                    EEASettings.DEFAULT_INDEX_NAME)
+            )
                     .type(XContentMapValues.nodeStringValue(
                             indexSettings.get("type"),
-                            EEASettings.DEFAULT_TYPE_NAME));
+                            EEASettings.DEFAULT_TYPE_NAME)
+
+            )
+                    .statusIndex(XContentMapValues.nodeStringValue(indexSettings.get("statusIndex"),EEASettings.DEFAULT_INDEX_NAME + "_status")
+            );
         }
         else {
             //TODO: don't know if is correct
             if( settings.getSettings().containsKey("syncReq")){
                 harv.index(  ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("index").toString() );
                 harv.type( ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("type").toString() );
+
+                String indexName = ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("index").toString();
+
+                HashMap indexMap = ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index"));
+                String statusI = indexMap.get("statusIndex") != null ? indexMap.get("statusIndex").toString() : indexName + "_status";
+                harv.statusIndex( statusI );
             } else {
                 harv.index(EEASettings.DEFAULT_INDEX_NAME);
                 harv.type( "river" );
+                harv.statusIndex(EEASettings.DEFAULT_INDEX_NAME + "_status");
             }
 
         }

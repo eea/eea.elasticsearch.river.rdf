@@ -18,7 +18,7 @@
   </organization>
 
   <properties>
-    <elasticsearch.version>6.2.3</elasticsearch.version>
+    <elasticsearch.version>6.2.4</elasticsearch.version>
     <jena.version>2.12.1</jena.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
@@ -47,7 +47,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.8</version>
         <configuration>
-          <skipTests>false</skipTests>
+          <skipTests>true</skipTests>
           <additionalClasspathElements>
             <!--<additionalClasspathElement>${project.build.directory}/classes/org/app</additionalClasspathElement>-->
             <additionalClasspathElement>${project.build.directory}/classes/conf</additionalClasspathElement>
@@ -149,6 +149,12 @@
       <scope>compile</scope>
     </dependency>
 
+    <!--<dependency>
+      <groupId>org.elasticsearch.client</groupId>
+      <artifactId>elasticsearch-rest-client</artifactId>
+      <version>${elasticsearch.version}</version>
+    </dependency>-->
+
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
@@ -175,6 +181,11 @@
     	<scope>test</scope>
     </dependency>
 
+    <!--<dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.2.3</version>
+    </dependency>-->
 
 
 

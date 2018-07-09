@@ -132,8 +132,15 @@ public class Harvester implements Runnable {
 
 	/* ES api options */
 	private RestHighLevelClient client;
+
+	public String getIndexName() {
+		return indexName;
+	}
+
 	private String indexName;
 	private String typeName;
+	private String statusIndex;
+
 	private String riverName;
 	private String riverIndex;
 
@@ -495,6 +502,12 @@ public class Harvester implements Runnable {
 		return this;
 	}
 
+	public Harvester statusIndex(String sIndex){
+		if(sIndex != null) this.statusIndex = sIndex;
+		else this.statusIndex = this.indexName + "_status";
+		return this;
+	}
+
 	public Harvester type(String typeName) {
 		this.typeName = typeName;
 		return this;
@@ -524,10 +537,9 @@ public class Harvester implements Runnable {
 	private void setLastUpdate(Date date) {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 		BulkRequest bulkRequest = new BulkRequest();
-		//TODO: bulkRequest - DONE
-		try {
-			String statusIndex = indexName + "_status";
 
+		try {
+			//TODO: status update
 			bulkRequest.add(new IndexRequest( statusIndex , "last_update", riverName )
                 .source(
                     jsonBuilder().startObject()
@@ -566,7 +578,8 @@ public class Harvester implements Runnable {
 		String res = "";
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
-		GetRequest getRequest = new GetRequest(indexName + "_status", "last_update", riverName );
+		//TODO: status update
+		GetRequest getRequest = new GetRequest(this.statusIndex, "last_update", riverName );
 
 		//TODO: move to async ?
 		try {
@@ -1088,6 +1101,7 @@ public class Harvester implements Runnable {
 
 		while (true){
 			for (ArrayList<String> bulk : bulks) {
+				//TODO: break in 3 parts
 				String syncQuery = getSyncQueryStr(bulk);
 				logger.info("QUERY:");
 				logger.info(syncQuery);
@@ -1107,6 +1121,7 @@ public class Harvester implements Runnable {
 							qExec.execConstruct(constructModel);
 						} catch (ARQException exc ){
 							logger.error("com.hp.hpl.jena.sparql.ARQException: [{}]", exc);
+							return false;
 						}
 
 						long endTime = System.currentTimeMillis();
@@ -1133,12 +1148,25 @@ public class Harvester implements Runnable {
 							return false;
 						}
 
-						addModelToES(constructModel, bulkRequest, false, modelCounter);
+						ArrayList<String> urisWithESErrors = addModelToES(constructModel, bulkRequest, false, modelCounter);
 
-						count += bulk.size();
+						count += bulk.size() - urisWithESErrors.size();
 
+                                                if (urisWithESErrors.size() > 0){
+                                                    for (String uri : urisWithESErrors) {
+                                                        urisWithErrors.add(uri);
+                                                    }
+                                                }
 						for (String uri : bulk){
-							urisUpdatedWithSuccess.add(uri);
+                                                    boolean hasErrors = false;
+                                                    for (String uriWithError : urisWithESErrors){
+                                                        if (uriWithError.indexOf(String.format("%s ", uri)) != -1){
+                                                            hasErrors = true;
+                                                        }
+                                                    }
+                                                    if (!hasErrors){
+                                                        urisUpdatedWithSuccess.add(uri);
+                                                    }
 						}
 
 					} catch (Exception e){
@@ -1216,8 +1244,8 @@ public class Harvester implements Runnable {
 		}
 
 		//TODO: LOG - DONE
-		logger.info("Finished synchronisation: Deleted {}, Updated {}/{}",
-				deleted, count, syncUris.size());
+		logger.info("Finished synchronisation: Deleted {}, Updated {}/{}, Error {}",
+				deleted, count, syncUris.size(), urisWithErrors.size());
 
 		logger.info("Uris updated with success:");
 
@@ -1522,204 +1550,6 @@ public class Harvester implements Runnable {
 		esNormalizer.process();
 
 		return esNormalizer.getJsonMap();
-
-		/*ArrayList<Object> results = new ArrayList<Object>();
-
-		if(addUriForResource) {
-			results.add( rs.toString() );
-			//jsonMap.put("http://www.w3.org/1999/02/22-rdf-syntax-ns#about", results);
-			jsonMap.put("about", results);
-		}
-
-		Set<String> rdfLanguages = new HashSet<String>();
-
-		for(Property prop: properties) {
-			NodeIterator niter = model.listObjectsOfProperty(rs,prop);
-			String property = prop.toString();
-			results = new ArrayList<Object>();
-
-			String currValue;
-
-			if (normalizeProp.containsKey(property)) {
-				Object norm_property = normalizeProp.get(property);
-				if (norm_property instanceof String){
-					property = norm_property.toString();
-					if (jsonMap.containsKey(property)) {
-						Object temp = jsonMap.get(property);
-
-						if(temp instanceof List){
-							if(((List) results).size() == 1)
-								jsonMap.put(property,results.get(0));
-							else
-								jsonMap.put(property,results.toArray() );
-						} else {
-							jsonMap.put(property, results);
-						}
-					} else {
-						if(results.size() == 1)
-							jsonMap.put(property, results.get(0));
-						else
-							jsonMap.put(property, results);
-					}
-				} else {
-					if (norm_property instanceof List<?>){
-
-						for (String norm_prop : ((List<String>) norm_property)) {
-							Object temp = jsonMap.get(norm_prop);
-							//TODO:
-							if (jsonMap.containsKey(norm_prop)) {
-								if(temp instanceof List){
-									//((List) temp).addAll(results);
-									if(results.size() == 1)
-										jsonMap.put(norm_prop, results.get(0));
-									else
-										jsonMap.put(norm_prop, temp);
-								} else {
-
-									jsonMap.put(norm_prop, results);
-								}
-							} else {
-								if(results.size() == 1)
-									jsonMap.put(norm_prop, results.get(0));
-								else
-									jsonMap.put(norm_prop, results);
-							}
-						}
-
-					} else {
-						property = norm_property.toString();
-						if (jsonMap.containsKey(property)) {
-							Object temp = jsonMap.get(property);
-							//TODO:
-							if(temp instanceof List){
-								//((List) temp).addAll(results);
-								if(results.size() == 1)
-									jsonMap.put(property, results.get(0));
-								else
-									jsonMap.put(property, results.toArray());
-							} else {
-								if(results.size() == 1)
-									jsonMap.put(property, results.get(0));
-								else
-									jsonMap.put(property, results);
-
-							}
-							//jsonMap.get(property).addAll(results);
-						} else {
-							if(results.size() == 1)
-								jsonMap.put(property, results.get(0));
-							else
-								jsonMap.put(property, results);
-
-						}
-						logger.error("Normalizer error:" , norm_property);
-					}
-				}
-			} else {
-				jsonMap.put(property, results);
-			}
-
-			while (niter.hasNext()) {
-				RDFNode node = niter.next();
-				currValue = getStringForResult(node, getPropLabel);
-
-				String shortValue = currValue;
-
-				int currLen = currValue.length();
-				// Unquote string
-				if (currLen > 1)
-					shortValue = currValue.substring(1, currLen - 1);
-
-				// If either whiteMap does contains shortValue
-				// or blackMap contains the value
-				// skip adding it to the index
-				boolean whiteMapCond = whiteMap.containsKey(property)
-						&& !whiteMap.get(property).contains(shortValue);
-				boolean blackMapCond = blackMap.containsKey(property)
-						&& blackMap.get(property).contains(shortValue);
-
-				if (whiteMapCond || blackMapCond) {
-					continue;
-				}
-				if (normalizeObj.containsKey(shortValue)) {
-					if (!results.contains( normalizeObj.get(shortValue)  )){
-						results.add( normalizeObj.get(shortValue) );
-					}
-				} else {
-					if (!results.contains(currValue)){
-						results.add(currValue);
-					}
-				}
-			}
-
-			// Do not index empty properties
-			if (results.isEmpty()) continue;
-
-
-		}*/
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-		/*if(addLanguage) {
-			HashSet<Property> allProperties = new HashSet<Property>();
-
-            StmtIterator it = model.listStatements();
-            while(it.hasNext()) {
-            	Statement st = it.nextStatement();
-                Property prop = st.getPredicate();
-
-                allProperties.add(prop);
-            }
-
-            for(Property prop: allProperties) {
-            	String property = prop.toString();
-                NodeIterator niter = model.listObjectsOfProperty(rs,prop);
-                String lang;
-
-                while (niter.hasNext()) {
-                	RDFNode node = niter.next();
-                	if (addLanguage) {
-                    	if (node.isLiteral()) {
-                        	lang = node.asLiteral().getLanguage();
-                            if (!lang.isEmpty()) {
-                            	rdfLanguages.add( lang );
-						    }
-						}
-                    }
-			    }
-			}
-
-		    if(rdfLanguages.isEmpty() && !language.isEmpty())
-		        rdfLanguages.add(language);
-			if(!rdfLanguages.isEmpty())
-			    jsonMap.put(
-			        "language", new ArrayList<String>(rdfLanguages));
-	    }*/
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-		/*for (Map.Entry<String, Object> it : normalizeMissing.entrySet()) {
-			if (!jsonMap.containsKey(it.getKey())) {
-				ArrayList<Object> res = new ArrayList<Object>();
-				Object miss_values = it.getValue();
-                if (miss_values instanceof String){
-				    res.add( (String) miss_values );
-                } else {
-		            if (miss_values instanceof List<?>){
-        	            for (String miss_value: ((List<String>)miss_values)){
-            	            res.add( miss_value );
-                        }
-                    } else if(miss_values instanceof Number){
-						res.add( miss_values );
-					} else {
-						res.add( miss_values.toString() );
-					}
-	            }
-				jsonMap.put(it.getKey(), res);
-			}
-		}*/
-
-		//return jsonMap;
 	}
 
 	/**
@@ -1814,7 +1644,8 @@ public class Harvester implements Runnable {
 
 
 	@SuppressWarnings("Duplicates")
-	private void addModelToES(Model model, BulkRequest bulkRequest, boolean getPropLabel, int modelCounter) {
+	private ArrayList<String> addModelToES(Model model, BulkRequest bulkRequest, boolean getPropLabel, int modelCounter) {
+                ArrayList<String> urisWithESErrors = new ArrayList<String>();
 		long startTime = System.currentTimeMillis();
 		long bulkLength = 0;
 		HashSet<Property> properties = new HashSet<Property>();
@@ -1879,7 +1710,7 @@ public class Harvester implements Runnable {
 				}
 
 				if (bulkResponse.hasFailures()) {
-					processBulkResponseFailure(bulkResponse);
+					urisWithESErrors = processBulkResponseFailure(bulkResponse);
 				}
 
 				// After executing, flush the BulkRequestBuilder.
@@ -1900,7 +1731,7 @@ public class Harvester implements Runnable {
 
 			// Handle failure by iterating through each bulk response item
 			if(response != null && response.hasFailures()) {
-				processBulkResponseFailure(response);
+				urisWithESErrors = processBulkResponseFailure(response);
 			}
 		}
 
@@ -1909,27 +1740,33 @@ public class Harvester implements Runnable {
 		// Show time taken to index the documents
 		//TODO:LOG - DONE
 		logger.info("Indexed {} documents on {}/{} in {} seconds",
-				bulkLength, indexName, typeName,
+				bulkLength - urisWithESErrors.size(), indexName, typeName,
 				(System.currentTimeMillis() - startTime)/ 1000.0);
+                if (urisWithESErrors.size() > 0){
+                    logger.info("Couldn't index {} documents", urisWithESErrors.size());
+                }
+                return urisWithESErrors;
 	}
         
 	/**
 	 *  This method processes failures by iterating through each bulk response item
 	 *  @param response, a BulkResponse
 	 **/
-	private void processBulkResponseFailure(BulkResponse response) {
-		logger.warn("There was failures when executing bulk : " + response.buildFailureMessage());
-
-		if(!logger.isDebugEnabled()) return;
+	private ArrayList<String> processBulkResponseFailure(BulkResponse response) {
+                ArrayList<String> urisWithESErrors = new ArrayList<String>();
+		logger.warn("There were failures when executing bulk : " + response.buildFailureMessage());
 
 		for(BulkItemResponse item: response.getItems()) {
 			if (item.isFailed()) {
-                //TODO:LOG - DONE
-				logger.debug("Error {} occurred on index {}, type {}, id {} for {} operation "
+                            if(logger.isDebugEnabled()){
+				logger.info("Error {} occurred on index {}, type {}, id {} for {} operation "
 							, item.getFailureMessage(), item.getIndex(), item.getType(), item.getId()
 							, item.getOpType());
+                            }
+                            urisWithESErrors.add(String.format("%s %s", item.getId(), item.getFailureMessage()));
 			}
 		}
+                return urisWithESErrors;
 	}
 
 	/**
