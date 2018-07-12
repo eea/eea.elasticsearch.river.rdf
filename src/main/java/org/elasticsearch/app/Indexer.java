@@ -281,15 +281,15 @@ public class Indexer {
             })
         );
 
-        logger.info("Username: " + this.envMap.get("elastic_user"));
-        logger.info("Password: " + this.envMap.get("elastic_pass"));
-        logger.info("HOST: " + this.envMap.get("elastic_host"));
-        logger.info("PORT: " + this.envMap.get("elastic_port"));
-        logger.info("RIVER INDEX: " + this.RIVER_INDEX);
-        logger.info("MULTITHREADING_ACTIVE: " + this.MULTITHREADING_ACTIVE);
-        logger.info("THREADS: " + this.THREADS);
+        logger.debug("Username: " + this.envMap.get("elastic_user"));
+        logger.debug("Password: " + this.envMap.get("elastic_pass"));
+        logger.debug("HOST: " + this.envMap.get("elastic_host"));
+        logger.debug("PORT: " + this.envMap.get("elastic_port"));
+        logger.debug("RIVER INDEX: " + this.RIVER_INDEX);
+        logger.debug("MULTITHREADING_ACTIVE: " + this.MULTITHREADING_ACTIVE);
+        logger.debug("THREADS: " + this.THREADS);
         logger.info("LOG_LEVEL: " + this.envMap.get("LOG_LEVEL") );
-        logger.info("DOCUMENT BULK: ", Integer.toString(EEASettings.DEFAULT_BULK_REQ) );
+        logger.debug("DOCUMENT BULK: ", Integer.toString(EEASettings.DEFAULT_BULK_REQ) );
         getAllRivers();
     }
 
