@@ -59,6 +59,8 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import java.util.concurrent.TimeUnit;
+
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 
@@ -1039,7 +1041,14 @@ public class Harvester implements Runnable {
 		//TODO : if error retry
 		if (syncUris == null) {
 			logger.error("Errors occurred during sync procedure. Aborting!");
-
+                        logger.info("sleep for 30secs");
+                        try {
+                            TimeUnit.SECONDS.sleep(30);
+                        }
+                        catch(InterruptedException ex) {
+                            logger.info("interrupted");
+                        }
+                        logger.info("sleep done");
 			return false;
 		}
 
