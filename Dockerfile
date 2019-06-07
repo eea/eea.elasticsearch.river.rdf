@@ -11,8 +11,8 @@ RUN apt-get update \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
-ADD crontab /var/spool/cron/crontabs/root
-RUN chmod 0600 /var/spool/cron/crontabs/root
+ADD crontab /tmp/crontab
+RUN crontab /tmp/crontab
 
 RUN cd /usr/src/river.rdf && /usr/bin/mvn clean install
 
