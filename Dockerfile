@@ -12,7 +12,6 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 ADD crontab /tmp/crontab
-RUN crontab /tmp/crontab
 
 RUN cd /usr/src/river.rdf && /usr/bin/mvn clean install
 
