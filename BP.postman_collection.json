@@ -1,0 +1,68 @@
+{
+	"info": {
+		"_postman_id": "e2c95ba6-412c-476b-8b70-e15a3ea5694e",
+		"name": "BP",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "putTestSPARQL",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"type\" : \"eeaRDF\",\r\n    \"eeaRDF\" : {\r\n         \"endpoint\" : \"http://dbpedia.org/sparql\",\r\n         \"query\" : [\"select distinct ?Concept where {[] a ?Concept} LIMIT 100\"],\r\n         \"queryType\" : \"select\" \r\n    },\r\n    \"syncReq\": {\r\n        \r\n    },\r\n    \"index\": {\r\n        \"index\": \"testrdf\",\r\n        \"type\": \"rdf\"\r\n    }\r\n }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:9200/eeardf/river/sparql",
+					"host": [
+						"localhost"
+					],
+					"port": "9200",
+					"path": [
+						"eeardf",
+						"river",
+						"sparql"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "putTestEndpoint",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"type\": \"eeaRDF\",\r\n    \"eeaRDF\": {\r\n        \"uris\" : [\"http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf\",\r\n               \"http://dd.eionet.europa.eu/vocabulary/aq/measurementmethod/rdf\"\r\n               ]\r\n    },\r\n    \"syncReq\": {\r\n\r\n    },\r\n    \"index\": {\r\n        \"index\": \"testend\",\r\n        \"type\": \"rdf\"\r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:9200/eeardf/river/end",
+					"host": [
+						"localhost"
+					],
+					"port": "9200",
+					"path": [
+						"eeardf",
+						"river",
+						"end"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
