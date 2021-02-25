@@ -6,140 +6,176 @@
 	},
 	"item": [
 		{
-			"name": "putTestSPARQL",
-			"request": {
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"type\" : \"eeaRDF\",\r\n    \"eeaRDF\" : {\r\n         \"endpoint\" : \"http://dbpedia.org/sparql\",\r\n         \"query\" : [\"select distinct ?Concept where {[] a ?Concept} LIMIT 100\"],\r\n         \"queryType\" : \"select\" \r\n    },\r\n    \"syncReq\": {\r\n        \r\n    },\r\n    \"index\": {\r\n        \"index\": \"testrdf\",\r\n        \"type\": \"rdf\"\r\n    }\r\n }",
-					"options": {
-						"raw": {
-							"language": "json"
+			"name": "ManagingIndexes",
+			"item": [
+				{
+					"name": "loadSSP",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"type\" : \"eeaRDF\",\r\n    \"eeaRDF\" : {\r\n         \"endpoint\" : \"https://xn--slovnk-7va.gov.cz/sparql\",\r\n         \"query\" : [\"SELECT * WHERE { ?s a <http://www.w3.org/2004/02/skos/core#Concept> ; ?p ?o . FILTER(isIri(?o) || isLiteral(?o))}\"],\r\n         \"queryType\" : \"select\" \r\n    },\r\n    \"syncReq\": {\r\n        \r\n    },\r\n    \"index\": {\r\n        \"index\": \"ssp1\",\r\n        \"type\": \"rdf\"\r\n    }\r\n }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:9200/eeardf/river/sparql",
+							"host": [
+								"localhost"
+							],
+							"port": "9200",
+							"path": [
+								"eeardf",
+								"river",
+								"sparql"
+							]
 						}
-					}
+					},
+					"response": []
 				},
-				"url": {
-					"raw": "localhost:9200/eeardf/river/sparql",
-					"host": [
-						"localhost"
-					],
-					"port": "9200",
-					"path": [
-						"eeardf",
-						"river",
-						"sparql"
-					]
+				{
+					"name": "Delete index",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:9200/ssp",
+							"host": [
+								"localhost"
+							],
+							"port": "9200",
+							"path": [
+								"ssp"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "putTestEndpoint",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"type\": \"eeaRDF\",\r\n    \"eeaRDF\": {\r\n        \"uris\" : [\r\n                \"http://dd.eionet.europa.eu/vocabulary/aq/measurementmethod/rdf\",\r\n                \"http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf\"\r\n                ]\r\n    },\r\n    \"syncReq\": {\r\n\r\n    },\r\n    \"index\": {\r\n        \"index\": \"testrdf\",\r\n        \"type\": \"rdf\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:9200/eeardf/river/end",
+							"host": [
+								"localhost"
+							],
+							"port": "9200",
+							"path": [
+								"eeardf",
+								"river",
+								"end"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete EEARDF",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:9200/eeardf/",
+							"host": [
+								"localhost"
+							],
+							"port": "9200",
+							"path": [
+								"eeardf",
+								""
+							]
+						}
+					},
+					"response": []
 				}
-			},
-			"response": []
+			]
 		},
 		{
-			"name": "putSPARQL",
-			"request": {
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"type\" : \"eeaRDF\",\r\n    \"eeaRDF\" : {\r\n         \"endpoint\" : \"https://xn--slovnk-7va.gov.cz/sparql\",\r\n         \"query\" : [\"PREFIX dct: <http://purl.org/dc/terms/> Describe ?slovnik  WHERE { ?slovnik a <http://onto.fel.cvut.cz/ontologies/slovník/agendový/popis-dat/pojem/slovník>  } ORDER BY DESC(?slovnik) \"],\r\n         \"queryType\" : \"select\" \r\n    },\r\n    \"syncReq\": {\r\n        \r\n    },\r\n    \"index\": {\r\n        \"index\": \"slovnik\",\r\n        \"type\": \"rdf\"\r\n    }\r\n }",
-					"options": {
-						"raw": {
-							"language": "json"
+			"name": "KibanaAPI",
+			"item": [
+				{
+					"name": "GetDashboardInfo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5601/api/kibana/dashboards/export?dashboard=f335efa0-42ee-11eb-be02-fb69650a05ca",
+							"host": [
+								"localhost"
+							],
+							"port": "5601",
+							"path": [
+								"api",
+								"kibana",
+								"dashboards",
+								"export"
+							],
+							"query": [
+								{
+									"key": "dashboard",
+									"value": "f335efa0-42ee-11eb-be02-fb69650a05ca"
+								}
+							]
 						}
-					}
+					},
+					"response": []
 				},
-				"url": {
-					"raw": "localhost:9200/eeardf/river/sparql",
-					"host": [
-						"localhost"
-					],
-					"port": "9200",
-					"path": [
-						"eeardf",
-						"river",
-						"sparql"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "putTestEndpoint",
-			"request": {
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"type\": \"eeaRDF\",\r\n    \"eeaRDF\": {\r\n        \"uris\" : [\r\n                \"http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf\",\r\n                \"http://dd.eionet.europa.eu/vocabulary/aq/measurementmethod/rdf\"\r\n                ]\r\n    },\r\n    \"syncReq\": {\r\n\r\n    },\r\n    \"index\": {\r\n        \"index\": \"testend\",\r\n        \"type\": \"rdf\"\r\n    }\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
+				{
+					"name": "GetAllDashboards",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"query\": {\r\n    \"regexp\": {\r\n      \"type\": {\r\n        \"value\": \"dashboard\"\r\n      }\r\n    }\r\n  }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:9200/_search?pretty=true&size=10000",
+							"host": [
+								"localhost"
+							],
+							"port": "9200",
+							"path": [
+								"_search"
+							],
+							"query": [
+								{
+									"key": "pretty",
+									"value": "true"
+								},
+								{
+									"key": "size",
+									"value": "10000"
+								}
+							]
 						}
-					}
-				},
-				"url": {
-					"raw": "localhost:9200/eeardf/river/end",
-					"host": [
-						"localhost"
-					],
-					"port": "9200",
-					"path": [
-						"eeardf",
-						"river",
-						"end"
-					]
+					},
+					"response": []
 				}
-			},
-			"response": []
-		},
-		{
-			"name": "putTestEndpoint Copy",
-			"request": {
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"type\": \"eeaRDF\",\r\n    \"eeaRDF\": {\r\n        \"uris\" : [\r\n                \"D:\\\\psp-2016.ttl\"\r\n                ]\r\n    },\r\n    \"syncReq\": {\r\n        \r\n    },\r\n    \"index\": {\r\n        \"index\": \"spsp2016\",\r\n        \"type\": \"rdf\"\r\n    }\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "localhost:9200/eeardf/river/psp",
-					"host": [
-						"localhost"
-					],
-					"port": "9200",
-					"path": [
-						"eeardf",
-						"river",
-						"psp"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Delete EEARDF",
-			"request": {
-				"method": "DELETE",
-				"header": [],
-				"url": {
-					"raw": "localhost:9200/eeardf/",
-					"host": [
-						"localhost"
-					],
-					"port": "9200",
-					"path": [
-						"eeardf",
-						""
-					]
-				}
-			},
-			"response": []
+			]
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }
