@@ -4,24 +4,22 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.search.SearchHit;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class River {
+public class River implements Serializable {
     private RiverName riverName;
     private RiverSettings riverSettings;
 
     public River() {
     }
 
-    public River(SearchHit sh) {
-
-    }
-
     public River(Map<String, Object> map) {
-        String name = ((Map) map.get("index")).get("index").toString();
-        String type = ((Map) map.get("index")).get("type").toString();
-        this.setRiverName(name, type).setRiverSettings(new RiverSettings(map));
+        Map<String, Object> config = (Map<String, Object>) map.get("config");
+        String name = ((Map) config.get("index")).get("index").toString();
+        String type = ((Map) config.get("index")).get("type").toString();
+        this.setRiverName(name, type).setRiverSettings(new RiverSettings(config));
     }
 
     public String riverName() {
@@ -47,12 +45,10 @@ public class River {
         return this.riverSettings;
     }
 
-    public String getJsonString() throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
+    public Map<String, Object> toMap() {
         Map<String, Object> res = new HashMap<>();
+        res.put("config", getRiverSettings().getSettings());
 
-        res.put(riverName(), getRiverSettings().getSettings());
-
-        return mapper.writeValueAsString(res);
+        return res;
     }
 }

@@ -1,0 +1,1 @@
+{"sspapi":{"config":{"type":"eeaRDF","eeaRDF":{"endpoint":"https://xn--slovnk-7va.gov.cz/sparql","query":["SELECT * WHERE { ?s a <http://www.w3.org/2004/02/skos/core#Concept> ; ?p ?o . FILTER(isIri(?o) || isLiteral(?o))}"],"queryType":"select"},"syncReq":{},"index":{"index":"sspapi","type":"rdf"}}}}

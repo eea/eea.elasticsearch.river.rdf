@@ -64,6 +64,7 @@ import java.util.concurrent.TimeUnit;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 
+
 /**
  * @author iulia
  */
@@ -673,26 +674,27 @@ public class Harvester implements Runnable {
                 logger.info("===============================================================================");
                 logger.info("TOTAL TIME:  {} ms", System.currentTimeMillis() - currentTime);
                 logger.info("===============================================================================");
-//TODO: Testing
 
-//                client.deleteAsync(deleteRequest, new ActionListener<DeleteResponse>() {
-//                    @Override
-//                    public void onResponse(DeleteResponse deleteResponse) {
-//                        logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
-//                        //setClusterStatus("synced");
-//                        that.close();
-//                        indexer.closeHarvester(that);
-//                    }
-//
-//                    @Override
-//                    public void onFailure(Exception e) {
-//                        logger.error("Could not delete river :" + riverIndex + "/" + riverName);
-//                        //setClusterStatus("synced");
-//                        logger.error("Reason: [{}]", e.getMessage());
-//                        that.close();
-//                        indexer.closeHarvester(that);
-//                    }
-//                });
+
+                if(!indexer.isUsingAPI())
+                client.deleteAsync(deleteRequest, new ActionListener<DeleteResponse>() {
+                    @Override
+                    public void onResponse(DeleteResponse deleteResponse) {
+                        logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
+                        //setClusterStatus("synced");
+                        that.close();
+                        indexer.closeHarvester(that);
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        logger.error("Could not delete river :" + riverIndex + "/" + riverName);
+                        //setClusterStatus("synced");
+                        logger.error("Reason: [{}]", e.getMessage());
+                        that.close();
+                        indexer.closeHarvester(that);
+                    }
+                });
 
             }
         }
@@ -1289,6 +1291,7 @@ public class Harvester implements Runnable {
     }
 
     private boolean checkRiverNotExists() {
+        if (indexer.isUsingAPI()) return false;
         GetRequest getRequest = new GetRequest(indexer.getRIVER_INDEX(), "river", riverName);
         try {
             GetResponse getResponse = client.get(getRequest);

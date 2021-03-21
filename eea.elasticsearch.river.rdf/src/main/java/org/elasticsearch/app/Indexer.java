@@ -49,6 +49,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+
 public class Indexer {
     private final static String USER = "user_rw";
     private final static String PASS = "rw_pass";
@@ -65,6 +66,8 @@ public class Indexer {
     private int THREADS = 4;
     public String loglevel;
 
+    private boolean usingAPI = true;
+
     private static final ESLogger logger = Loggers.getLogger(Indexer.class);
 
     private ArrayList<River> rivers = new ArrayList<>();
@@ -77,11 +80,13 @@ public class Indexer {
 
     private static ExecutorService executorService;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
 
         logger.info("Starting application...");
 
         Indexer indexer = new Indexer();
+        indexer.setUsingAPI(false);
+        indexer.getAllRivers();
 
         logger.setLevel(indexer.loglevel);
 
@@ -91,24 +96,30 @@ public class Indexer {
             indexer.close();
         }
 
+
+        indexer.startIndexing();
+        indexer.close();
+
+    }
+
+    public void startIndexing() {
         //TODO: loop for all rivers
-        if (indexer.MULTITHREADING_ACTIVE) {
+        if (MULTITHREADING_ACTIVE) {
         /*Indexer.executorService = EsExecutors.newAutoQueueFixed("threadPool", 1, 5, 5, 26,2,
                 TimeValue.timeValueHours(10), EsExecutors.daemonThreadFactory("esapp"), new ThreadContext(Builder.EMPTY_SETTINGS));*/
-            Indexer.executorService = Executors.newFixedThreadPool(indexer.THREADS);
+            Indexer.executorService = Executors.newFixedThreadPool(this.THREADS);
             //Indexer.executorService = Executors.newWorkStealingPool(4);
 
         } else {
             Indexer.executorService = Executors.newSingleThreadExecutor();
         }
-
-        for (River river : indexer.rivers) {
+        for (River river : rivers) {
             Harvester h = new Harvester();
 
-            h.client(indexer.client).riverName(river.riverName())
-                    .riverIndex(indexer.RIVER_INDEX)
-                    .indexer(indexer);
-            indexer.addHarvesterSettings(h, river.getRiverSettings());
+            h.client(client).riverName(river.riverName())
+                    .riverIndex(RIVER_INDEX)
+                    .indexer(this);
+            this.addHarvesterSettings(h, river.getRiverSettings());
 
             Indexer.executorService.submit(h);
             logger.info("Created thread for river: {}", river.riverName());
@@ -120,28 +131,30 @@ public class Indexer {
         try {
             Indexer.executorService.awaitTermination(1, TimeUnit.DAYS);
 
-            try {
-                //TODO: Testing
-//                DeleteIndexRequest request = new DeleteIndexRequest(indexer.RIVER_INDEX);
-//                indexer.client.indices().delete(request);
-//                logger.info("Deleting river index!!!");
+            if (!isUsingAPI()) try {
+                DeleteIndexRequest request = new DeleteIndexRequest(RIVER_INDEX);
+                client.indices().delete(request);
+                logger.info("Deleting river index!!!");
 
             } catch (ElasticsearchException exception) {
                 if (exception.status() == RestStatus.NOT_FOUND) {
                     logger.error("River index not found");
                     logger.info("Tasks interrupted by missing river index.");
-                    indexer.close();
+                    this.close();
                 }
+            }catch ( IOException e){
+                logger.error("Unable to delete river index!!!");
+                this.close();
             }
 
-        } catch (InterruptedException ignored) {
+        } catch (InterruptedException  ignored) {
             logger.info("Tasks interrupted.");
         }
         logger.info("All tasks completed.");
 
         // Switching alias
-        if (indexer.rivers.size() > 0) {
-            River riv = indexer.rivers.get(0);
+        if (rivers.size() > 0) {
+            River riv = rivers.get(0);
 
             HashMap set = (HashMap) riv.getRiverSettings().getSettings().get("syncReq");
             HashMap ind = (HashMap) set.get("index");
@@ -150,15 +163,32 @@ public class Indexer {
                 Boolean switchA = (Boolean) ind.get("switchAlias");
 
                 if (switchA != null && switchA) {
-                    RestClient lowclient = indexer.client.getLowLevelClient();
+                    RestClient lowclient = client.getLowLevelClient();
 
-                    switchAliases(lowclient, indexer);
+                    switchAliases(lowclient, this);
                 }
 
             }
         }
-        indexer.close();
+    }
 
+
+    public boolean isUsingAPI() {
+        return usingAPI;
+    }
+
+    public void setUsingAPI(boolean usingAPI) {
+        this.usingAPI = usingAPI;
+    }
+
+    public void setRivers(ArrayList<River> rivers) {
+        this.rivers = rivers;
+    }
+
+    public void setRivers(River river) {
+        ArrayList<River> rivers = new ArrayList<>();
+        rivers.add(river);
+        this.rivers = rivers;
     }
 
     private static void switchAliases(RestClient lowclient, Indexer indexer) {
@@ -293,7 +323,6 @@ public class Indexer {
         logger.debug("THREADS: " + this.THREADS);
         logger.info("LOG_LEVEL: " + this.envMap.get("LOG_LEVEL"));
         logger.debug("DOCUMENT BULK: ", Integer.toString(EEASettings.DEFAULT_BULK_REQ));
-        getAllRivers();
     }
 
     public void getRivers() {
