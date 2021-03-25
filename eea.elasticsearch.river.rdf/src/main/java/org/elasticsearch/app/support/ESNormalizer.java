@@ -423,13 +423,11 @@ public class ESNormalizer {
                         }
                     } catch(Exception e) {
                         keepTrying = true;
-                        //TODO:LOG - DONE
                         logger.warn("Could not get label for uri {}. Retrying.",
                                 uri);
                     } finally { qExec.close();}
                 }
             } catch (QueryParseException qpe) {
-                //TODO:LOG - DONE
                 logger.error("Exception for query {}. The label cannot be obtained",
                         innerQuery);
             }

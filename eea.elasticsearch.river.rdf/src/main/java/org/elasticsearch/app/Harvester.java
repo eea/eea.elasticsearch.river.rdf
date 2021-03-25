@@ -18,6 +18,7 @@ import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.sparql.ARQException;
 import com.hp.hpl.jena.sparql.engine.http.QueryExceptionHTTP;
+import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.RiotException;
@@ -79,7 +80,7 @@ public class Harvester implements Runnable {
         DESCRIBE
     }
 
-    //TODO: LOGGER - DONE
+
     private final ESLogger logger = Loggers.getLogger(Harvester.class);
 
     private Indexer indexer;
@@ -229,7 +230,7 @@ public class Harvester implements Runnable {
         try {
             rdfQueryType = QueryType.valueOf(queryType.toUpperCase());
         } catch (IllegalArgumentException e) {
-            //TODO: LOG - DONE
+
             logger.info("Bad query type: {}", queryType);
             /* River process can't continue */
             throw e;
@@ -614,6 +615,7 @@ public class Harvester implements Runnable {
 
     public void run() {
         logger.setLevel(this.indexer.loglevel);
+        indexer.threadPoolAdd(Thread.currentThread());
         Thread.currentThread().setName(riverName);
 
         if (checkRiverNotExists()) {
@@ -656,9 +658,6 @@ public class Harvester implements Runnable {
             else
                 success = runSync();
 
-            //TODO: remove
-            //success = true;
-
             //TODO: async ?
             if (success) {
 
@@ -676,28 +675,29 @@ public class Harvester implements Runnable {
                 logger.info("===============================================================================");
 
 
-                if(!indexer.isUsingAPI())
-                client.deleteAsync(deleteRequest, new ActionListener<DeleteResponse>() {
-                    @Override
-                    public void onResponse(DeleteResponse deleteResponse) {
-                        logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
-                        //setClusterStatus("synced");
-                        that.close();
-                        indexer.closeHarvester(that);
-                    }
+                if (!indexer.isUsingAPI())
+                    client.deleteAsync(deleteRequest, new ActionListener<DeleteResponse>() {
+                        @Override
+                        public void onResponse(DeleteResponse deleteResponse) {
+                            logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
+                            //setClusterStatus("synced");
+                            that.close();
+                            indexer.closeHarvester(that);
+                        }
 
-                    @Override
-                    public void onFailure(Exception e) {
-                        logger.error("Could not delete river :" + riverIndex + "/" + riverName);
-                        //setClusterStatus("synced");
-                        logger.error("Reason: [{}]", e.getMessage());
-                        that.close();
-                        indexer.closeHarvester(that);
-                    }
-                });
+                        @Override
+                        public void onFailure(Exception e) {
+                            logger.error("Could not delete river :" + riverIndex + "/" + riverName);
+                            //setClusterStatus("synced");
+                            logger.error("Reason: [{}]", e.getMessage());
+                            that.close();
+                            indexer.closeHarvester(that);
+                        }
+                    });
 
             }
         }
+        indexer.threadPoolRemove(Thread.currentThread());
 
         if (this.closed) {
             logger.info("Thread closed");
@@ -709,7 +709,7 @@ public class Harvester implements Runnable {
     }
 
     public boolean runSync() {
-        //TODO: LOG - DONE
+
         logger.info("Starting RDF synchronization: endpoint [{}], " +
                         "index name [{}], type name [{}]",
                 rdfEndpoint, indexName, typeName);
@@ -764,7 +764,7 @@ public class Harvester implements Runnable {
                     String value = sol.getResource(queryObjName).toString();
                     rdfUrls.add(value);
                 } catch (NoSuchElementException e) {
-                    //TODO: LOG - DONE
+
                     logger.error(
                             "Encountered a NoSuchElementException: "
                                     + e.getLocalizedMessage());
@@ -772,7 +772,7 @@ public class Harvester implements Runnable {
                 }
             }
         } catch (Exception e) {
-            //TODO: LOG - DONE
+
             logger.error(
                     "Encountered a [{}] while querying the endpoint for sync",
                     e.getLocalizedMessage());
@@ -1038,7 +1038,6 @@ public class Harvester implements Runnable {
      * changes from the SPARQL endpoint
      */
     public boolean sync() {
-        //TODO: LOG
         logger.info("Sync resources newer than {}", startTime);
         int rdfUrlssyncQueryCounter = 0;
         int modelSyncQueryCounter = 0;
@@ -1196,7 +1195,7 @@ public class Harvester implements Runnable {
                         }
 
                     } catch (Exception e) {
-                        //TODO: LOG - DONE
+
                         logger.error("Error while querying for modified content. {}", e.getLocalizedMessage());
 
                         if (!isBulkWithErrors) {
@@ -1230,7 +1229,7 @@ public class Harvester implements Runnable {
                         qExec.close();
                     }
                 } catch (QueryParseException qpe) {
-                    //TODO: LOG - DONE
+
                     logger.warn("Could not parse Sync query. Please provide a relevant query. {}", qpe.getLocalizedMessage());
                     if (!isBulkWithErrors) {
                         for (String uri : bulk) {
@@ -1269,7 +1268,7 @@ public class Harvester implements Runnable {
             bulks = bulksWithErrors;
         }
 
-        //TODO: LOG - DONE
+
         logger.info("Finished synchronisation: Deleted {}, Updated {}/{}, Error {}",
                 deleted, count, syncUris.size(), urisWithErrors.size());
 
@@ -1281,7 +1280,7 @@ public class Harvester implements Runnable {
 
         if (urisWithErrors.size() > 0) {
 
-            //TODO: LOG - DONE
+
             logger.error("There were {} uris with errors:", urisWithErrors.size());
             for (String uri : urisWithErrors) {
                 logger.error(uri);
@@ -1318,7 +1317,7 @@ public class Harvester implements Runnable {
      * Starts the harvester for queries and/or URLs
      */
     public boolean runIndexAll() {
-        //TODO: LOG - DONE
+
         logger.info(
                 "Starting RDF harvester: endpoint [{}], queries [{}]," +
                         "URIs [{}], index name [{}], typeName [{}]",
@@ -1326,7 +1325,7 @@ public class Harvester implements Runnable {
 
         while (true) {
             if (this.closed) {
-                //TODO: LOG - DONE
+
                 logger.info("Ended harvest for endpoint [{}], queries [{}]," +
                                 "URIs [{}], index name {}, type name {}",
                         rdfEndpoint, rdfQueries, rdfUris, indexName, typeName);
@@ -1444,7 +1443,7 @@ public class Harvester implements Runnable {
             try {
                 Model model = getModel(qExec);
 
-                //TODO: prepareBulk - DONE
+
                 BulkRequest bulkRequest = new BulkRequest();
                 if (model != null) {
                     addModelToES(model, bulkRequest, true);
@@ -1467,14 +1466,13 @@ public class Harvester implements Runnable {
      */
     private void harvestFromEndpoint() {
 
-        logger.info("harvestFromEndpoint");
+        logger.info("Harvest from endpoint ---------------------------------------------------------------");
         Query query;
         QueryExecution qExec;
 
         for (String rdfQuery : rdfQueries) {
             if (closed) break;
 
-            //TODO:LOG - DONE
             logger.info(
                     "Harvesting with query: [{}] on index [{}] and type [{}]",
                     rdfQuery, indexName, typeName);
@@ -1484,7 +1482,6 @@ public class Harvester implements Runnable {
                 logger.info(rdfQuery);
                 query = QueryFactory.create(rdfQuery);
             } catch (QueryParseException qpe) {
-                //TODO:LOG - DONE
                 logger.error(
                         "Could not parse [{}]. Please provide a relevant query. {}",
                         rdfQuery, qpe);
@@ -1496,7 +1493,6 @@ public class Harvester implements Runnable {
             try {
                 harvest(qExec);
             } catch (Exception e) {
-                //TODO:LOG - DONE
                 logger.error("Exception [{}] occurred while harvesting", e.getLocalizedMessage());
             } finally {
                 qExec.close();
@@ -1509,23 +1505,22 @@ public class Harvester implements Runnable {
      */
     private void harvestFromDumps() {
         for (String uri : rdfUris) {
+            uri = uri.trim();
             if (uri.isEmpty()) continue;
 
-            //TODO:LOG - DONE
             logger.info("Harvesting uri [{}]", uri);
 
             Model model = ModelFactory.createDefaultModel();
+            Lang lang = RDFLanguages.RDFXML;
             try {
-                RDFDataMgr.read(model, uri.trim(), RDFLanguages.RDFXML);
-                //TODO: prepareBulk - DONE
+                RDFDataMgr.read(model, uri, lang);
+
                 BulkRequest bulkRequest = new BulkRequest();
 
                 addModelToES(model, bulkRequest, true);
             } catch (RiotException re) {
-                //TODO:LOG - DONE
-                logger.error("Illegal xml character [{}]", re.getLocalizedMessage());
+                logger.error("Illegal {} character [{}]", lang.getName(), re.getLocalizedMessage());
             } catch (Exception e) {
-                //TODO:LOG - DONE
                 logger.error("Exception when harvesting url: {}. Details: {}",
                         uri, e.getLocalizedMessage());
             }
@@ -1648,7 +1643,6 @@ public class Harvester implements Runnable {
                 }
 
                 // After executing, flush the BulkRequestBuilder.
-                //TODO: prepareBulk - DONE
                 bulkRequest = new BulkRequest();
             }
         }
@@ -1670,7 +1664,6 @@ public class Harvester implements Runnable {
         }
 
         // Show time taken to index the documents
-        //TODO:LOG - DONE
         logger.info("Indexed {} documents on {}/{} in {} seconds",
                 bulkLength, indexName, typeName,
                 (System.currentTimeMillis() - startTime) / 1000.0);
@@ -1771,7 +1764,6 @@ public class Harvester implements Runnable {
 
 
         // Show time taken to index the documents
-        //TODO:LOG - DONE
         logger.info("Indexed {} documents on {}/{} in {} seconds",
                 bulkLength - urisWithESErrors.size(), indexName, typeName,
                 (System.currentTimeMillis() - startTime) / 1000.0);

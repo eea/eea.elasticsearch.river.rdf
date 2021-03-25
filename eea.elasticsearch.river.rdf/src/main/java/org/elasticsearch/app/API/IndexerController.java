@@ -10,8 +10,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.BindException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+
 
 @RestController
 @RequestMapping("/")
@@ -29,6 +33,15 @@ public class IndexerController {
     @GetMapping("/config")
     public Map<String, Object> SaveConfig() {
         return configManager.getListOfConfigs();
+    }
+    @GetMapping("/threads")
+    public ArrayList<String> threads() {
+        ArrayList<String> s = new ArrayList<>();
+        for (Thread thread : ApiServer.indexer.getThreadPool()) {
+            s.add(thread.getName());
+        }
+        Collections.sort(s);
+        return s;
     }
 
     @PutMapping(path = "/config", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -49,10 +62,15 @@ public class IndexerController {
             //TODO throw Exception
             return;
         }
+        if(threads().contains(river.riverName())){
+            //TODO throw Exception
+            return;
+        }
 
-        Indexer indexer = new Indexer();
-        indexer.setRivers(river);
-        indexer.startIndexing();
+        ApiServer.indexer.setRivers(river);
+        ApiServer.indexer.startIndexing();
+
+
     }
 
     @PostMapping(path = "/configAndIndex", consumes = MediaType.APPLICATION_JSON_VALUE)

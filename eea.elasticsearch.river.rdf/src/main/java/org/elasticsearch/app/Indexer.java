@@ -66,6 +66,8 @@ public class Indexer {
     private int THREADS = 4;
     public String loglevel;
 
+    private final Set<Thread> threadPool = new HashSet<>();
+
     private boolean usingAPI = true;
 
     private static final ESLogger logger = Loggers.getLogger(Indexer.class);
@@ -103,16 +105,18 @@ public class Indexer {
     }
 
     public void startIndexing() {
+
         //TODO: loop for all rivers
         if (MULTITHREADING_ACTIVE) {
         /*Indexer.executorService = EsExecutors.newAutoQueueFixed("threadPool", 1, 5, 5, 26,2,
                 TimeValue.timeValueHours(10), EsExecutors.daemonThreadFactory("esapp"), new ThreadContext(Builder.EMPTY_SETTINGS));*/
-            Indexer.executorService = Executors.newFixedThreadPool(this.THREADS);
+            Indexer.executorService = Executors.newFixedThreadPool(THREADS);
             //Indexer.executorService = Executors.newWorkStealingPool(4);
 
         } else {
             Indexer.executorService = Executors.newSingleThreadExecutor();
         }
+
         for (River river : rivers) {
             Harvester h = new Harvester();
 
@@ -128,7 +132,7 @@ public class Indexer {
         Indexer.executorService.shutdown();
 
         logger.info("All tasks submitted.");
-        try {
+        if (!isUsingAPI()) try {
             Indexer.executorService.awaitTermination(1, TimeUnit.DAYS);
 
             if (!isUsingAPI()) try {
@@ -142,12 +146,12 @@ public class Indexer {
                     logger.info("Tasks interrupted by missing river index.");
                     this.close();
                 }
-            }catch ( IOException e){
+            } catch (IOException e) {
                 logger.error("Unable to delete river index!!!");
                 this.close();
             }
 
-        } catch (InterruptedException  ignored) {
+        } catch (InterruptedException ignored) {
             logger.info("Tasks interrupted.");
         }
         logger.info("All tasks completed.");
@@ -172,6 +176,17 @@ public class Indexer {
         }
     }
 
+    public void threadPoolAdd(Thread thread) {
+        threadPool.add(thread);
+    }
+
+    public void threadPoolRemove(Thread thread) {
+        threadPool.remove(thread);
+    }
+
+    public Set<Thread> getThreadPool() {
+        return threadPool;
+    }
 
     public boolean isUsingAPI() {
         return usingAPI;
@@ -291,7 +306,6 @@ public class Indexer {
                 Boolean.parseBoolean(env.get("indexer_multithreading")) : this.MULTITHREADING_ACTIVE;
         this.THREADS = (env.get("threads") != null) ? Integer.parseInt(env.get("threads")) : this.THREADS;
         this.loglevel = (env.get("LOG_LEVEL") != null) ? env.get("LOG_LEVEL") : "info";
-        //TODO: Added
 
         credentialsProvider.setCredentials(AuthScope.ANY,
                 new UsernamePasswordCredentials(user, pass));

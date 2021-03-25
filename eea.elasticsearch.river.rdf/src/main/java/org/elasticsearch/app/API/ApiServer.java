@@ -4,10 +4,13 @@ import org.elasticsearch.app.Indexer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import java.util.concurrent.Executors;
+
 @SpringBootApplication
 public class ApiServer {
+    public static  Indexer indexer;
     public static void main(String[] args) {
-        //Indexer indexer = new Indexer();
+         indexer = new Indexer();
         SpringApplication.run(ApiServer.class, args);
     }
 
