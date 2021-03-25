@@ -1,14 +1,8 @@
 package org.elasticsearch.app;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.org.apache.xpath.internal.operations.Bool;
-import jdk.nashorn.internal.parser.JSONParser;
-import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
-import org.apache.http.RequestLine;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
@@ -20,23 +14,14 @@ import org.apache.http.nio.entity.NStringEntity;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
-import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse;
-import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 
-import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.*;
 import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
 import org.elasticsearch.app.river.River;
-import org.elasticsearch.app.river.RiverName;
-import org.elasticsearch.app.river.RiverSettings;
 import org.elasticsearch.client.*;
 
-import org.elasticsearch.cluster.metadata.AliasMetaData;
-import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.rest.RestStatus;
@@ -160,7 +145,7 @@ public class Indexer {
         if (rivers.size() > 0) {
             River riv = rivers.get(0);
 
-            HashMap set = (HashMap) riv.getRiverSettings().getSettings().get("syncReq");
+            HashMap set = (HashMap) riv.getRiverSettings().get("syncReq");
             HashMap ind = (HashMap) set.get("index");
 
             if (ind != null) {
@@ -392,11 +377,9 @@ public class Indexer {
             //logger.debug("{}", source.containsKey("eeaRDF"));
 
             if (source.containsKey("eeaRDF")) {
-                RiverSettings riverSettings = new RiverSettings(source);
-                RiverName riverName = new RiverName("eeaRDF", sh.getId());
                 River river = new River()
-                        .setRiverName(riverName.name())
-                        .setRiverSettings(riverSettings);
+                        .setRiverName(sh.getId())
+                        .setRiverSettings(source);
                 rivers.add(river);
                 continue;
             }
@@ -407,21 +390,19 @@ public class Indexer {
                         "There are no eeaRDF settings in the river settings");
 
             } else {
-                RiverSettings riverSettings = new RiverSettings(source);
-                RiverName riverName = new RiverName("eeaRDF", sh.getId());
                 River river = new River()
-                        .setRiverName(riverName.name())
-                        .setRiverSettings(riverSettings);
+                        .setRiverName(sh.getId())
+                        .setRiverSettings(source);
                 rivers.add(river);
             }
 
         }
     }
 
-    private void addHarvesterSettings(Harvester harv, RiverSettings settings) {
-        if (settings.getSettings().containsKey("eeaRDF")) {
+    private void addHarvesterSettings(Harvester harv, Map<String,Object> settings) {
+        if (settings.containsKey("eeaRDF")) {
 
-        } else if (!(((HashMap) settings.getSettings().get("syncReq")).containsKey("eeaRDF"))) {
+        } else if (!(((HashMap) settings.get("syncReq")).containsKey("eeaRDF"))) {
             logger.error("There are no syncReq settings in the river settings");
             throw new IllegalArgumentException(
                     "There are no eeaRDF settings in the river settings");
@@ -499,7 +480,7 @@ public class Indexer {
             harv.rdfWhiteMap(getStrObjMapFromSettings(rdfSettings, "whiteMap"));
         }
         //TODO : change to index
-        if (settings.getSettings().containsKey("index")) {
+        if (settings.containsKey("index")) {
             Map<String, Object> indexSettings = extractSettings(settings, "index");
             harv.index(XContentMapValues.nodeStringValue(
                     indexSettings.get("index"),
@@ -514,13 +495,13 @@ public class Indexer {
                     );
         } else {
             //TODO: don't know if is correct
-            if (settings.getSettings().containsKey("syncReq")) {
-                harv.index(((HashMap) ((HashMap) settings.getSettings().get("syncReq")).get("index")).get("index").toString());
-                harv.type(((HashMap) ((HashMap) settings.getSettings().get("syncReq")).get("index")).get("type").toString());
+            if (settings.containsKey("syncReq")) {
+                harv.index(((HashMap) ((HashMap) settings.get("syncReq")).get("index")).get("index").toString());
+                harv.type(((HashMap) ((HashMap) settings.get("syncReq")).get("index")).get("type").toString());
 
-                String indexName = ((HashMap) ((HashMap) settings.getSettings().get("syncReq")).get("index")).get("index").toString();
+                String indexName = ((HashMap) ((HashMap) settings.get("syncReq")).get("index")).get("index").toString();
 
-                HashMap indexMap = ((HashMap) ((HashMap) settings.getSettings().get("syncReq")).get("index"));
+                HashMap indexMap = ((HashMap) ((HashMap) settings.get("syncReq")).get("index"));
                 String statusI = indexMap.get("statusIndex") != null ? indexMap.get("statusIndex").toString() : indexName + "_status";
                 harv.statusIndex(statusI);
             } else {
@@ -537,12 +518,12 @@ public class Indexer {
      * Type casting accessors for river settings
      **/
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> extractSettings(RiverSettings settings,
+    private static Map<String, Object> extractSettings(Map<String,Object> settings,
                                                        String key) {
-        if (settings.getSettings().containsKey("eeaRDF")) {
-            return (Map<String, Object>) ((Map<String, Object>) settings.getSettings()).get(key);
+        if (settings.containsKey("eeaRDF")) {
+            return (Map<String, Object>)  settings.get(key);
         } else {
-            return (Map<String, Object>) ((Map<String, Object>) settings.getSettings().get("syncReq")).get(key);
+            return (Map<String, Object>) ((Map<String, Object>) settings.get("syncReq")).get(key);
         }
 
     }
