@@ -2,7 +2,7 @@ package org.elasticsearch.app.API;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.elasticsearch.app.Indexer;
+import org.elasticsearch.app.ApiServer;
 import org.elasticsearch.app.river.River;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.BindException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
@@ -34,6 +33,7 @@ public class IndexerController {
     public Map<String, Object> SaveConfig() {
         return configManager.getListOfConfigs();
     }
+
     @GetMapping("/threads")
     public ArrayList<String> threads() {
         ArrayList<String> s = new ArrayList<>();
@@ -50,7 +50,7 @@ public class IndexerController {
 
         River river = new River(map);
 
-        configManager.add(river);
+        configManager.save(river);
 
         return river.riverName();
     }
@@ -62,7 +62,7 @@ public class IndexerController {
             //TODO throw Exception
             return;
         }
-        if(threads().contains(river.riverName())){
+        if (threads().contains(river.riverName())) {
             //TODO throw Exception
             return;
         }
@@ -87,7 +87,14 @@ public class IndexerController {
             //TODO throw Exception
             return;
         }
-        configManager.remove(river);
+        configManager.delete(river);
+    }
+
+    @PostMapping("/config/{id}/stop")
+    public void StopIndex(@PathVariable String id) {
+        for (Thread thread : ApiServer.indexer.getThreadPool()) {
+            if (thread.getName().equals(id)) thread.interrupt();
+        }
     }
 
 

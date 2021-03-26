@@ -1,10 +1,7 @@
-package org.elasticsearch.app.API;
+package org.elasticsearch.app;
 
-import org.elasticsearch.app.Indexer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-import java.util.concurrent.Executors;
 
 @SpringBootApplication
 public class ApiServer {
