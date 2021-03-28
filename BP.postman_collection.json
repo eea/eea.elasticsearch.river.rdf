@@ -15,7 +15,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"type\" : \"eeaRDF\",\r\n    \"eeaRDF\" : {\r\n         \"endpoint\" : \"https://xn--slovnk-7va.gov.cz/sparql\",\r\n         \"query\" : [\"SELECT * WHERE { ?s a <http://www.w3.org/2004/02/skos/core#Concept> ; ?p ?o . FILTER(isIri(?o) || isLiteral(?o))}\"],\r\n         \"queryType\" : \"select\" \r\n    },\r\n    \"syncReq\": {\r\n        \r\n    },\r\n    \"index\": {\r\n        \"index\": \"ssp1\",\r\n        \"type\": \"rdf\"\r\n    }\r\n }",
+							"raw": "{\r\n    \"type\" : \"eeaRDF\",\r\n    \"eeaRDF\" : {\r\n         \"endpoint\" : \"https://xn--slovnk-7va.gov.cz/sparql\",\r\n         \"query\" : [\"SELECT * WHERE { ?s a <http://www.w3.org/2004/02/skos/core#Concept> ; ?p ?o . FILTER(isIri(?o) || isLiteral(?o))}\"],\r\n         \"queryType\" : \"select\" \r\n    },\r\n    \"syncReq\": {\r\n        \r\n    },\r\n    \"index\": {\r\n        \"index\": \"ssptest\",\r\n        \"type\": \"rdf\"\r\n    }\r\n }",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -170,6 +170,258 @@
 									"key": "size",
 									"value": "10000"
 								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "IndexerApi",
+			"item": [
+				{
+					"name": "GetRunningHarvests",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/threads",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"threads"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetIndexes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/config",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"config"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SaveIndex",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"config\": {\r\n        \"type\": \"eeaRDF\",\r\n        \"eeaRDF\": {\r\n            \"endpoint\": \"https://xn--slovnk-7va.gov.cz/sparql\",\r\n            \"query\": [\r\n                \"SELECT * WHERE { ?s a <http://www.w3.org/2004/02/skos/core#Concept> ; ?p ?o . FILTER(isIri(?o) || isLiteral(?o))}\"\r\n            ],\r\n            \"queryType\": \"select\"\r\n        },\r\n        \"syncReq\": {},\r\n        \"index\": {\r\n            \"index\": \"sspapi\",\r\n            \"type\": \"rdf\"\r\n        }\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8080/config",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"config"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "saveIndexAndIndex",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"config\": {\r\n        \"type\": \"eeaRDF\",\r\n        \"eeaRDF\": {\r\n            \"endpoint\": \"https://xn--slovnk-7va.gov.cz/sparql\",\r\n            \"query\": [\r\n                \"SELECT * WHERE { ?s a <http://www.w3.org/2004/02/skos/core#Concept> ; ?p ?o . FILTER(isIri(?o) || isLiteral(?o))}\"\r\n            ],\r\n            \"queryType\": \"select\"\r\n        },\r\n        \"syncReq\": {},\r\n        \"index\": {\r\n            \"index\": \"sspapi\",\r\n            \"type\": \"rdf\"\r\n        }\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8080/configAndIndex",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"configAndIndex"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "startIndexing",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/config/sspapi/start",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"config",
+								"sspapi",
+								"start"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "StopIndexing",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/config/sspapi/stop",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"config",
+								"sspapi",
+								"stop"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DeleteIndex",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/config/b",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"config",
+								"b"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "testingRequests",
+			"item": [
+				{
+					"name": "SetIndexToCloneabel",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"settings\": {\r\n    \"index.blocks.write\": true\r\n  }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:9200/sspapi-temp/_settings",
+							"host": [
+								"localhost"
+							],
+							"port": "9200",
+							"path": [
+								"sspapi-temp",
+								"_settings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Copy Indexes",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:9200/sspapi-temp/_clone/sspapi",
+							"host": [
+								"localhost"
+							],
+							"port": "9200",
+							"path": [
+								"sspapi-temp",
+								"_clone",
+								"sspapi"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete index",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:9200/sspapi-temp",
+							"host": [
+								"localhost"
+							],
+							"port": "9200",
+							"path": [
+								"sspapi-temp"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "saveIndexAndIndex LargeOne",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"config\": {\r\n        \"type\": \"eeaRDF\",\r\n        \"eeaRDF\": {\r\n            \"uris\" : [\r\n                \"http://192.168.0.130/a.ttl\"\r\n                ]\r\n        },\r\n        \"syncReq\": {},\r\n        \"index\": {\r\n            \"index\": \"b\",\r\n            \"type\": \"rdf\"\r\n        }\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8080/configAndIndex",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"configAndIndex"
 							]
 						}
 					},
