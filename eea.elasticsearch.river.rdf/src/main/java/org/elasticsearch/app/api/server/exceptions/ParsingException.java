@@ -1,4 +1,4 @@
-package org.elasticsearch.app.ApiSpringServer.Exceptions;
+package org.elasticsearch.app.api.server.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

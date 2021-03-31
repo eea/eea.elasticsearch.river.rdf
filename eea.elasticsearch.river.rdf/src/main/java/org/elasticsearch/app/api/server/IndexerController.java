@@ -1,14 +1,12 @@
-package org.elasticsearch.app.ApiSpringServer;
+package org.elasticsearch.app.api.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.elasticsearch.app.ApiServer;
-import org.elasticsearch.app.ApiSpringServer.Exceptions.AlreadyRunningException;
-import org.elasticsearch.app.ApiSpringServer.Exceptions.ParsingException;
-import org.elasticsearch.app.ApiSpringServer.Exceptions.SettingNotFoundException;
+import org.elasticsearch.app.Indexer;
+import org.elasticsearch.app.api.server.exceptions.AlreadyRunningException;
+import org.elasticsearch.app.api.server.exceptions.ParsingException;
+import org.elasticsearch.app.api.server.exceptions.SettingNotFoundException;
 import org.elasticsearch.app.river.River;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,13 +22,14 @@ import java.util.Objects;
 @RequestMapping("/")
 public class IndexerController {
 
-    private static final Logger logger = LoggerFactory.getLogger(IndexerController.class);
-
     private final ConfigManager configManager;
 
+    private final Indexer indexer;
+
     @Autowired
-    public IndexerController(ConfigManager configManager) {
+    public IndexerController(ConfigManager configManager, Indexer indexer) {
         this.configManager = configManager;
+        this.indexer = indexer;
     }
 
     @GetMapping("/config")
@@ -41,7 +40,7 @@ public class IndexerController {
     @GetMapping("/running")
     public ArrayList<String> runningHarvests() {
         ArrayList<String> s = new ArrayList<>();
-        for (RunningHarvester harvester : ApiServer.indexer.getHarvesterPool()) {
+        for (RunningHarvester harvester : indexer.getHarvesterPool()) {
             s.add(harvester.getIndexName());
         }
         Collections.sort(s);
@@ -75,8 +74,8 @@ public class IndexerController {
             throw new AlreadyRunningException("Indexing of index '" + id + "', already running");
         }
 
-        ApiServer.indexer.setRivers(river);
-        ApiServer.indexer.startIndexing();
+        indexer.setRivers(river);
+        indexer.startIndexing();
 
 
     }
@@ -100,7 +99,7 @@ public class IndexerController {
 
     @PostMapping("/config/{id}/stop")
     public void stopIndex(@PathVariable String id) {
-        for (RunningHarvester harvester : ApiServer.indexer.getHarvesterPool()) {
+        for (RunningHarvester harvester : indexer.getHarvesterPool()) {
             if (harvester.getIndexName().equals(id)) {
                 harvester.stop();
                 return;

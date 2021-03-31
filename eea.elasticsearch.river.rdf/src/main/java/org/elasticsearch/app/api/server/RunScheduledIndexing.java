@@ -1,20 +1,25 @@
-package org.elasticsearch.app.ApiSpringServer;
+package org.elasticsearch.app.api.server;
 
-import org.elasticsearch.app.ApiServer;
+import org.elasticsearch.app.Indexer;
 import org.elasticsearch.app.river.River;
 
-public class RunScheduledIndexing implements Runnable {
-    private River river;
 
-    public RunScheduledIndexing(River river) {
+public class RunScheduledIndexing implements Runnable {
+
+    private final River river;
+
+    private final Indexer indexer;
+
+    public RunScheduledIndexing(River river, Indexer indexer) {
         this.river = river;
+        this.indexer = indexer;
     }
 
     @Override
     public void run() {
-        if (ApiServer.indexer.getHarvesterPool().stream().anyMatch(h -> h.getIndexName().equals(river.riverName())))
+        if (indexer.getHarvesterPool().stream().anyMatch(h -> h.getIndexName().equals(river.riverName())))
             return;
-        ApiServer.indexer.setRivers(river);
-        ApiServer.indexer.startIndexing();
+        indexer.setRivers(river);
+        indexer.startIndexing();
     }
 }
