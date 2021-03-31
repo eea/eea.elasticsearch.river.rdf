@@ -24,6 +24,14 @@ public class River {
     @Column(columnDefinition = "CLOB")
     private String settingsJSON;
 
+    @Column
+    @Basic
+    private String schedule;
+
+    @Column
+    @Basic
+    private boolean automaticScheduling;
+
     @Transient
     private Map<String, Object> riverSettings;
 
@@ -32,8 +40,26 @@ public class River {
 
     public River(Map<String, Object> map) {
         Map<String, Object> config = (Map<String, Object>) map.get("config");
+        Map<String, Object> scheduleMap = (Map<String, Object>) map.get("schedule");
         String name = ((Map) config.get("index")).get("index").toString();
-        this.setRiverName(name).setRiverSettings(config);
+        automaticScheduling = (boolean) scheduleMap.get("automatic");
+        this.setSchedule(scheduleMap.get("schedule").toString());
+        this.setRiverName(name);
+        this.setRiverSettings(config);
+    }
+
+    public boolean isAutomatic() {
+        return automaticScheduling;
+    }
+
+    public String getSchedule() {
+        return schedule;
+    }
+
+
+    public void setSchedule(String schedule) {
+        //TODO parse for cron
+        this.schedule = schedule;
     }
 
     public String riverName() {
@@ -66,8 +92,11 @@ public class River {
 
     public Map<String, Object> toMap() {
         Map<String, Object> res = new HashMap<>();
+        Map<String, Object> scheduleMap = new HashMap<>();
+        scheduleMap.put("schedule", schedule);
+        scheduleMap.put("automatic", automaticScheduling);
+        res.put("schedule", scheduleMap);
         res.put("config", getRiverSettings());
-
         return res;
     }
 
@@ -82,8 +111,8 @@ public class River {
             return true;
         if (!(obj instanceof River))
             return false;
-        River employee = (River) obj;
-        return Objects.equals(this.riverName, employee.riverName) && Objects.equals(this.riverSettings, employee.riverSettings);
+        River river = (River) obj;
+        return Objects.equals(this.riverName, river.riverName) && Objects.equals(this.riverSettings, river.riverSettings);
     }
 
     @Override

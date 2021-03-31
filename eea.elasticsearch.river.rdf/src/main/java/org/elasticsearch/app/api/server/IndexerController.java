@@ -34,7 +34,7 @@ public class IndexerController {
     }
 
     @GetMapping("/config")
-    public Map<String, Object> SaveConfig() {
+    public Map<String, Object> getConfigs() {
         return configManager.getListOfConfigs();
     }
 
@@ -49,7 +49,7 @@ public class IndexerController {
     }
 
     @PutMapping(path = "/config", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public String SaveConfig(@RequestBody String s)  {
+    public String saveConfig(@RequestBody String s)  {
         Map<String, Object> map = null;
         try {
             map = new ObjectMapper().readValue(s, Map.class);
@@ -66,7 +66,7 @@ public class IndexerController {
 
     @PostMapping("/config/{id}/start")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public void StartIndex(@PathVariable String id) {
+    public void startIndex(@PathVariable String id) {
         River river = configManager.getRiver(id);
         if (Objects.isNull(river)) {
             throw new SettingNotFoundException("Settings of index '" + id + "', not found");
@@ -82,14 +82,15 @@ public class IndexerController {
     }
 
     @PostMapping(path = "/configAndIndex", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public String SaveConfigAndStart(@RequestBody String s) {
-        String id = SaveConfig(s);
-        StartIndex(id);
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public String saveConfigAndStart(@RequestBody String s) {
+        String id = saveConfig(s);
+        startIndex(id);
         return id;
     }
 
     @DeleteMapping("/config/{id}")
-    public void DeleteIndex(@PathVariable String id) {
+    public void deleteIndex(@PathVariable String id) {
         River river = configManager.getRiver(id);
         if (Objects.isNull(river)) {
             throw new SettingNotFoundException("Settings of index '" + id + "', not found");
@@ -98,7 +99,7 @@ public class IndexerController {
     }
 
     @PostMapping("/config/{id}/stop")
-    public void StopIndex(@PathVariable String id) {
+    public void stopIndex(@PathVariable String id) {
         for (RunningHarvester harvester : ApiServer.indexer.getHarvesterPool()) {
             if (harvester.getIndexName().equals(id)) {
                 harvester.stop();

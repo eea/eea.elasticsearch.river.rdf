@@ -46,7 +46,7 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.support.replication.ReplicationResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
-import org.elasticsearch.app.ApiSpringServer.RunningHarvester;
+import org.elasticsearch.app.api.server.RunningHarvester;
 import org.elasticsearch.app.logging.ESLogger;
 
 import org.elasticsearch.app.logging.Loggers;
@@ -146,6 +146,7 @@ public class Harvester implements Runnable, RunningHarvester {
     /* ES api options */
     private RestHighLevelClient client;
 
+    @Override
     public String getIndexName() {
         return indexName;
     }
@@ -628,6 +629,14 @@ public class Harvester implements Runnable, RunningHarvester {
     public void run() {
         logger.setLevel(this.indexer.loglevel);
         Thread.currentThread().setName(riverName);
+        try {
+            client.ping(RequestOptions.DEFAULT);
+        } catch (IOException | ElasticsearchException e) {
+            logger.error("Could not connect to ES");
+            stop();
+            logger.error("Harvesting {} stopped", riverName);
+            return;
+        }
         indexer.harvesterPoolAdd(this);
 
         if (checkRiverNotExists()) {
@@ -663,11 +672,13 @@ public class Harvester implements Runnable, RunningHarvester {
                 if (delete.isAcknowledged()) logger.warn("Deleted {} before indexing", indexName + indexPostfix);
             } catch (IOException e) {
                 logger.error("Could not delete index {} before indexing", indexName + indexPostfix);
-                return;
+                stop();
+                break;
             } catch (ElasticsearchException e) {
                 if (e.status() != RestStatus.NOT_FOUND) {
                     logger.error("Could not delete index {} before indexing", indexName + indexPostfix);
-                    return;
+                    stop();
+                    break;
                 }
             }
 
@@ -681,10 +692,7 @@ public class Harvester implements Runnable, RunningHarvester {
                 setLastUpdate(new Date(currentTime));
                 renameIndex();
 
-                success = false;
                 synced = true;
-                // deleting river cluster from riverIndex
-                DeleteRequest deleteRequest = new DeleteRequest(riverIndex, "river", riverName);
 
                 Harvester that = this;
                 new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
@@ -703,7 +711,9 @@ public class Harvester implements Runnable, RunningHarvester {
                 logger.info("===============================================================================");
 
 
-                if (!indexer.isUsingAPI())
+                if (!indexer.isUsingAPI()) {
+                    // deleting river cluster from riverIndex
+                    DeleteRequest deleteRequest = new DeleteRequest(riverIndex, "river", riverName);
                     client.deleteAsync(deleteRequest, RequestOptions.DEFAULT, new ActionListener<DeleteResponse>() {
                         @Override
                         public void onResponse(DeleteResponse deleteResponse) {
@@ -722,13 +732,13 @@ public class Harvester implements Runnable, RunningHarvester {
                             indexer.closeHarvester(that);
                         }
                     });
-
+                }
             }
         }
 
         if (stopped) {
             rollback();
-            logger.info("Stopped {} harvest", indexName);
+            logger.warn("Stopped {} harvest", indexName);
         }
 
         indexer.harvesterPoolRemove(this);
@@ -1858,8 +1868,14 @@ public class Harvester implements Runnable, RunningHarvester {
 
     @Override
     public void stop() {
-        logger.info("Stopping {} harvest", indexName);
+        logger.warn("Stopping {} harvest", indexName);
         closed = true;
         stopped = true;
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        indexer.harvesterPoolRemove(this);
+        super.finalize();
     }
 }

@@ -16,7 +16,7 @@ import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 
 import org.elasticsearch.action.search.*;
-import org.elasticsearch.app.ApiSpringServer.RunningHarvester;
+import org.elasticsearch.app.api.server.RunningHarvester;
 import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
 import org.elasticsearch.app.river.River;
@@ -94,11 +94,7 @@ public class Indexer {
 
         //TODO: loop for all rivers
         if (MULTITHREADING_ACTIVE) {
-        /*Indexer.executorService = EsExecutors.newAutoQueueFixed("threadPool", 1, 5, 5, 26,2,
-                TimeValue.timeValueHours(10), EsExecutors.daemonThreadFactory("esapp"), new ThreadContext(Builder.EMPTY_SETTINGS));*/
             Indexer.executorService = Executors.newFixedThreadPool(THREADS);
-            //Indexer.executorService = Executors.newWorkStealingPool(4);
-
         } else {
             Indexer.executorService = Executors.newSingleThreadExecutor();
         }
@@ -318,14 +314,14 @@ public class Indexer {
                         })
         );
 
-        logger.debug("Username: " + this.envMap.get("elastic_user"));
-        logger.debug("Password: " + this.envMap.get("elastic_pass"));
-        logger.debug("HOST: " + this.envMap.get("elastic_host"));
-        logger.debug("PORT: " + this.envMap.get("elastic_port"));
+        logger.debug("Username: " + user);
+        logger.debug("Password: " + pass);
+        logger.debug("HOST: " + host);
+        logger.debug("PORT: " + port);
         logger.debug("RIVER INDEX: " + this.RIVER_INDEX);
         logger.debug("MULTITHREADING_ACTIVE: " + this.MULTITHREADING_ACTIVE);
         logger.debug("THREADS: " + this.THREADS);
-        logger.info("LOG_LEVEL: " + this.envMap.get("LOG_LEVEL"));
+        logger.info("LOG_LEVEL: " + this.loglevel);
         logger.debug("DOCUMENT BULK: ", Integer.toString(EEASettings.DEFAULT_BULK_REQ));
     }
 
