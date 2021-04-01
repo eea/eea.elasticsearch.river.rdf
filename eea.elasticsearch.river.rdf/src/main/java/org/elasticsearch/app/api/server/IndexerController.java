@@ -60,7 +60,7 @@ public class IndexerController {
 
         configManager.save(river);
 
-        return river.riverName();
+        return river.getRiverName();
     }
 
     @PostMapping("/config/{id}/start")
@@ -70,7 +70,7 @@ public class IndexerController {
         if (Objects.isNull(river)) {
             throw new SettingNotFoundException("Settings of index '" + id + "', not found");
         }
-        if (runningHarvests().contains(river.riverName())) {
+        if (runningHarvests().contains(river.getRiverName())) {
             throw new AlreadyRunningException("Indexing of index '" + id + "', already running");
         }
 

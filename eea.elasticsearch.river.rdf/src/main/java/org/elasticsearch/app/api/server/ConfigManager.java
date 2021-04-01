@@ -37,9 +37,12 @@ public class ConfigManager {
     }
 
     @Transactional
-    public void save(River river) {
-        addOrUpdateSchedule(river);
-        riverDAO.save(river);
+    public void save(River newRiver) {
+        River foundRiver = riverDAO.findById(newRiver.getRiverName()).orElse(null);
+        if (Objects.isNull(foundRiver)) foundRiver = newRiver;
+        else foundRiver.update(newRiver);
+        addOrUpdateSchedule(foundRiver);
+        riverDAO.save(foundRiver);
     }
 
     @Transactional
@@ -51,7 +54,7 @@ public class ConfigManager {
     @Transactional(readOnly = true)
     public Map<String, Object> getListOfConfigs() {
         Map<String, Object> configs = new HashMap<>();
-        riverDAO.findAll().forEach((r) -> configs.put(r.riverName(), r.toMap()));
+        riverDAO.findAll().forEach((r) -> configs.put(r.getRiverName(), r.toMap()));
         return configs;
     }
 
@@ -70,11 +73,11 @@ public class ConfigManager {
     }
 
     private void removeSchedule(River river) {
-        ScheduledFuture<?> scheduledFuture = scheduledFutures.get(river.riverName());
+        ScheduledFuture<?> scheduledFuture = scheduledFutures.get(river.getRiverName());
         if (Objects.isNull(scheduledFuture)) return;
         scheduledFuture.cancel(false);
         scheduledFutures.remove(scheduledFuture);
-        logger.debug("Schedule for index '{}' - removed", river.riverName());
+        logger.debug("Schedule for index '{}' - removed", river.getRiverName());
     }
 
     private void addOrUpdateSchedule(River river) {
@@ -83,15 +86,15 @@ public class ConfigManager {
             return;
         }
         String state = "added";
-        ScheduledFuture<?> scheduledFuture = scheduledFutures.get(river.riverName());
+        ScheduledFuture<?> scheduledFuture = scheduledFutures.get(river.getRiverName());
         if (Objects.nonNull(scheduledFuture)) {
             scheduledFuture.cancel(false);
             scheduledFutures.remove(scheduledFuture);
             state = "updated";
         }
         CronTrigger cronTrigger = new CronTrigger(river.getSchedule());
-        scheduledFutures.put(river.riverName(), taskScheduler.schedule(new RunScheduledIndexing(river, indexer), cronTrigger));
-        logger.debug("Schedule for index '{}' - {}", river.riverName(), state);
+        scheduledFutures.put(river.getRiverName(), taskScheduler.schedule(new RunScheduledIndexing(river, indexer), cronTrigger));
+        logger.debug("Schedule for index '{}' - {}", river.getRiverName(), state);
     }
 
 }

@@ -102,13 +102,13 @@ public class Indexer {
         for (River river : rivers) {
             Harvester h = new Harvester();
 
-            h.client(client).riverName(river.riverName())
+            h.client(client).riverName(river.getRiverName())
                     .riverIndex(RIVER_INDEX)
                     .indexer(this);
             this.addHarvesterSettings(h, river.getRiverSettings());
 
             Indexer.executorService.submit(h);
-            logger.info("Created thread for river: {}", river.riverName());
+            logger.info("Created thread for river: {}", river.getRiverName());
         }
 
         Indexer.executorService.shutdown();

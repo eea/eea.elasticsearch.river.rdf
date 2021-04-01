@@ -17,7 +17,7 @@ public class RunScheduledIndexing implements Runnable {
 
     @Override
     public void run() {
-        if (indexer.getHarvesterPool().stream().anyMatch(h -> h.getIndexName().equals(river.riverName())))
+        if (indexer.getHarvesterPool().stream().anyMatch(h -> h.getIndexName().equals(river.getRiverName())))
             return;
         indexer.setRivers(river);
         indexer.startIndexing();

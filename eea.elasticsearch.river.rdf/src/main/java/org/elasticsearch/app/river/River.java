@@ -62,7 +62,7 @@ public class River {
         this.schedule = schedule;
     }
 
-    public String riverName() {
+    public String getRiverName() {
         return this.riverName;
     }
 
@@ -100,6 +100,13 @@ public class River {
         return res;
     }
 
+    public void update(River newRiver) {
+        setRiverSettings(newRiver.getRiverSettings());
+        automaticScheduling = newRiver.isAutomatic();
+        setSchedule(newRiver.getSchedule());
+
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(this.riverName, this.settingsJSON);
@@ -120,4 +127,6 @@ public class River {
         return "River: " + this.riverName + " = " + this.toMap().toString();
 
     }
+
+
 }
