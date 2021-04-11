@@ -5,9 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.app.Indexer;
 import org.elasticsearch.app.api.server.exceptions.AlreadyRunningException;
 import org.elasticsearch.app.api.server.exceptions.ParsingException;
-import org.elasticsearch.app.api.server.exceptions.SettingNotFoundException;
+import org.elasticsearch.app.api.server.exceptions.ConfigNotFoundException;
 import org.elasticsearch.app.api.server.scheduler.RunningHarvester;
-import org.elasticsearch.app.river.River;
+import org.elasticsearch.app.api.server.entities.River;
+import org.elasticsearch.app.api.server.services.ConfigManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,6 +18,7 @@ import java.util.*;
 
 
 @RestController
+@CrossOrigin("*")
 @RequestMapping("/")
 public class IndexerController {
 
@@ -28,26 +30,31 @@ public class IndexerController {
     public IndexerController(ConfigManager configManager, Indexer indexer) {
         this.configManager = configManager;
         this.indexer = indexer;
+        this.indexer.configManager = this.configManager;
     }
 
-    @GetMapping("/config")
+    @GetMapping("/configs")
     public List<Map<String, Object>> getConfigs() {
         return configManager.getMapOfIndexes();
     }
 
     @GetMapping("/running")
-    public ArrayList<String> runningHarvests() {
-        ArrayList<String> s = new ArrayList<>();
+    public Map<String, String> runningHarvests() {
+        Map<String, String> running = new HashMap<>();
         for (RunningHarvester harvester : indexer.getHarvesterPool()) {
-            s.add(harvester.getIndexName());
+            running.put(harvester.getIndexName(), harvester.getHarvestState().toString());
         }
-        Collections.sort(s);
-        return s;
+        return running;
+    }
+
+    @GetMapping("/config/{id}")
+    public Map<String, Object> getConfigs(@PathVariable String id) {
+        return configManager.getConfig(id);
     }
 
     @PutMapping(path = "/config", consumes = MediaType.APPLICATION_JSON_VALUE)
     public String saveConfig(@RequestBody String s) {
-        Map<String, Object> map = null;
+        Map<String, Object> map;
         try {
             map = new ObjectMapper().readValue(s, Map.class);
         } catch (JsonProcessingException e) {
@@ -66,9 +73,9 @@ public class IndexerController {
     public void startIndex(@PathVariable String id) {
         River river = configManager.getRiver(id);
         if (Objects.isNull(river)) {
-            throw new SettingNotFoundException("Settings of index '" + id + "', not found");
+            throw new ConfigNotFoundException("Settings of index '" + id + "', not found");
         }
-        if (runningHarvests().contains(river.getRiverName())) {
+        if (indexer.getHarvesterPool().stream().anyMatch(h -> h.getIndexName().equals(river.getRiverName()))) {
             throw new AlreadyRunningException("Indexing of index '" + id + "', already running");
         }
 
@@ -90,7 +97,7 @@ public class IndexerController {
     public void deleteIndex(@PathVariable String id) {
         River river = configManager.getRiver(id);
         if (Objects.isNull(river)) {
-            throw new SettingNotFoundException("Settings of index '" + id + "', not found");
+            throw new ConfigNotFoundException("Settings of index '" + id + "', not found");
         }
         configManager.delete(river);
     }
@@ -103,7 +110,7 @@ public class IndexerController {
                 return;
             }
         }
-        throw new SettingNotFoundException("Indexing of index '" + id + "' is not running");
+        throw new ConfigNotFoundException("Indexing of index '" + id + "' is not running");
     }
 
 

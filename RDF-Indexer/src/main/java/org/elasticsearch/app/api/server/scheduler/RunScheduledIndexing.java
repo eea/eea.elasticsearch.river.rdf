@@ -1,7 +1,7 @@
 package org.elasticsearch.app.api.server.scheduler;
 
 import org.elasticsearch.app.Indexer;
-import org.elasticsearch.app.river.River;
+import org.elasticsearch.app.api.server.entities.River;
 
 
 public class RunScheduledIndexing implements Runnable {

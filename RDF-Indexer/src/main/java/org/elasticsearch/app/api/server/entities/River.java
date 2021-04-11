@@ -1,4 +1,4 @@
-package org.elasticsearch.app.river;
+package org.elasticsearch.app.api.server.entities;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -7,9 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.persistence.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Entity
 public class River {
@@ -31,6 +30,9 @@ public class River {
     @Column
     @Basic
     private boolean automaticScheduling;
+
+    @OneToMany(cascade = CascadeType.ALL)
+    private List<UpdateRecord> updateHistory = new ArrayList<>();
 
     @Transient
     private Map<String, Object> riverSettings;
@@ -58,7 +60,7 @@ public class River {
 
 
     public void setSchedule(String schedule) {
-        //TODO parse for cron
+        //TODO: parse for cron
         this.schedule = schedule;
     }
 
@@ -87,7 +89,7 @@ public class River {
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(), e);
         }
-        return this.riverSettings;
+        return riverSettings;
     }
 
     public Map<String, Object> toMap() {
@@ -104,7 +106,14 @@ public class River {
         setRiverSettings(newRiver.getRiverSettings());
         automaticScheduling = newRiver.isAutomatic();
         setSchedule(newRiver.getSchedule());
+    }
 
+    public List<UpdateRecord> getLastTenUpdateRecords() {
+        return updateHistory.stream().sorted(Comparator.comparing(UpdateRecord::getLastUpdateStartDate,Comparator.nullsLast(Comparator.reverseOrder()))).limit(10).collect(Collectors.toList());
+    }
+
+    public void addUpdateRecord(UpdateRecord updateRecord) {
+        updateHistory.add(updateRecord);
     }
 
     @Override
@@ -126,14 +135,5 @@ public class River {
     public String toString() {
         return "River: " + this.riverName + " = " + this.toMap().toString();
 
-    }
-
-
-    public String  getLastUpdate() {
-        return "TODO: in river";
-    }
-
-    public Object getDuration() {
-        return "TODO: in river";
     }
 }

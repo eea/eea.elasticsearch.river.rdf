@@ -16,10 +16,11 @@ import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 
 import org.elasticsearch.action.search.*;
+import org.elasticsearch.app.api.server.services.ConfigManager;
 import org.elasticsearch.app.api.server.scheduler.RunningHarvester;
 import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
-import org.elasticsearch.app.river.River;
+import org.elasticsearch.app.api.server.entities.River;
 import org.elasticsearch.client.*;
 
 import org.elasticsearch.common.unit.TimeValue;
@@ -42,6 +43,8 @@ public class Indexer {
     private boolean MULTITHREADING_ACTIVE = true;
     private int THREADS = 4;
     public String loglevel;
+
+    public ConfigManager configManager;
 
     private final Set<RunningHarvester> harvesterPool = new HashSet<>();
 
