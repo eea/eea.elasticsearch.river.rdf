@@ -114,7 +114,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5601/api/kibana/dashboards/export?dashboard=f335efa0-42ee-11eb-be02-fb69650a05ca",
+							"raw": "localhost:5601/api/kibana/dashboards/export?dashboard=025623a0-947b-11eb-bbd2-eb9fd2920b1e",
 							"host": [
 								"localhost"
 							],
@@ -128,7 +128,7 @@
 							"query": [
 								{
 									"key": "dashboard",
-									"value": "f335efa0-42ee-11eb-be02-fb69650a05ca"
+									"value": "025623a0-947b-11eb-bbd2-eb9fd2920b1e"
 								}
 							]
 						}
@@ -145,7 +145,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"query\": {\r\n    \"regexp\": {\r\n      \"type\": {\r\n        \"value\": \"dashboard\"\r\n      }\r\n    }\r\n  }\r\n}",
+							"raw": "{\r\n    \"query\": {\r\n        \"regexp\": {\r\n            \"type\": {\r\n                \"value\": \"dashboard\"\r\n            }\r\n        }\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -211,6 +211,25 @@
 							"port": "8080",
 							"path": [
 								"config"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetIndex",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/config/sspapi",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"config",
+								"sspapi"
 							]
 						}
 					},
@@ -407,7 +426,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"schedule\": {\r\n        \"schedule\": \"0 0 0 0 0 0\",\r\n        \"automatic\": false\r\n    },\r\n    \"config\": {\r\n        \"type\": \"eeaRDF\",\r\n        \"eeaRDF\": {\r\n            \"uris\" : [\r\n                \"http://192.168.0.130/a.ttl\"\r\n                ]\r\n        },\r\n        \"syncReq\": {},\r\n        \"index\": {\r\n            \"index\": \"b\",\r\n            \"type\": \"rdf\"\r\n        }\r\n    }\r\n}",
+							"raw": "{\r\n    \"schedule\": {\r\n        \"schedule\": \"0 0 0 0 0 0\",\r\n        \"automatic\": false\r\n    },\r\n    \"config\": {\r\n        \"type\": \"eeaRDF\",\r\n        \"eeaRDF\": {\r\n            \"uris\" : [\r\n                \"http://192.168.0.130/a.ttl\"\r\n                ]\r\n        },\r\n        \"syncReq\": {},\r\n        \"index\": {\r\n            \"index\": \"aaa\",\r\n            \"type\": \"rdf\"\r\n        }\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
