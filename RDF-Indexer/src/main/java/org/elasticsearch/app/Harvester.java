@@ -97,6 +97,8 @@ public class Harvester implements Runnable, RunningHarvester {
 
     private String indexWithPrefix;
 
+    private long startTime = 0;
+
     private UpdateRecord updateRecord = new UpdateRecord();
 
     private final ESLogger logger = Loggers.getLogger(Harvester.class);
@@ -111,7 +113,7 @@ public class Harvester implements Runnable, RunningHarvester {
 
     /* Harvester operation info */
     private Boolean indexAll = true;
-    private String startTime = "";
+    private String lastupdateDate = "";
 
     /* Harvest from uris options */
     private Set<String> rdfUris = new HashSet<String>();
@@ -573,7 +575,7 @@ public class Harvester implements Runnable, RunningHarvester {
     }
 
     public Harvester rdfStartTime(String startTime) {
-        this.startTime = startTime;
+        this.lastupdateDate = startTime;
         return this;
     }
 
@@ -644,14 +646,17 @@ public class Harvester implements Runnable, RunningHarvester {
     }
 
     public void run() {
+        startTime = System.currentTimeMillis();
         logger.setLevel(this.indexer.loglevel);
         Thread.currentThread().setName(riverName);
         indexWithPrefix = indexPrefix + indexName;
+
         try {
             client.ping(RequestOptions.DEFAULT);
         } catch (IOException | ElasticsearchException e) {
             logger.error("Could not connect to ES");
             stop();
+            updateRecord.setFinishState(UpdateStates.FAILED);
             logger.error("Harvesting {} stopped", riverName);
             return;
         }
@@ -679,10 +684,9 @@ public class Harvester implements Runnable, RunningHarvester {
         }
 
         while (!closed && !synced) {
-            long currentTime = System.currentTimeMillis();
             boolean success;
 
-            if (startTime.isEmpty()) startTime = getLastUpdate();
+            if (lastupdateDate.isEmpty()) lastupdateDate = getLastUpdate();
 
             //delete leftover temporary index if exists
             try {
@@ -691,11 +695,13 @@ public class Harvester implements Runnable, RunningHarvester {
             } catch (IOException e) {
                 logger.error("Could not delete index {} before indexing", indexWithPrefix);
                 stop();
+                updateRecord.setFinishState(UpdateStates.FAILED);
                 break;
             } catch (ElasticsearchException e) {
                 if (e.status() != RestStatus.NOT_FOUND) {
                     logger.error("Could not delete index {} before indexing", indexWithPrefix);
                     stop();
+                    updateRecord.setFinishState(UpdateStates.FAILED);
                     break;
                 }
             }
@@ -709,14 +715,14 @@ public class Harvester implements Runnable, RunningHarvester {
             //TODO: async ?
             if (success) updateRecord.setFinishState(UpdateStates.SUCCESS);
             if (success && !stopped) {
-                setLastUpdate(new Date(currentTime));
+                setLastUpdate(new Date(startTime));
                 renameIndex();
 
                 synced = true;
 
                 Harvester that = this;
                 new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-                long duration = System.currentTimeMillis() - currentTime;
+                long duration = System.currentTimeMillis() - startTime;
                 updateRecord.setLastUpdateDuration(duration);
                 String time = duration % 1000 + "ms";
                 if ((duration /= 1000) > 0)
@@ -846,7 +852,7 @@ public class Harvester implements Runnable, RunningHarvester {
 
         logger.info("Ended synchronization from [{}], for endpoint [{}]," +
                         "index name [{}], type name [{}] with status {}",
-                startTime, rdfEndpoint, indexName, typeName,
+                lastupdateDate, rdfEndpoint, indexName, typeName,
                 success ? "Success" : "Failure");
 
         return success;
@@ -1165,7 +1171,7 @@ public class Harvester implements Runnable, RunningHarvester {
      * changes from the SPARQL endpoint
      */
     public boolean sync() {
-        logger.info("Sync resources newer than {}", startTime);
+        logger.info("Sync resources newer than {}", lastupdateDate);
         int rdfUrlssyncQueryCounter = 0;
         int modelSyncQueryCounter = 0;
 
@@ -1178,7 +1184,7 @@ public class Harvester implements Runnable, RunningHarvester {
 
         String queryStr = String.format(rdfQueryTemplate, syncConditions,
                 syncTimeProp, graphSyncConditions,
-                startTime);
+                lastupdateDate);
 
         Set<String> syncUris = executeSyncQuery(queryStr, "resource", rdfUrlssyncQueryCounter);
         if (stopped) return false;
@@ -1904,6 +1910,7 @@ public class Harvester implements Runnable, RunningHarvester {
     public void stop() {
         logger.warn("Stopping {} harvest", indexName);
         harvestState = HarvestStates.STOPPING;
+        if (startTime != 0) updateRecord.setLastUpdateDuration(System.currentTimeMillis() - startTime);
         updateRecord.setFinishState(UpdateStates.STOPPED);
         closed = true;
         stopped = true;
