@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import javax.persistence.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Entity
 public class River {
@@ -17,6 +18,7 @@ public class River {
     private static final Logger logger = LoggerFactory.getLogger(River.class);
 
     @Id
+    @Column(nullable = false)
     private String riverName;
 
     @Lob
@@ -108,8 +110,12 @@ public class River {
         setSchedule(newRiver.getSchedule());
     }
 
-    public List<UpdateRecord> getLastTenUpdateRecords() {
-        return updateHistory.stream().sorted(Comparator.comparing(UpdateRecord::getLastUpdateStartDate,Comparator.nullsLast(Comparator.reverseOrder()))).limit(10).collect(Collectors.toList());
+    public List<UpdateRecord> getLastSuccessAndLastTenUpdateRecords() {
+        List<UpdateRecord> updateRecordList = new ArrayList<>();
+        List<UpdateRecord> sorted = updateHistory.stream().sorted(Comparator.comparing(UpdateRecord::getLastUpdateStartDate, Comparator.nullsLast(Comparator.reverseOrder()))).collect(Collectors.toList());
+        updateRecordList.add(sorted.stream().filter(s -> s.getFinishState().equals(UpdateStates.SUCCESS)).findFirst().orElse(null));
+        updateRecordList.addAll(sorted.stream().limit(10).collect(Collectors.toList()));
+        return updateRecordList;
     }
 
     public void addUpdateRecord(UpdateRecord updateRecord) {

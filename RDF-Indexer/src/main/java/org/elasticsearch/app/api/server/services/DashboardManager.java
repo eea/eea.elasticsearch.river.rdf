@@ -47,12 +47,12 @@ public class DashboardManager {
     }
 
     @Cacheable("dashboardsInfo")
-    public Map<String, Set<String>> getAssociationOfIndexPatternsAndDashboards() {
+    public Map<String, Map<String, String>> getAssociationOfIndexPatternsAndDashboards() {
         SearchRequest searchRequest = new SearchRequest();
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(QueryBuilders.regexpQuery("type", "dashboard"));
         searchRequest.source(searchSourceBuilder);
-        Map<String, Set<String>> mapIndexDashboards = new HashMap<>();
+        Map<String, Map<String, String>> mapIndexDashboards = new HashMap<>();
         try {
             SearchResponse searchResponse = indexer.clientES.search(searchRequest, RequestOptions.DEFAULT);
             for (Pair<String, String> dashboard : Arrays.stream(searchResponse.getHits().getHits()).map(hit -> Pair.of(hit.getId(), ((Map) hit.getSourceAsMap().get("dashboard")).get("title").toString())).collect(Collectors.toList())) {
@@ -64,8 +64,8 @@ public class DashboardManager {
                 ).map(pattern -> pattern.getAsObject().get("attributes").getAsObject().get("title").getAsString().value()).collect(Collectors.toList());
                 for (String indexPatternRegex : dashboardsIndexPatterns) {
                     if (!mapIndexDashboards.containsKey(indexPatternRegex))
-                        mapIndexDashboards.put(indexPatternRegex, new HashSet<>());
-                    mapIndexDashboards.get(indexPatternRegex).add(dashboard.getSecond());
+                        mapIndexDashboards.put(indexPatternRegex, new HashMap<>());
+                    mapIndexDashboards.get(indexPatternRegex).put(dashboard.getFirst().replace("dashboard:",""), dashboard.getSecond());
 
                 }
             }

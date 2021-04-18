@@ -64,7 +64,7 @@ public class ConfigManager {
             Map<String, Object> riverMap = new HashMap<>();
             riverMap.put("name", river.getRiverName());
             riverMap.put("dashboards", getAssociatedDashboards(river.getRiverName()));
-            riverMap.put("lastTenUpdateRecords", river.getLastTenUpdateRecords());
+            riverMap.put("lastSuccessAndLastTenUpdateRecords", river.getLastSuccessAndLastTenUpdateRecords());
             indexes.add(riverMap);
         }
         return indexes;
@@ -119,12 +119,12 @@ public class ConfigManager {
         logger.debug("Schedule for index '{}' - {}", river.getRiverName(), state);
     }
 
-    private Set<String> getAssociatedDashboards(String riverName) {
-        Set<String> associatedDashboards = new HashSet<>();
-        Map<String, Set<String>> associationOfIndexPatternsAndDashboards = dashboardManager.getAssociationOfIndexPatternsAndDashboards();
+    private Map<String, String> getAssociatedDashboards(String riverName) {
+        Map<String, String> associatedDashboards = new HashMap<>();
+        Map<String, Map<String, String>> associationOfIndexPatternsAndDashboards = dashboardManager.getAssociationOfIndexPatternsAndDashboards();
         for (String indexPatternRegex : associationOfIndexPatternsAndDashboards.keySet()) {
             if (riverName.matches("^" + indexPatternRegex.replace(".", "\\.").replace("*", ".*")))
-                associatedDashboards.addAll(associationOfIndexPatternsAndDashboards.get(indexPatternRegex));
+                associatedDashboards.putAll(associationOfIndexPatternsAndDashboards.get(indexPatternRegex));
         }
         return associatedDashboards;
     }
