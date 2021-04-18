@@ -19,7 +19,7 @@ import java.util.*;
 
 @RestController
 @CrossOrigin("*")
-@RequestMapping("/")
+@RequestMapping("/api")
 public class IndexerController {
 
     private final ConfigManager configManager;
@@ -36,6 +36,10 @@ public class IndexerController {
     @GetMapping("/configs")
     public List<Map<String, Object>> getConfigs() {
         return configManager.getMapOfIndexes();
+    }
+    @GetMapping("/kibanaHost")
+    public String getKibanaHost() {
+        return indexer.clientKibana.getLowLevelClient().getNodes().get(0).getHost().toString();
     }
 
     @GetMapping("/running")
