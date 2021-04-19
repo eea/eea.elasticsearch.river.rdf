@@ -186,12 +186,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8080/running",
+							"raw": "localhost:8080/api/running",
 							"host": [
 								"localhost"
 							],
 							"port": "8080",
 							"path": [
+								"api",
 								"running"
 							]
 						}
@@ -204,13 +205,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8080/config",
+							"raw": "localhost:8080/api/configs",
 							"host": [
 								"localhost"
 							],
 							"port": "8080",
 							"path": [
-								"config"
+								"api",
+								"configs"
 							]
 						}
 					},
@@ -222,12 +224,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8080/config/sspapi",
+							"raw": "localhost:8080/api/config/sspapi",
 							"host": [
 								"localhost"
 							],
 							"port": "8080",
 							"path": [
+								"api",
 								"config",
 								"sspapi"
 							]
@@ -242,7 +245,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"schedule\": {\r\n        \"schedule\": \"*/30 * * * * *\",\r\n        \"automatic\": false\r\n    },\r\n    \"config\": {\r\n        \"type\": \"eeaRDF\",\r\n        \"eeaRDF\": {\r\n            \"endpoint\": \"https://xn--slovnk-7va.gov.cz/sparql\",\r\n            \"query\": [\r\n                \"SELECT * WHERE { ?s a <http://www.w3.org/2004/02/skos/core#Concept> ; ?p ?o . FILTER(isIri(?o) || isLiteral(?o))}\"\r\n            ],\r\n            \"queryType\": \"select\"\r\n        },\r\n        \"syncReq\": {},\r\n        \"index\": {\r\n            \"index\": \"sspapi\",\r\n            \"type\": \"rdf\"\r\n        }\r\n    }\r\n}",
+							"raw": "{\r\n    \"schedule\": {\r\n        \"schedule\": \"*/30 * * * * *\",\r\n        \"automatic\": false\r\n    },\r\n    \"config\": {\r\n        \"type\": \"eeaRDF\",\r\n        \"eeaRDF\": {\r\n            \"endpoint\": \"https://xn--slovnk-7va.gov.cz/sparql\",\r\n            \"query\": [\r\n                \"SELECT * WHERE { ?s a <http://www.w3.org/2004/02/skos/core#Concept> ; ?p ?o . FILTER(isIri(?o) || isLiteral(?o))}\"\r\n            ],\r\n            \"queryType\": \"select\"\r\n        },\r\n        \"syncReq\": {},\r\n        \"index\": {\r\n            \"index\": \"test\",\r\n            \"type\": \"rdf\"\r\n        }\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -250,12 +253,13 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8080/config",
+							"raw": "localhost:8080/api/config",
 							"host": [
 								"localhost"
 							],
 							"port": "8080",
 							"path": [
+								"api",
 								"config"
 							]
 						}
@@ -277,143 +281,14 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8080/configAndIndex",
+							"raw": "localhost:8080/api/configAndIndex",
 							"host": [
 								"localhost"
 							],
 							"port": "8080",
 							"path": [
+								"api",
 								"configAndIndex"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "startIndexing",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "localhost:8080/config/sspapi/start",
-							"host": [
-								"localhost"
-							],
-							"port": "8080",
-							"path": [
-								"config",
-								"sspapi",
-								"start"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "StopIndexing",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "localhost:8080/config/sspapi/stop",
-							"host": [
-								"localhost"
-							],
-							"port": "8080",
-							"path": [
-								"config",
-								"sspapi",
-								"stop"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "DeleteIndex",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "localhost:8080/config/sspapi",
-							"host": [
-								"localhost"
-							],
-							"port": "8080",
-							"path": [
-								"config",
-								"sspapi"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "testingRequests",
-			"item": [
-				{
-					"name": "SetIndexToCloneabel",
-					"request": {
-						"method": "PUT",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n  \"settings\": {\r\n    \"index.blocks.write\": true\r\n  }\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "localhost:9200/sspapi-temp/_settings",
-							"host": [
-								"localhost"
-							],
-							"port": "9200",
-							"path": [
-								"sspapi-temp",
-								"_settings"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Copy Indexes",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "localhost:9200/sspapi-temp/_clone/sspapi",
-							"host": [
-								"localhost"
-							],
-							"port": "9200",
-							"path": [
-								"sspapi-temp",
-								"_clone",
-								"sspapi"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Delete index",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "localhost:9200/sspapi-temp",
-							"host": [
-								"localhost"
-							],
-							"port": "9200",
-							"path": [
-								"sspapi-temp"
 							]
 						}
 					},
@@ -434,13 +309,76 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8080/configAndIndex",
+							"raw": "localhost:8080/api/configAndIndex",
 							"host": [
 								"localhost"
 							],
 							"port": "8080",
 							"path": [
+								"api",
 								"configAndIndex"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "startIndexing",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/api/config/sspapi/start",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"config",
+								"sspapi",
+								"start"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "StopIndexing",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/api/config/sspapi/stop",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"config",
+								"sspapi",
+								"stop"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DeleteIndex",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/api/config/sspapi",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"config",
+								"sspapi"
 							]
 						}
 					},
