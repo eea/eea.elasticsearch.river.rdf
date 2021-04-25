@@ -11,3 +11,6 @@ pom.xml.releaseBackup
 
 \.idea/
 \IGNORE/
+
+*.db
+/frontend/build/*

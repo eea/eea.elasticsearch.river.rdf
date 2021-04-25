@@ -700,8 +700,8 @@ public class Harvester implements Runnable, RunningHarvester {
                 success = runSync();
 
             //TODO: async ?
-            if (success) updateRecord.setFinishState(UpdateStates.SUCCESS);
             if (success && !stopped) {
+                updateRecord.setFinishState(UpdateStates.SUCCESS);
                 setLastUpdate(new Date(startTime));
                 renameIndex();
 
@@ -710,7 +710,6 @@ public class Harvester implements Runnable, RunningHarvester {
                 Harvester that = this;
                 new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
                 long duration = System.currentTimeMillis() - startTime;
-                updateRecord.setLastUpdateDuration(duration);
                 String time = duration % 1000 + "ms";
                 if ((duration /= 1000) > 0)
                     time = duration % 60 + "s " + time;
@@ -756,6 +755,8 @@ public class Harvester implements Runnable, RunningHarvester {
         }
 
         if (indexer.isUsingAPI() && Objects.nonNull(indexer.configManager)) {
+            if(!updateRecord.getFinishState().equals(UpdateStates.STOPPED))
+                updateRecord.setLastUpdateDuration(System.currentTimeMillis() - startTime);
             updateRecord.setLastUpdateStartDate(new Date(System.currentTimeMillis()));
             indexer.configManager.addUpdateRecordToRiver(indexName, updateRecord);
         }
@@ -1764,6 +1765,7 @@ public class Harvester implements Runnable, RunningHarvester {
 
             long startJsonMap = System.currentTimeMillis();
 
+            //TODO: optimize - this takes a long time cca 1150ms with 1mil TTL
             Map<String, Object> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
             long endJsonMap = System.currentTimeMillis();
 
