@@ -671,28 +671,28 @@ public class Harvester implements Runnable, RunningHarvester {
         }
 
         try {
-        while (!closed && !synced) {
-            boolean success;
+            while (!closed && !synced) {
+                boolean success;
 
-            if (lastupdateDate.isEmpty()) lastupdateDate = getLastUpdate();
+                if (lastupdateDate.isEmpty()) lastupdateDate = getLastUpdate();
 
-            //delete leftover temporary index if exists
-            try {
-                AcknowledgedResponse delete = client.indices().delete(new DeleteIndexRequest(indexWithPrefix), RequestOptions.DEFAULT);
-                if (delete.isAcknowledged()) logger.warn("Deleted {} before indexing", indexWithPrefix);
-            } catch (IOException e) {
-                logger.error("Could not delete index {} before indexing", indexWithPrefix);
-                stop();
-                updateRecord.setFinishState(UpdateStates.FAILED);
-                break;
-            } catch (ElasticsearchException e) {
-                if (e.status() != RestStatus.NOT_FOUND) {
+                //delete leftover temporary index if exists
+                try {
+                    AcknowledgedResponse delete = client.indices().delete(new DeleteIndexRequest(indexWithPrefix), RequestOptions.DEFAULT);
+                    if (delete.isAcknowledged()) logger.warn("Deleted {} before indexing", indexWithPrefix);
+                } catch (IOException e) {
                     logger.error("Could not delete index {} before indexing", indexWithPrefix);
                     stop();
                     updateRecord.setFinishState(UpdateStates.FAILED);
                     break;
+                } catch (ElasticsearchException e) {
+                    if (e.status() != RestStatus.NOT_FOUND) {
+                        logger.error("Could not delete index {} before indexing", indexWithPrefix);
+                        stop();
+                        updateRecord.setFinishState(UpdateStates.FAILED);
+                        break;
+                    }
                 }
-            }
                 setHarvestState(HarvestStates.HARVESTING_ENDPOINT);
                 if (indexAll && !synced)
                     success = runIndexAll();
@@ -749,7 +749,7 @@ public class Harvester implements Runnable, RunningHarvester {
                 }
             }
 
-        }catch (Exception e){
+        } catch (Exception e) {
             logger.error(e.getMessage());
         }
 
@@ -1446,7 +1446,6 @@ public class Harvester implements Runnable, RunningHarvester {
      * Starts the harvester for queries and/or URLs
      */
     public boolean runIndexAll() {
-
         logger.info(
                 "Starting RDF harvester: endpoint [{}], queries [{}]," +
                         "URIs [{}], index name [{}], typeName [{}]",
@@ -1454,7 +1453,6 @@ public class Harvester implements Runnable, RunningHarvester {
 
         while (true) {
             if (this.closed) {
-
                 logger.info("Ended harvest for endpoint [{}], queries [{}]," +
                                 "URIs [{}], index name {}, type name {}",
                         rdfEndpoint, rdfQueries, rdfUris, indexName, typeName);
@@ -1628,10 +1626,10 @@ public class Harvester implements Runnable, RunningHarvester {
             qExec.setTimeout(-1);
             try {
                 harvest(qExec);
-            } catch (QueryExceptionHTTP e) {
-                throw e;
             } catch (Exception e) {
                 logger.error("Exception [{}] occurred while harvesting", e.getLocalizedMessage());
+                qExec.close();
+                throw e;
             } finally {
                 qExec.close();
             }
@@ -1743,6 +1741,7 @@ public class Harvester implements Runnable, RunningHarvester {
 
     @SuppressWarnings("Duplicates")
     private ArrayList<String> addModelToES(Model model, BulkRequest bulkRequest, boolean getPropLabel, int modelCounter) {
+        logger.info("Adding model to ES");
         setHarvestState(HarvestStates.INDEXING);
         ArrayList<String> urisWithESErrors = new ArrayList<>();
         long startTime = System.currentTimeMillis();
@@ -1767,52 +1766,52 @@ public class Harvester implements Runnable, RunningHarvester {
 
         int jsonMapCounter = 0;
         while (resIt.hasNext()) {
-            if (stopped) return null;
-            Resource rs = resIt.nextResource();
+                if (stopped) return null;
+                Resource rs = resIt.nextResource();
 
-            long startJsonMap = System.currentTimeMillis();
+                long startJsonMap = System.currentTimeMillis();
 
-            //TODO: optimize - this takes a long time cca 1150ms with 1mil TTL
-            Map<String, Object> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
-            long endJsonMap = System.currentTimeMillis();
+                //TODO: optimize - this takes a long time cca 1150ms with 1mil TTL
+                Map<String, Object> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
+                long endJsonMap = System.currentTimeMillis();
 
-            if (DEBUG_TIME) {
-                logger.info("jsonMapTime : #" + modelCounter + "|" + jsonMapCounter + " : " + "{}",
-                        endJsonMap - startJsonMap
-                );
-            }
-
-            jsonMapCounter++;
-
-            if (addCounting) {
-                jsonMap = addCountingToJsonMap(jsonMap);
-            }
-
-            //TODO: prepareIndex - DONE ; make request async?
-            bulkRequest.add(new IndexRequest(indexWithPrefix, typeName, rs.toString())
-                    //.source(mapToString(jsonMap)));
-                    .source(jsonMap));
-
-            bulkLength++;
-
-            // We want to execute the bulk for every  DEFAULT_BULK_SIZE requests
-            if (bulkLength % EEASettings.DEFAULT_BULK_SIZE == 0) {
-                BulkResponse bulkResponse = null;
-
-                //TODO: make request async
-                try {
-                    bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-                } catch (IOException e) {
-                    logger.error(e.getMessage());
+                if (DEBUG_TIME) {
+                    logger.info("jsonMapTime : #" + modelCounter + "|" + jsonMapCounter + " : " + "{}",
+                            endJsonMap - startJsonMap
+                    );
                 }
 
-                if (bulkResponse.hasFailures()) {
-                    urisWithESErrors = processBulkResponseFailure(bulkResponse);
+                jsonMapCounter++;
+
+                if (addCounting) {
+                    jsonMap = addCountingToJsonMap(jsonMap);
                 }
 
-                // After executing, flush the BulkRequestBuilder.
-                bulkRequest = new BulkRequest();
-            }
+                //TODO: prepareIndex - DONE ; make request async?
+                bulkRequest.add(new IndexRequest(indexWithPrefix, typeName, rs.toString())
+                        //.source(mapToString(jsonMap)));
+                        .source(jsonMap));
+
+                bulkLength++;
+
+                // We want to execute the bulk for every  DEFAULT_BULK_SIZE requests
+                if (bulkLength % EEASettings.DEFAULT_BULK_SIZE == 0) {
+                    BulkResponse bulkResponse = null;
+
+                    //TODO: make request async
+                    try {
+                        bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+                    } catch (IOException e) {
+                        logger.error(e.getMessage());
+                    }
+
+                    if (bulkResponse.hasFailures()) {
+                        urisWithESErrors = processBulkResponseFailure(bulkResponse);
+                    }
+
+                    // After executing, flush the BulkRequestBuilder.
+                    bulkRequest = new BulkRequest();
+                }
         }
 
         // Execute remaining requests
@@ -1839,6 +1838,7 @@ public class Harvester implements Runnable, RunningHarvester {
         if (urisWithESErrors.size() > 0) {
             logger.info("Couldn't index {} documents", urisWithESErrors.size());
         }
+        logger.info("Adding model to ES - Done");
         return urisWithESErrors;
     }
 
