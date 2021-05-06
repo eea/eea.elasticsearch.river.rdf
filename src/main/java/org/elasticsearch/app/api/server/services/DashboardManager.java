@@ -82,17 +82,22 @@ public class DashboardManager {
         try {
             SearchResponse searchResponse = indexer.clientES.search(searchRequest, RequestOptions.DEFAULT);
             for (Pair<String, String> dashboard : Arrays.stream(searchResponse.getHits().getHits()).map(hit -> Pair.of(hit.getId(), ((Map) hit.getSourceAsMap().get("dashboard")).get("title").toString())).collect(Collectors.toList())) {
-                Response kibanaResponse = indexer.clientKibana.getLowLevelClient().performRequest(new Request("GET", "/api/kibana/dashboards/export?" + dashboard.getFirst().replace(':', '=')));
+                try {
+                    Response kibanaResponse = indexer.clientKibana.getLowLevelClient().performRequest(new Request("GET", "/api/kibana/dashboards/export?" + dashboard.getFirst().replace(':', '=')));
 
-                JsonObject dashboardInfos = JSON.parse(kibanaResponse.getEntity().getContent());
-                List<String> dashboardsIndexPatterns = dashboardInfos.get("objects").getAsArray().stream().filter(dashboardInfo ->
-                        dashboardInfo.getAsObject().get("type").getAsString().equals(new JsonString("index-pattern"))
-                ).map(pattern -> pattern.getAsObject().get("attributes").getAsObject().get("title").getAsString().value()).collect(Collectors.toList());
-                for (String indexPatternRegex : dashboardsIndexPatterns) {
-                    if (!mapIndexDashboards.containsKey(indexPatternRegex))
-                        mapIndexDashboards.put(indexPatternRegex, new HashMap<>());
-                    mapIndexDashboards.get(indexPatternRegex).put(dashboard.getFirst().replace("dashboard:", ""), dashboard.getSecond());
+                    JsonObject dashboardInfos = JSON.parse(kibanaResponse.getEntity().getContent());
+                    List<String> dashboardsIndexPatterns;
+                    dashboardsIndexPatterns = dashboardInfos.get("objects").getAsArray().stream().filter(dashboardInfo ->
+                            dashboardInfo.getAsObject().get("type").getAsString().equals(new JsonString("index-pattern"))
+                    ).map(pattern -> pattern.getAsObject().get("attributes").getAsObject().get("title").getAsString().value()).collect(Collectors.toList());
+                    for (String indexPatternRegex : dashboardsIndexPatterns) {
+                        if (!mapIndexDashboards.containsKey(indexPatternRegex))
+                            mapIndexDashboards.put(indexPatternRegex, new HashMap<>());
+                        mapIndexDashboards.get(indexPatternRegex).put(dashboard.getFirst().replace("dashboard:", ""), dashboard.getSecond());
 
+                    }
+                } catch (Exception e) {
+                    logger.debug("No attributes in dashboard");
                 }
             }
         } catch (IOException | ElasticsearchException e) {

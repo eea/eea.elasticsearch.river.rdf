@@ -1619,7 +1619,7 @@ public class Harvester implements Runnable, RunningHarvester {
                 logger.error(
                         "Could not parse [{}]. Please provide a relevant query. {}",
                         rdfQuery, qpe);
-                continue;
+                throw qpe;
             }
 
             qExec = QueryExecutionFactory.sparqlService(rdfEndpoint, query);
@@ -1829,11 +1829,11 @@ public class Harvester implements Runnable, RunningHarvester {
                 urisWithESErrors = processBulkResponseFailure(response);
             }
         }
-
-
+        long documents = bulkLength - urisWithESErrors.size();
+        updateRecord.addToIndexedESHits(documents);
         // Show time taken to index the documents
         logger.info("Indexed {} documents on {}/{} in {} seconds",
-                bulkLength - urisWithESErrors.size(), indexName, typeName,
+                documents, indexName, typeName,
                 (System.currentTimeMillis() - startTime) / 1000.0);
         if (urisWithESErrors.size() > 0) {
             logger.info("Couldn't index {} documents", urisWithESErrors.size());

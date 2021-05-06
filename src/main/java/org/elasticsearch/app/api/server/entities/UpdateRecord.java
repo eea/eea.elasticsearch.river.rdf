@@ -22,9 +22,14 @@ public class UpdateRecord {
     @Basic(optional = false)
     private UpdateStates finishState;
 
+    @Column(nullable = false)
+    @Basic(optional = false)
+    private long indexedESHits;
+
     public UpdateRecord() {
         finishState = UpdateStates.FAILED;
         this.lastUpdateStartDate = new Date(System.currentTimeMillis());
+        indexedESHits=0;
     }
 
     public UpdateRecord(Date lastUpdateStartDate, long lastUpdateDuration) {
@@ -59,5 +64,13 @@ public class UpdateRecord {
 
     public void setFinishState(UpdateStates state) {
         this.finishState = state;
+    }
+
+    public long getIndexedESHits() {
+        return indexedESHits;
+    }
+
+    public void addToIndexedESHits(long indexedESHits) {
+        this.indexedESHits += indexedESHits;
     }
 }

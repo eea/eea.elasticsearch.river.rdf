@@ -361,7 +361,7 @@ public class ESNormalizer {
             if (getNodeLabel) {
                 result = getLabelForUri(result);
             }
-            if(Objects.isNull(result))result = node.asResource().toString();
+            if (Objects.isNull(result)) result = node.asResource().toString();
             quote = true;
         }
         //TODO: ?
