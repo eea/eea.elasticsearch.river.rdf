@@ -1705,8 +1705,8 @@ public class Harvester implements Runnable, RunningHarvester {
      *                     one of the properties set in {@link #uriDescriptionList}.
      * @return map of properties to be indexed for res
      */
-    private Map<String, Object> getJsonMap(Resource rs, Set<Property> properties, Model model,
-                                           boolean getPropLabel) {
+    private HashMap<String, HashMap<String, Object>> getJsonMap(Resource rs, Set<Property> properties, Model model,
+                                                                boolean getPropLabel) {
 
         ESNormalizer esNormalizer = new ESNormalizer(rs, properties, model, getPropLabel, this);
         esNormalizer.setAddUriForResource(addUriForResource);
@@ -1720,7 +1720,7 @@ public class Harvester implements Runnable, RunningHarvester {
 
         esNormalizer.process();
 
-        return esNormalizer.getJsonMap();
+        return esNormalizer.getJsonMaps();
     }
 
     /**
@@ -1771,13 +1771,13 @@ public class Harvester implements Runnable, RunningHarvester {
             Resource rs = resIt.nextResource();
 
             //TODO: delete if
-            if(rs.asNode().toString().equals("https://slovník.gov.cz/generický/eu-directive-1999-37-ec/pojem/prochází-technickou-prohlídkou"))
+            if (rs.asNode().toString().equals("https://slovník.gov.cz/generický/eu-directive-1999-37-ec/pojem/prochází-technickou-prohlídkou"))
                 System.out.println("here");
 
             long startJsonMap = System.currentTimeMillis();
 
             //TODO: optimize - this takes a long time cca 1150ms with 1mil TTL
-            Map<String, Object> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
+            HashMap<String, HashMap<String, Object>> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
             long endJsonMap = System.currentTimeMillis();
 
             if (DEBUG_TIME) {
@@ -1789,19 +1789,18 @@ public class Harvester implements Runnable, RunningHarvester {
             jsonMapCounter++;
 
             if (addCounting) {
-                jsonMap = addCountingToJsonMap(jsonMap);
+                //TODO: repair hashmap to map
+                //jsonMap = addCountingToJsonMap(jsonMap.get(""));
             }
+            for (String lang : jsonMap.keySet()) {
 
-            //TODO: prepareIndex - DONE ; make request async?
-            IndexRequest indexRequest = new IndexRequest(indexWithPrefix, typeName, rs.toString()).source(jsonMap);
-            //TODO: delete if
-            if(indexRequest.id().equals("https://slovník.gov.cz/generický/eu-directive-1999-37-ec/pojem/prochází-technickou-prohlídkou")) {
-                System.out.println("here");
-                indexRequest=indexRequest.id(indexRequest.id()+"@"+bulkLength);
+                //TODO: prepareIndex - DONE ; make request async?
+                IndexRequest indexRequest = new IndexRequest(indexWithPrefix, typeName, rs.toString()).source(jsonMap.get(lang));
+                //TODO: delete if
+                indexRequest = indexRequest.id(indexRequest.id() + "@" + lang);
+                //.source(mapToString(jsonMap)));
+                bulkRequest.add(indexRequest);
             }
-            //.source(mapToString(jsonMap)));
-            bulkRequest.add(indexRequest);
-
             bulkLength++;
 
             // We want to execute the bulk for every  DEFAULT_BULK_SIZE requests

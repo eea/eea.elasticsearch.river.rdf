@@ -18,7 +18,7 @@ public class ESNormalizer {
     private Model model;
     private boolean getPropLabel;
 
-    private HashMap<String, Object> jsonMap = new JSONMap();
+    private HashMap<String, HashMap<String, Object>> jsonMaps = new HashMap<>();
 
     private boolean addUriForResource;
     private Map<String, Object> normalizeProp;
@@ -68,9 +68,11 @@ public class ESNormalizer {
     }
 
     public ESNormalizer() {
+        jsonMaps.put("", new JSONMap());
     }
 
     public ESNormalizer(Resource rs, Set<Property> properties, Model model, boolean getPropLabel, Harvester harvester) {
+        this();
         this.rs = rs;
         this.properties = properties;
         this.model = model;
@@ -85,14 +87,30 @@ public class ESNormalizer {
         for (Property prop : properties) {
             processProperty(prop);
         }
-//        addLanguage();
+
+        addSharedPropertiesToLanguages();
 
         normalizeMissing();
     }
 
+    private void addSharedPropertiesToLanguages() {
+        HashMap<String, Object> sharedPropertiesJson = jsonMaps.get("");
+        for (String lang : jsonMaps.keySet()) {
+            if (lang.equals("")) continue;
+            HashMap<String, Object> languageJson = jsonMaps.get(lang);
+            for (String prop : sharedPropertiesJson.keySet()) {
+                ArrayList<Object> collection = (ArrayList<Object>) sharedPropertiesJson.get(prop);
+                if(languageJson.containsKey(prop))
+                    collection.addAll((Collection<?>) languageJson.get(prop));
+                languageJson.put(prop,collection);
+            }
+        }
+        jsonMaps.remove("");
+    }
+
     private void normalizeMissing() {
         for (Map.Entry<String, Object> it : normalizeMissing.entrySet()) {
-            if (!jsonMap.containsKey(it.getKey())) {
+            if (!jsonMaps.get("").containsKey(it.getKey())) {
                 ArrayList<Object> res = new ArrayList<>();
                 Object miss_values = it.getValue();
 
@@ -111,9 +129,9 @@ public class ESNormalizer {
                     }
                 }
                 if (res.size() == 1)
-                    jsonMap.put(it.getKey(), res.get(0));
+                    jsonMaps.get("").put(it.getKey(), res.get(0));
                 else
-                    jsonMap.put(it.getKey(), res);
+                    jsonMaps.get("").put(it.getKey(), res);
             }
         }
     }
@@ -121,16 +139,23 @@ public class ESNormalizer {
     private void processProperty(Property prop) {
         NodeIterator niter = model.listObjectsOfProperty(rs, prop);
         String property = prop.toString();
-        ArrayList<Object> results = new ArrayList<>();
+        //todo: optimize
+        ArrayList<Object> results;
+        String lang;
 
         Pair<String, String> currValue;
         //hasWorkflowState
         while (niter.hasNext()) {
+            results = new ArrayList<>();
             RDFNode node = niter.next();
             currValue = getStringForResult(node, getPropLabel);
             //todo: here
-            rdfLanguages.add(currValue.getValue());
-            jsonMap.put("language", rdfLanguages);
+            lang = currValue.getValue();
+            rdfLanguages.add(lang);
+            if (!jsonMaps.keySet().contains(lang))
+                jsonMaps.put(lang, new JSONMap());
+            if (!lang.equals(""))
+                jsonMaps.get(lang).put("language", lang);
 
             String shortValue = currValue.getKey();
 
@@ -159,162 +184,116 @@ public class ESNormalizer {
                     results.add(currValue.getKey());
                 }
             }
-        }
 
 
-        // Do not index empty properties
-        if (!results.isEmpty()) {
+            // Do not index empty properties
+            if (!results.isEmpty()) {
 
-            if (normalizeProp.containsKey(property)) {
-                Object norm_property = normalizeProp.get(property);
-                if (norm_property instanceof String) {
-                    property = norm_property.toString();
-
-                    if (jsonMap.containsKey(property)) {
-                        Object temp = jsonMap.get(property);
-                        if (temp instanceof List) {
-                            results.addAll((List) temp);
-
-                            if (results.size() == 1)
-                                jsonMap.put(property, results.get(0));
-                            else
-                                jsonMap.put(property, results);
-                        } else {
-                            jsonMap.put(property, results);
-                        }
-                    } else {
-                        if (results.size() == 1)
-                            jsonMap.put(property, results.get(0));
-                        else
-                            jsonMap.put(property, results);
-                    }
-                } else {
-
-                    if (norm_property instanceof List<?>) {
-
-                        for (String norm_prop : ((List<String>) norm_property)) {
-
-                            //TODO:
-                            if (jsonMap.containsKey(norm_prop)) {
-                                Object temp = jsonMap.get(norm_prop);
-                                if (temp instanceof List) {
-                                    results.addAll((List) temp);
-                                    if (results.size() == 1)
-                                        jsonMap.put(norm_prop, results.get(0));
-                                    else
-                                        jsonMap.put(norm_prop, results);
-                                } else {
-                                    results.add(temp);
-                                    jsonMap.put(norm_prop, results);
-                                }
-                            } else {
-                                if (results.size() == 1)
-                                    jsonMap.put(norm_prop, results.get(0));
-                                else
-                                    jsonMap.put(norm_prop, results);
-                            }
-                        }
-
-                    } else {
+                if (normalizeProp.containsKey(property)) {
+                    Object norm_property = normalizeProp.get(property);
+                    if (norm_property instanceof String) {
                         property = norm_property.toString();
 
-                        if (jsonMap.containsKey(property)) {
-                            Object temp = jsonMap.get(property);
-                            //TODO:
+                        if (jsonMaps.get(lang).containsKey(property)) {
+                            Object temp = jsonMaps.get(lang).get(property);
                             if (temp instanceof List) {
-                                //((List) temp).addAll(results);
-                                if (results.size() == 1)
-                                    jsonMap.put(property, results.get(0));
-                                else
-                                    jsonMap.put(property, results.toArray());
+                                results.addAll((List) temp);
+//TODO: commented results.get(0)
+//                                if (results.size() == 1)
+//                                    jsonMaps.get(lang).put(property, results.get(0));
+//                                else
+                                    jsonMaps.get(lang).put(property, results);
                             } else {
-                                if (results.size() == 1)
-                                    jsonMap.put(property, results.get(0));
-                                else
-                                    jsonMap.put(property, results);
+                                jsonMaps.get(lang).put(property, results);
+                            }
+                        } else {
+//                            if (results.size() == 1)
+//                                jsonMaps.get(lang).put(property, results.get(0));
+//                            else
+                                jsonMaps.get(lang).put(property, results);
+                        }
+                    } else {
+
+                        if (norm_property instanceof List<?>) {
+
+                            for (String norm_prop : ((List<String>) norm_property)) {
+
+                                //TODO:
+                                if (jsonMaps.get(lang).containsKey(norm_prop)) {
+                                    Object temp = jsonMaps.get(lang).get(norm_prop);
+                                    if (temp instanceof List) {
+                                        results.addAll((List) temp);
+//                                        if (results.size() == 1)
+//                                            jsonMaps.get(lang).put(norm_prop, results.get(0));
+//                                        else
+                                            jsonMaps.get(lang).put(norm_prop, results);
+                                    } else {
+                                        results.add(temp);
+                                        jsonMaps.get(lang).put(norm_prop, results);
+                                    }
+                                } else {
+//                                    if (results.size() == 1)
+//                                        jsonMaps.get(lang).put(norm_prop, results.get(0));
+//                                    else
+                                        jsonMaps.get(lang).put(norm_prop, results);
+                                }
+                            }
+
+                        } else {
+                            property = norm_property.toString();
+
+                            if (jsonMaps.get(lang).containsKey(property)) {
+                                Object temp = jsonMaps.get(lang).get(property);
+                                //TODO:
+                                if (temp instanceof List) {
+                                    //((List) temp).addAll(results);
+//                                    if (results.size() == 1)
+//                                        jsonMaps.get(lang).put(property, results.get(0));
+//                                    else
+                                        jsonMaps.get(lang).put(property, results.toArray());
+                                } else {
+//                                    if (results.size() == 1)
+//                                        jsonMaps.get(lang).put(property, results.get(0));
+//                                    else
+                                        jsonMaps.get(lang).put(property, results);
+
+                                }
+                                //jsonMaps.get(property).addAll(results);
+                            } else {
+//                                if (results.size() == 1)
+//                                    jsonMaps.get(lang).put(property, results.get(0));
+//                                else
+                                    jsonMaps.get(lang).put(property, results);
 
                             }
-                            //jsonMap.get(property).addAll(results);
-                        } else {
-                            if (results.size() == 1)
-                                jsonMap.put(property, results.get(0));
-                            else
-                                jsonMap.put(property, results);
-
+                            logger.error("Normalizer error:", norm_property);
                         }
-                        logger.error("Normalizer error:", norm_property);
                     }
+                } else {
+                    if (jsonMaps.get(lang).containsKey(property))
+                        results.addAll((Collection<?>) jsonMaps.get(lang).get(property));
+                    jsonMaps.get(lang).put(property, results);
                 }
-            } else {
-                jsonMap.put(property, results);
             }
-        }
 
+        }
     }
 
     private void addUriForResource() {
         ArrayList<Object> results = new ArrayList<Object>();
         if (addUriForResource) {
             results.add(rs.toString());
-            if (results.size() == 1)
-                jsonMap.put("about", results.get(0));
-            else
-                jsonMap.put("about", results);
+//            if (results.size() == 1)
+//                jsonMaps.get("").put("about", results.get(0));
+//            else
+                jsonMaps.get("").put("about", results);
 
         }
     }
 
-    private void addLanguage() {
-        if (addLanguage) {
-            HashSet<Property> allProperties = new HashSet<Property>();
 
-            StmtIterator it = model.listStatements();
-            while (it.hasNext()) {
-                Statement st = it.nextStatement();
-                Property prop = st.getPredicate();
-
-                allProperties.add(prop);
-            }
-
-            for (Property prop : allProperties) {
-                String property = prop.toString();
-                NodeIterator niter = model.listObjectsOfProperty(rs, prop);
-                String lang;
-
-                while (niter.hasNext()) {
-                    RDFNode node = niter.next();
-                    if (addLanguage) {
-                        if (node.isLiteral()) {
-                            lang = node.asLiteral().getLanguage();
-                            if (!lang.isEmpty()) {
-                                rdfLanguages.add(lang);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (rdfLanguages.isEmpty() && !language.isEmpty())
-                rdfLanguages.add(language);
-            if (!rdfLanguages.isEmpty()) {
-                if (rdfLanguages.size() == 1) {
-                    Iterator iter = rdfLanguages.iterator();
-                    Object first = iter.next();
-                    if (first instanceof List<?>) {
-                        logger.info("is LIST");
-                    }
-                    jsonMap.put("language", first);
-                } else {
-                    jsonMap.put("language", rdfLanguages);
-                }
-            }
-
-
-        }
-    }
-
-    public HashMap<String, Object> getJsonMap() {
-        return jsonMap;
+    public HashMap<String, HashMap<String, Object>> getJsonMaps() {
+        return jsonMaps;
     }
 
     /**
