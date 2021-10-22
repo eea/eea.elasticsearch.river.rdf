@@ -360,7 +360,8 @@ public class ESNormalizer {
         } else if (node.isResource()) {
             result = node.asResource().getURI();
             if (getNodeLabel) {
-                result = getLabelForUri(result);
+                //TODO: optimize
+//                result = getLabelForUri(result);
             }
             if (Objects.isNull(result))
                 result = node.asResource().toString();
