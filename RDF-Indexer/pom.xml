@@ -2,30 +2,21 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.elasticsearch.plugin.river.eea_rdf</groupId>
-    <artifactId>eea-rdf-river-indexer</artifactId>
-    <version>2.0.3 - altered</version>
-
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.4.2</version>
+        <version>2.4.4</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-
+    <groupId>org.elasticsearch.plugin.river.eea_rdf</groupId>
+    <artifactId>eea-rdf-river-indexer</artifactId>
+    <version>2.0.3-altered</version>
     <packaging>jar</packaging>
-
     <name>eea-rdf-river-indexer</name>
     <description>Elasticsearch RDF River Indexer for EEA</description>
 
-    <inceptionYear>2013</inceptionYear>
-
-    <organization>
-        <name>Eau de Web</name>
-        <url>https://github.com/eaudeweb</url>
-    </organization>
-
     <properties>
+        <java.version>1.8</java.version>
         <elasticsearch.version>7.10.0</elasticsearch.version>
         <jena.version>2.12.1</jena.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -41,6 +32,10 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -135,12 +130,6 @@
                     <target>1.8</target>
                     <useIncrementalCompilation>false</useIncrementalCompilation>
                 </configuration>
-            </plugin>
-
-
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
         </plugins>
 

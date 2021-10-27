@@ -1,0 +1,42 @@
+services:
+  elasticsearch:
+    container_name: "ElasticSearch"
+    image: "docker.elastic.co/elasticsearch/elasticsearch:7.10.0"
+    ports:
+      - "9200:9200"
+      - "9201:9201"
+    environment:
+      discovery.type: "single-node"
+  kibana:
+    container_name: "Kibana"
+    image: "docker.elastic.co/kibana/kibana:7.10.0"
+    links:
+      - "elasticsearch:elasticsearch"
+    ports:
+      - "5601:5601"
+  indexer-server:
+    container_name: "Spring-indexer"
+    environment:
+
+      elastic_host: 192.168.0.101     # the elastic host ip
+
+      elastic_port: '9200'            # the elastic host port
+
+      elastic_user: 'user'            # the elastic username
+
+      elastic_pass: 'pass'            # the elastic password
+
+      river_index: 'eeardf'           # the name of the index where the rivers are created
+
+      indexer_multithreading: 'true'  # if you want multithreading; each river will have a single thread
+
+      threads: 4                      # in case of multithreading, the max number of concurrent working threads
+
+      LOG_LEVEL: "info"               # the log level ( info or debug)
+
+    tty: true
+
+    ports:
+      - "8080:8080"
+
+    build: .

@@ -186,13 +186,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8080/threads",
+							"raw": "localhost:8080/running",
 							"host": [
 								"localhost"
 							],
 							"port": "8080",
 							"path": [
-								"threads"
+								"running"
 							]
 						}
 					},
@@ -223,7 +223,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"config\": {\r\n        \"type\": \"eeaRDF\",\r\n        \"eeaRDF\": {\r\n            \"endpoint\": \"https://xn--slovnk-7va.gov.cz/sparql\",\r\n            \"query\": [\r\n                \"SELECT * WHERE { ?s a <http://www.w3.org/2004/02/skos/core#Concept> ; ?p ?o . FILTER(isIri(?o) || isLiteral(?o))}\"\r\n            ],\r\n            \"queryType\": \"select\"\r\n        },\r\n        \"syncReq\": {},\r\n        \"index\": {\r\n            \"index\": \"sspapi\",\r\n            \"type\": \"rdf\"\r\n        }\r\n    }\r\n}",
+							"raw": "{\r\n    \"schedule\": {\r\n        \"schedule\": \"*/30 * * * * *\",\r\n        \"automatic\": false\r\n    },\r\n    \"config\": {\r\n        \"type\": \"eeaRDF\",\r\n        \"eeaRDF\": {\r\n            \"endpoint\": \"https://xn--slovnk-7va.gov.cz/sparql\",\r\n            \"query\": [\r\n                \"SELECT * WHERE { ?s a <http://www.w3.org/2004/02/skos/core#Concept> ; ?p ?o . FILTER(isIri(?o) || isLiteral(?o))}\"\r\n            ],\r\n            \"queryType\": \"select\"\r\n        },\r\n        \"syncReq\": {},\r\n        \"index\": {\r\n            \"index\": \"sspapi\",\r\n            \"type\": \"rdf\"\r\n        }\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -250,7 +250,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"config\": {\r\n        \"type\": \"eeaRDF\",\r\n        \"eeaRDF\": {\r\n            \"endpoint\": \"https://xn--slovnk-7va.gov.cz/sparql\",\r\n            \"query\": [\r\n                \"SELECT * WHERE { ?s a <http://www.w3.org/2004/02/skos/core#Concept> ; ?p ?o . FILTER(isIri(?o) || isLiteral(?o))}\"\r\n            ],\r\n            \"queryType\": \"select\"\r\n        },\r\n        \"syncReq\": {},\r\n        \"index\": {\r\n            \"index\": \"sspapi\",\r\n            \"type\": \"rdf\"\r\n        }\r\n    }\r\n}",
+							"raw": "{\r\n    \"schedule\": {\r\n        \"schedule\": \"*/30 * * * * *\",\r\n        \"automatic\": false\r\n    },\r\n    \"config\": {\r\n        \"type\": \"eeaRDF\",\r\n        \"eeaRDF\": {\r\n            \"endpoint\": \"https://xn--slovnk-7va.gov.cz/sparql\",\r\n            \"query\": [\r\n                \"SELECT * WHERE { ?s a <http://www.w3.org/2004/02/skos/core#Concept> ; ?p ?o . FILTER(isIri(?o) || isLiteral(?o))}\"\r\n            ],\r\n            \"queryType\": \"select\"\r\n        },\r\n        \"syncReq\": {},\r\n        \"index\": {\r\n            \"index\": \"sspapi\",\r\n            \"type\": \"rdf\"\r\n        }\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -316,14 +316,14 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "localhost:8080/config/b",
+							"raw": "localhost:8080/config/sspapi",
 							"host": [
 								"localhost"
 							],
 							"port": "8080",
 							"path": [
 								"config",
-								"b"
+								"sspapi"
 							]
 						}
 					},
@@ -407,7 +407,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"config\": {\r\n        \"type\": \"eeaRDF\",\r\n        \"eeaRDF\": {\r\n            \"uris\" : [\r\n                \"http://192.168.0.130/a.ttl\"\r\n                ]\r\n        },\r\n        \"syncReq\": {},\r\n        \"index\": {\r\n            \"index\": \"b\",\r\n            \"type\": \"rdf\"\r\n        }\r\n    }\r\n}",
+							"raw": "{\r\n    \"schedule\": {\r\n        \"schedule\": \"0 0 0 0 0 0\",\r\n        \"automatic\": false\r\n    },\r\n    \"config\": {\r\n        \"type\": \"eeaRDF\",\r\n        \"eeaRDF\": {\r\n            \"uris\" : [\r\n                \"http://192.168.0.130/a.ttl\"\r\n                ]\r\n        },\r\n        \"syncReq\": {},\r\n        \"index\": {\r\n            \"index\": \"b\",\r\n            \"type\": \"rdf\"\r\n        }\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
