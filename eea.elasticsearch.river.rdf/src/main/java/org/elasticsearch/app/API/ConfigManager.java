@@ -37,7 +37,7 @@ public class ConfigManager {
     @Transactional(readOnly = true)
     public Map<String, Object> getListOfConfigs() {
         Map<String, Object> configs = new HashMap<>();
-        riverDAO.findAll().stream().forEach((r)->configs.put(r.riverName(), r.toMap()));
+        riverDAO.findAll().forEach((r)->configs.put(r.riverName(), r.toMap()));
         return configs;
     }
 

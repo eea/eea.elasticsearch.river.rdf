@@ -85,6 +85,7 @@ public class Indexer {
 
 
         indexer.startIndexing();
+        indexer.awaitIndexingFinish();
         indexer.close();
 
     }
@@ -117,12 +118,15 @@ public class Indexer {
         Indexer.executorService.shutdown();
 
         logger.info("All tasks submitted.");
-        if (!isUsingAPI()) try {
+    }
+
+    public void awaitIndexingFinish(){
+        try {
             Indexer.executorService.awaitTermination(1, TimeUnit.DAYS);
 
-            if (!isUsingAPI()) try {
+            try {
                 DeleteIndexRequest request = new DeleteIndexRequest(RIVER_INDEX);
-                client.indices().delete(request);
+                client.indices().delete(request,RequestOptions.DEFAULT);
                 logger.info("Deleting river index!!!");
 
             } catch (ElasticsearchException exception) {
@@ -196,7 +200,7 @@ public class Indexer {
         String indexA = "";
 
         try {
-            response = lowclient.performRequest("GET", "global-search/_mappings");
+            response = lowclient.performRequest(new Request("GET", "global-search/_mappings"));
             String responseBody = EntityUtils.toString(response.getEntity());
 
             HashMap myMap = new HashMap<String, String>();
@@ -233,7 +237,10 @@ public class Indexer {
                         "]}";
 
                 HttpEntity entityR = new NStringEntity(jsonStringRemove, ContentType.APPLICATION_JSON);
-                Response responseRemove = lowclient.performRequest("POST", "/_aliases", params, entityR);
+                Request req = new Request("POST", "/_aliases");
+                req.addParameters(params);
+                req.setEntity(entityR);
+                Response responseRemove = lowclient.performRequest(req);
 
                 if (responseRemove.getStatusLine().getStatusCode() == 200) {
                     logger.info("{}", EntityUtils.toString(responseRemove.getEntity()));
@@ -256,7 +263,10 @@ public class Indexer {
 
                 HttpEntity entityAdd = new NStringEntity(jsonStringAdd, ContentType.APPLICATION_JSON);
                 try {
-                    Response responseAdd = lowclient.performRequest("POST", "/_aliases", params, entityAdd);
+                    Request req1 = new Request("POST", "/_aliases");
+                    req1.setEntity(entityAdd);
+                    req1.addParameters(params);
+                    Response responseAdd = lowclient.performRequest(req1);
 
                     if (responseAdd.getStatusLine().getStatusCode() == 200) {
                         logger.info("{}", EntityUtils.toString(responseAdd.getEntity()));
@@ -304,13 +314,13 @@ public class Indexer {
                         return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
                     }
                 })
-                        .setFailureListener(new RestClient.FailureListener() {
+                        .setFailureListener(/*new RestClient.FailureListener() {
                             @Override
                             public void onFailure(HttpHost host) {
                                 super.onFailure(host);
                                 logger.error("Connection failure: [{}]", host);
                             }
-                        })
+                        }*/ new RestClient.FailureListener())
         );
 
         logger.debug("Username: " + this.envMap.get("elastic_user"));
@@ -340,7 +350,7 @@ public class Indexer {
         SearchResponse searchResponse = null;
         try {
             logger.info("{}", searchRequest);
-            searchResponse = client.search(searchRequest);
+            searchResponse = client.search(searchRequest,RequestOptions.DEFAULT);
             logger.info("River index {} found", this.RIVER_INDEX);
             String scrollId = searchResponse.getScrollId();
             SearchHit[] searchHits = searchResponse.getHits().getHits();
@@ -351,7 +361,7 @@ public class Indexer {
             while (searchHits != null && searchHits.length > 0) {
                 SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
                 scrollRequest.scroll(scroll);
-                searchResponse = client.searchScroll(scrollRequest);
+                searchResponse = client.searchScroll(scrollRequest,RequestOptions.DEFAULT);
                 scrollId = searchResponse.getScrollId();
                 searchHits = searchResponse.getHits().getHits();
 
@@ -361,7 +371,7 @@ public class Indexer {
 
             ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
             clearScrollRequest.addScrollId(scrollId);
-            ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest);
+            ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest,RequestOptions.DEFAULT);
             boolean succeeded = clearScrollResponse.isSucceeded();
         } catch (IOException e) {
             logger.info("River index " + this.RIVER_INDEX + " not found");
@@ -399,7 +409,7 @@ public class Indexer {
         }
     }
 
-    private void addHarvesterSettings(Harvester harv, Map<String,Object> settings) {
+    private void addHarvesterSettings(Harvester harv, Map<String, Object> settings) {
         if (settings.containsKey("eeaRDF")) {
 
         } else if (!(((HashMap) settings.get("syncReq")).containsKey("eeaRDF"))) {
@@ -518,10 +528,10 @@ public class Indexer {
      * Type casting accessors for river settings
      **/
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> extractSettings(Map<String,Object> settings,
+    private static Map<String, Object> extractSettings(Map<String, Object> settings,
                                                        String key) {
         if (settings.containsKey("eeaRDF")) {
-            return (Map<String, Object>)  settings.get(key);
+            return (Map<String, Object>) settings.get(key);
         } else {
             return (Map<String, Object>) ((Map<String, Object>) settings.get("syncReq")).get(key);
         }

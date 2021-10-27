@@ -18,6 +18,7 @@ import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.sparql.ARQException;
 import com.hp.hpl.jena.sparql.engine.http.QueryExceptionHTTP;
+import org.apache.http.HttpEntity;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFLanguages;
@@ -27,6 +28,8 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.admin.indices.shrink.ResizeRequest;
+import org.elasticsearch.action.admin.indices.shrink.ResizeType;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -36,6 +39,7 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.*;
 import org.elasticsearch.action.support.replication.ReplicationResponse;
 import org.elasticsearch.action.update.UpdateRequest;
@@ -46,6 +50,8 @@ import org.elasticsearch.app.logging.Loggers;
 
 
 import org.elasticsearch.app.support.ESNormalizer;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 
 import org.elasticsearch.common.unit.TimeValue;
@@ -55,6 +61,7 @@ import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.springframework.http.RequestEntity;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -80,6 +87,7 @@ public class Harvester implements Runnable {
         DESCRIBE
     }
 
+    private static final String indexPostfix = "-temp";
 
     private final ESLogger logger = Loggers.getLogger(Harvester.class);
 
@@ -570,7 +578,7 @@ public class Harvester implements Runnable {
 
         //TODO: move to async
         try {
-            BulkResponse bulkResponse = client.bulk(bulkRequest);
+            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
 
             if (!bulkResponse.hasFailures()) {
                 for (BulkItemResponse bulkItemResponse : bulkResponse) {
@@ -598,7 +606,7 @@ public class Harvester implements Runnable {
 
         //TODO: move to async ?
         try {
-            GetResponse getResponse = client.get(getRequest);
+            GetResponse getResponse = client.get(getRequest,RequestOptions.DEFAULT);
 
             if (!getResponse.isSourceEmpty()) {
                 Integer updated_at = (Integer) getResponse.getSource().get("updated_at");
@@ -606,8 +614,8 @@ public class Harvester implements Runnable {
                 res = sdf.format(updated);
             }
 
-        } catch (IOException e) {
-            logger.error("Could not get last_update, use Date(0)", e);
+        } catch (Exception e) {
+            logger.info("Could not get last_update, use Date(0)");
             res = sdf.format(new Date(0));
         }
         return res;
@@ -625,9 +633,9 @@ public class Harvester implements Runnable {
             searchRequest.source(searchSourceBuilder);
 
             try {
-                SearchResponse searchResponse = client.search(searchRequest);
+                SearchResponse searchResponse = client.search(searchRequest,RequestOptions.DEFAULT);
                 SearchHits hits = searchResponse.getHits();
-                long totalHits = hits.getTotalHits();
+                long totalHits = hits.getTotalHits().value;
                 if (totalHits == 0) {
                     indexer.close();
                 }
@@ -641,7 +649,7 @@ public class Harvester implements Runnable {
 
         while (!this.closed && !synced) {
             long currentTime = System.currentTimeMillis();
-            boolean success = false;
+            boolean success;
 
             /*SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
             Long ts = Long.valueOf(0);
@@ -650,6 +658,8 @@ public class Harvester implements Runnable {
             } catch (ParseException e) {
                 e.printStackTrace();
             }*/
+            //TODO: WTF not working with first indexing... Does not give any error
+            if (startTime.isEmpty()) startTime = getLastUpdate();
 
             if ( startTime.isEmpty() ) startTime = getLastUpdate();
 
@@ -660,8 +670,8 @@ public class Harvester implements Runnable {
 
             //TODO: async ?
             if (success) {
-
                 setLastUpdate(new Date(currentTime));
+                renameIndex();
 
                 success = false;
                 synced = true;
@@ -676,7 +686,7 @@ public class Harvester implements Runnable {
 
 
                 if (!indexer.isUsingAPI())
-                    client.deleteAsync(deleteRequest, new ActionListener<DeleteResponse>() {
+                    client.deleteAsync(deleteRequest,RequestOptions.DEFAULT, new ActionListener<DeleteResponse>() {
                         @Override
                         public void onResponse(DeleteResponse deleteResponse) {
                             logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
@@ -706,6 +716,18 @@ public class Harvester implements Runnable {
 		   the master will interrupt the harvester thread after
 		   deleting the _river.
 		 */
+    }
+
+    private void renameIndex() {
+        ResizeRequest request = new ResizeRequest(indexName + indexPostfix, indexName);
+        request.setResizeType(ResizeType.CLONE);
+        try {
+            client.indices().clone(request, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
     }
 
     public boolean runSync() {
@@ -900,7 +922,7 @@ public class Harvester implements Runnable {
 
         SearchResponse searchResponse = null;
         try {
-            searchResponse = client.search(searchRequest);
+            searchResponse = client.search(searchRequest,RequestOptions.DEFAULT);
             String scrollId = searchResponse.getScrollId();
             SearchHit[] searchHits = searchResponse.getHits().getHits();
 
@@ -923,7 +945,7 @@ public class Harvester implements Runnable {
                     continue;
 
                 DeleteRequest deleteRequest = new DeleteRequest(indexName, typeName, hit.getId());
-                DeleteResponse deleteResponse = client.delete(deleteRequest);
+                DeleteResponse deleteResponse = client.delete(deleteRequest,RequestOptions.DEFAULT);
 
                 ReplicationResponse.ShardInfo shardInfo = deleteResponse.getShardInfo();
                 if (shardInfo.getTotal() != shardInfo.getSuccessful()) {
@@ -943,7 +965,7 @@ public class Harvester implements Runnable {
             while (searchHits != null && searchHits.length > 0) {
                 SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
                 scrollRequest.scroll(scroll);
-                searchResponse = client.searchScroll(scrollRequest);
+                searchResponse = client.searchScroll(scrollRequest,RequestOptions.DEFAULT);
                 scrollId = searchResponse.getScrollId();
                 searchHits = searchResponse.getHits().getHits();
 
@@ -965,7 +987,7 @@ public class Harvester implements Runnable {
                         continue;
 
                     DeleteRequest deleteRequest = new DeleteRequest(indexName, typeName, hit.getId());
-                    DeleteResponse deleteResponse = client.delete(deleteRequest);
+                    DeleteResponse deleteResponse = client.delete(deleteRequest,RequestOptions.DEFAULT);
 
                     ReplicationResponse.ShardInfo shardInfo = deleteResponse.getShardInfo();
                     if (shardInfo.getTotal() != shardInfo.getSuccessful()) {
@@ -985,7 +1007,7 @@ public class Harvester implements Runnable {
 
             ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
             clearScrollRequest.addScrollId(scrollId);
-            ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest);
+            ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest,RequestOptions.DEFAULT);
             boolean succeeded = clearScrollResponse.isSucceeded();
         } catch (IOException e) {
             e.printStackTrace();
@@ -1008,7 +1030,7 @@ public class Harvester implements Runnable {
 
         GetRequest getRequest = new GetRequest(statusIndex, "last_update", riverName);
         try {
-            GetResponse getResponse = client.get(getRequest);
+            GetResponse getResponse = client.get(getRequest,RequestOptions.DEFAULT);
             if (getResponse.getSource().get("status") == "indexing") {
                 indexing = true;
             }
@@ -1022,7 +1044,7 @@ public class Harvester implements Runnable {
             UpdateRequest request = new UpdateRequest(statusIndex, "last_update", riverName)
                     .doc(jsonMap);
             try {
-                UpdateResponse updateResponse = client.update(request);
+                UpdateResponse updateResponse = client.update(request,RequestOptions.DEFAULT);
                 logger.info("Updating index {} status to: indexing", riverName);
             } catch (IOException e) {
                 logger.error("{}", e);
@@ -1293,7 +1315,7 @@ public class Harvester implements Runnable {
         if (indexer.isUsingAPI()) return false;
         GetRequest getRequest = new GetRequest(indexer.getRIVER_INDEX(), "river", riverName);
         try {
-            GetResponse getResponse = client.get(getRequest);
+            GetResponse getResponse = client.get(getRequest,RequestOptions.DEFAULT);
             if (getResponse.isExists()) {
                 return false;
             } else {
@@ -1592,90 +1614,16 @@ public class Harvester implements Runnable {
      */
     @SuppressWarnings("Duplicates")
     private void addModelToES(Model model, BulkRequest bulkRequest, boolean getPropLabel) {
-        long startTime = System.currentTimeMillis();
-        long bulkLength = 0;
-        HashSet<Property> properties = new HashSet<Property>();
-
-        StmtIterator it = model.listStatements();
-        while (it.hasNext()) {
-            Statement st = it.nextStatement();
-            Property prop = st.getPredicate();
-            String property = prop.toString();
-
-            if (rdfPropList.isEmpty()
-                    || (isWhitePropList && rdfPropList.contains(property))
-                    || (!isWhitePropList && !rdfPropList.contains(property))
-                    || (normalizeProp.containsKey(property))) {
-                properties.add(prop);
-            }
-        }
-
-        ResIterator resIt = model.listSubjects();
-
-        while (resIt.hasNext()) {
-            Resource rs = resIt.nextResource();
-            Map<String, Object> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
-            if (addCounting) {
-                jsonMap = addCountingToJsonMap(jsonMap);
-            }
-
-            //TODO: prepareIndex - DONE ; make request async?
-            bulkRequest.add(new IndexRequest(indexName, typeName, rs.toString())
-                    //.source(mapToString(jsonMap)));
-                    .source(jsonMap));
-
-            bulkLength++;
-
-            // We want to execute the bulk for every  DEFAULT_BULK_SIZE requests
-            if (bulkLength % EEASettings.DEFAULT_BULK_SIZE == 0) {
-                BulkResponse bulkResponse = null;
-
-                //TODO: make request async
-                try {
-                    bulkResponse = client.bulk(bulkRequest);
-                } catch (IOException e) {
-                    e.printStackTrace();
-
-                }
-
-                if (bulkResponse.hasFailures()) {
-                    processBulkResponseFailure(bulkResponse);
-                }
-
-                // After executing, flush the BulkRequestBuilder.
-                bulkRequest = new BulkRequest();
-            }
-        }
-
-        // Execute remaining requests
-        if (bulkRequest.numberOfActions() > 0) {
-            //BulkResponse response = bulkRequest.execute().actionGet();
-            BulkResponse response = null;
-            try {
-                response = client.bulk(bulkRequest);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            // Handle failure by iterating through each bulk response item
-            if (response != null && response.hasFailures()) {
-                processBulkResponseFailure(response);
-            }
-        }
-
-        // Show time taken to index the documents
-        logger.info("Indexed {} documents on {}/{} in {} seconds",
-                bulkLength, indexName, typeName,
-                (System.currentTimeMillis() - startTime) / 1000.0);
+        addModelToES(model, bulkRequest, getPropLabel, 0);
     }
 
 
     @SuppressWarnings("Duplicates")
     private ArrayList<String> addModelToES(Model model, BulkRequest bulkRequest, boolean getPropLabel, int modelCounter) {
-        ArrayList<String> urisWithESErrors = new ArrayList<String>();
+        ArrayList<String> urisWithESErrors = new ArrayList<>();
         long startTime = System.currentTimeMillis();
         long bulkLength = 0;
-        HashSet<Property> properties = new HashSet<Property>();
+        HashSet<Property> properties = new HashSet<>();
 
         StmtIterator it = model.listStatements();
         while (it.hasNext()) {
@@ -1708,16 +1656,14 @@ public class Harvester implements Runnable {
                 );
             }
 
-
             jsonMapCounter++;
-
 
             if (addCounting) {
                 jsonMap = addCountingToJsonMap(jsonMap);
             }
 
             //TODO: prepareIndex - DONE ; make request async?
-            bulkRequest.add(new IndexRequest(indexName, typeName, rs.toString())
+            bulkRequest.add(new IndexRequest(indexName + indexPostfix, typeName, rs.toString())
                     //.source(mapToString(jsonMap)));
                     .source(jsonMap));
 
@@ -1729,11 +1675,9 @@ public class Harvester implements Runnable {
 
                 //TODO: make request async
                 try {
-                    bulkResponse = client.bulk(bulkRequest);
-
+                    bulkResponse = client.bulk(bulkRequest,RequestOptions.DEFAULT);
                 } catch (IOException e) {
                     e.printStackTrace();
-
                 }
 
                 if (bulkResponse.hasFailures()) {
@@ -1741,7 +1685,6 @@ public class Harvester implements Runnable {
                 }
 
                 // After executing, flush the BulkRequestBuilder.
-                //TODO: prepareBulk - DONE
                 bulkRequest = new BulkRequest();
             }
         }
@@ -1751,7 +1694,7 @@ public class Harvester implements Runnable {
             //BulkResponse response = bulkRequest.execute().actionGet();
             BulkResponse response = null;
             try {
-                response = client.bulk(bulkRequest);
+                response = client.bulk(bulkRequest,RequestOptions.DEFAULT);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -1772,6 +1715,7 @@ public class Harvester implements Runnable {
         }
         return urisWithESErrors;
     }
+
 
     /**
      * This method processes failures by iterating through each bulk response item
