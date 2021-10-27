@@ -224,15 +224,15 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8080/api/config/sspapi",
+							"raw": "localhost:8080/api/configs/test",
 							"host": [
 								"localhost"
 							],
 							"port": "8080",
 							"path": [
 								"api",
-								"config",
-								"sspapi"
+								"configs",
+								"test"
 							]
 						}
 					},
@@ -253,14 +253,14 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8080/api/config",
+							"raw": "localhost:8080/api/configs",
 							"host": [
 								"localhost"
 							],
 							"port": "8080",
 							"path": [
 								"api",
-								"config"
+								"configs"
 							]
 						}
 					},
@@ -269,7 +269,7 @@
 				{
 					"name": "saveIndexAndIndex",
 					"request": {
-						"method": "POST",
+						"method": "PUT",
 						"header": [],
 						"body": {
 							"mode": "raw",
@@ -297,7 +297,7 @@
 				{
 					"name": "saveIndexAndIndex LargeOne",
 					"request": {
-						"method": "POST",
+						"method": "PUT",
 						"header": [],
 						"body": {
 							"mode": "raw",
@@ -328,14 +328,14 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "localhost:8080/api/config/sspapi/start",
+							"raw": "localhost:8080/api/configs/sspapi/start",
 							"host": [
 								"localhost"
 							],
 							"port": "8080",
 							"path": [
 								"api",
-								"config",
+								"configs",
 								"sspapi",
 								"start"
 							]
@@ -349,14 +349,14 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "localhost:8080/api/config/sspapi/stop",
+							"raw": "localhost:8080/api/configs/sspapi/stop",
 							"host": [
 								"localhost"
 							],
 							"port": "8080",
 							"path": [
 								"api",
-								"config",
+								"configs",
 								"sspapi",
 								"stop"
 							]
@@ -370,15 +370,21 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "localhost:8080/api/config/sspapi",
+							"raw": "localhost:8080/api/configs/sspapi?deleteData=false",
 							"host": [
 								"localhost"
 							],
 							"port": "8080",
 							"path": [
 								"api",
-								"config",
+								"configs",
 								"sspapi"
+							],
+							"query": [
+								{
+									"key": "deleteData",
+									"value": "false"
+								}
 							]
 						}
 					},

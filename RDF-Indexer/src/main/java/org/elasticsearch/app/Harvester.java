@@ -1,15 +1,5 @@
 package org.elasticsearch.app;
 
-/*import org.apache.jena.graph.Graph;
-import org.apache.jena.graph.Node;
-import org.apache.jena.graph.NodeFactory;
-import org.apache.jena.graph.Triple;
-import org.apache.jena.query.*;
-
-import org.apache.jena.rdf.model.*;
-import org.apache.jena.sparql.ARQException;
-import org.apache.jena.sparql.engine.http.QueryExceptionHTTP;*/
-
 import com.hp.hpl.jena.graph.Graph;
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.NodeFactory;
@@ -333,9 +323,6 @@ public class Harvester implements Runnable, RunningHarvester {
         language = rdfLanguage;
         if (!language.isEmpty()) {
             addLanguage = true;
-            /* Quote the language str */
-			/*if(!language.startsWith("\""))
-				language = "\"" +  this.language + "\"";*/
         }
         return this;
     }

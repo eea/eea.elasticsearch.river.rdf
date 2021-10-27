@@ -38,6 +38,8 @@ import java.util.concurrent.TimeUnit;
 
 public class Indexer {
 
+    public final int cacheDurationInSeconds;
+
     private String riverIndex = "eeardf";
 
     private boolean MULTITHREADING_ACTIVE = true;
@@ -299,7 +301,8 @@ public class Indexer {
         this.MULTITHREADING_ACTIVE = (env.get("indexer_multithreading") != null) ?
                 Boolean.parseBoolean(env.get("indexer_multithreading")) : this.MULTITHREADING_ACTIVE;
         this.THREADS = (env.get("threads") != null) ? Integer.parseInt(env.get("threads")) : this.THREADS;
-        this.loglevel = (env.get("LOG_LEVEL") != null) ? env.get("LOG_LEVEL") : "info";
+        this.loglevel = (env.get("log_level") != null) ? env.get("log_level") : EEASettings.LOG_LEVEL;
+        this.cacheDurationInSeconds = (env.get("cache_duration_in_seconds") != null) ? Integer.parseInt(env.get("cache_duration_in_seconds")) : EEASettings.CACHE_DURATION_IN_SECONDS;
 
         credentialsProvider.setCredentials(AuthScope.ANY,
                 new UsernamePasswordCredentials(user, pass));

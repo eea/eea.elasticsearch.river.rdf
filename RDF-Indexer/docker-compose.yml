@@ -36,7 +36,9 @@ services:
 
       threads: 4                      # in case of multithreading, the max number of concurrent working threads
 
-      LOG_LEVEL: "info"               # the log level ( info or debug)
+      log_level: "info"               # the log level ( info or debug)
+
+      cache_duration_in_seconds: 10   # number of second to cache dashboard data
 
     tty: true
 

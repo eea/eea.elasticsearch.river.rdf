@@ -1,40 +1,23 @@
 package org.elasticsearch.app;
 
 public enum HarvestStates {
-    PREPARING{
-        @Override
-        public String toString() {
-            return "Preparing";
-        }
-    },
-    HARVESTING_ENDPOINT{
-        @Override
-        public String toString() {
-            return "Harvesting endpoint";
-        }
-    },
-    CREATING_MODEL{
-        @Override
-        public String toString() {
-            return "Creating model";
-        }
-    },
-    INDEXING{
-        @Override
-        public String toString() {
-            return "Indexing";
-        }
-    },
-    SWITCHING_TO_NEW_INDEX{
-        @Override
-        public String toString() {
-            return "Setting as actual";
-        }
-    },
-    STOPPING{
-        @Override
-        public String toString() {
-            return "Stopping";
-        }
+
+    PREPARING( "Preparing"),
+    HARVESTING_ENDPOINT( "Harvesting endpoint"),
+    CREATING_MODEL( "Creating model"),
+    INDEXING( "Indexing"),
+    SWITCHING_TO_NEW_INDEX( "Setting as actual"),
+    STOPPING( "Stopping");
+
+    private final String message;
+
+    HarvestStates(String message){
+        this.message=message;
     }
+
+    @Override
+    public String toString() {
+        return message;
+    }
+
 }

@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import javax.persistence.*;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Entity
 public class River {
@@ -34,7 +33,7 @@ public class River {
     private boolean automaticScheduling;
 
     @OneToMany(cascade = CascadeType.ALL)
-    private List<UpdateRecord> updateHistory = new ArrayList<>();
+    private final List<UpdateRecord> updateHistory = new ArrayList<>();
 
     @Transient
     private Map<String, Object> riverSettings;
@@ -42,20 +41,13 @@ public class River {
     public River() {
     }
 
-    public River(Map<String, Object> map) {
-        Map<String, Object> config = (Map<String, Object>) map.get("config");
-        Map<String, Object> scheduleMap = (Map<String, Object>) map.get("schedule");
-        String name = ((Map) config.get("index")).get("index").toString();
-        automaticScheduling = (boolean) scheduleMap.get("automatic");
-        this.setSchedule(scheduleMap.get("schedule").toString());
-        this.setRiverName(name);
-        this.setRiverSettings(config);
-    }
-
     public boolean isAutomatic() {
         return automaticScheduling;
     }
 
+    public void setAutomaticScheduling(boolean automaticScheduling) {
+        this.automaticScheduling = automaticScheduling;
+    }
     public String getSchedule() {
         return schedule;
     }

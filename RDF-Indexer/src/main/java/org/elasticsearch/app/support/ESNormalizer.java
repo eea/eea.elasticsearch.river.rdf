@@ -1,9 +1,5 @@
 package org.elasticsearch.app.support;
 
-/*import com.google.common.collect.Maps;
-import org.apache.jena.query.*;
-import org.apache.jena.rdf.model.*;*/
-
 import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.*;
 import org.elasticsearch.app.EEASettings;

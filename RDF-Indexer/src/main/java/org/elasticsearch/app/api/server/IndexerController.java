@@ -1,21 +1,18 @@
 package org.elasticsearch.app.api.server;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.app.Indexer;
-import org.elasticsearch.app.api.server.exceptions.AlreadyRunningException;
-import org.elasticsearch.app.api.server.exceptions.ParsingException;
-import org.elasticsearch.app.api.server.exceptions.ConfigNotFoundException;
-import org.elasticsearch.app.api.server.scheduler.RunningHarvester;
+import org.elasticsearch.app.api.server.dto.ConfigInfoDTO;
 import org.elasticsearch.app.api.server.entities.River;
+import org.elasticsearch.app.api.server.exceptions.AlreadyRunningException;
 import org.elasticsearch.app.api.server.services.ConfigManager;
+import org.elasticsearch.app.api.server.services.DashboardManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
-
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @CrossOrigin("*")
@@ -24,97 +21,69 @@ public class IndexerController {
 
     private final ConfigManager configManager;
 
-    private final Indexer indexer;
+    private final DashboardManager dashboardManager;
 
     @Autowired
-    public IndexerController(ConfigManager configManager, Indexer indexer) {
+    public IndexerController(ConfigManager configManager, Indexer indexer, DashboardManager dashboardManager) {
         this.configManager = configManager;
-        this.indexer = indexer;
-        this.indexer.configManager = this.configManager;
+        this.dashboardManager = dashboardManager;
+        indexer.configManager = this.configManager;
     }
 
     @GetMapping("/configs")
-    public List<Map<String, Object>> getConfigs() {
-        return configManager.getMapOfIndexes();
+    public List<ConfigInfoDTO> getConfigs() {
+        return configManager.getListOfConfigs();
     }
+
     @GetMapping("/kibanaHost")
     public String getKibanaHost() {
-        return indexer.clientKibana.getLowLevelClient().getNodes().get(0).getHost().toString();
+        return dashboardManager.getKibanaHost();
     }
 
     @GetMapping("/running")
     public Map<String, String> runningHarvests() {
-        Map<String, String> running = new HashMap<>();
-        for (RunningHarvester harvester : indexer.getHarvesterPool()) {
-            running.put(harvester.getIndexName(), harvester.getHarvestState().toString());
-        }
-        return running;
+        return configManager.getRunning();
     }
 
-    @GetMapping("/config/{id}")
-    public Map<String, Object> getConfigs(@PathVariable String id) {
+    @GetMapping("/configs/{id}")
+    public Map<String, Object> getConfig(@PathVariable String id) {
         return configManager.getConfig(id);
     }
 
-    @PutMapping(path = "/config", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public String saveConfig(@RequestBody String s) {
-        Map<String, Object> map;
-        try {
-            map = new ObjectMapper().readValue(s, Map.class);
-        } catch (JsonProcessingException e) {
-            throw new ParsingException("Could not parse input JSON");
-        }
-
-        River river = new River(map);
-
-        configManager.save(river);
-
+    @PutMapping(path = "/configs", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public String saveConfig(@RequestBody String jsonConfig) {
+        River river = configManager.save(jsonConfig);
         return river.getRiverName();
     }
 
-    @PostMapping("/config/{id}/start")
+    @PostMapping("/configs/{id}/start")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void startIndex(@PathVariable String id) {
         River river = configManager.getRiver(id);
-        if (Objects.isNull(river)) {
-            throw new ConfigNotFoundException("Settings of index '" + id + "', not found");
-        }
-        if (indexer.getHarvesterPool().stream().anyMatch(h -> h.getIndexName().equals(river.getRiverName()))) {
+        if (configManager.isRunning(river.getRiverName())) {
             throw new AlreadyRunningException("Indexing of index '" + id + "', already running");
         }
-
-        indexer.setRivers(river);
-        indexer.startIndexing();
-
-
+        configManager.startIndexing(river);
     }
 
-    @PostMapping(path = "/configAndIndex", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(path = "/configAndIndex", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public String saveConfigAndStart(@RequestBody String s) {
-        String id = saveConfig(s);
+    public String saveConfigAndStart(@RequestBody String jsonConfig) {
+        String id = saveConfig(jsonConfig);
         startIndex(id);
         return id;
     }
 
-    @DeleteMapping("/config/{id}")
-    public void deleteIndex(@PathVariable String id) {
+    @DeleteMapping("/configs/{id}")
+    public void deleteIndex(@PathVariable String id, @RequestParam(required = false, defaultValue = "false") boolean deleteData) {
         River river = configManager.getRiver(id);
-        if (Objects.isNull(river)) {
-            throw new ConfigNotFoundException("Settings of index '" + id + "', not found");
-        }
-        configManager.delete(river);
+        configManager.delete(river, deleteData);
     }
 
-    @PostMapping("/config/{id}/stop")
+    @PostMapping("/configs/{id}/stop")
     public void stopIndex(@PathVariable String id) {
-        for (RunningHarvester harvester : indexer.getHarvesterPool()) {
-            if (harvester.getIndexName().equals(id)) {
-                harvester.stop();
-                return;
-            }
-        }
-        throw new ConfigNotFoundException("Indexing of index '" + id + "' is not running");
+        configManager.stopIndexing(id);
     }
 
 

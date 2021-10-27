@@ -4,9 +4,11 @@ import org.apache.jena.atlas.json.JSON;
 import org.apache.jena.atlas.json.JsonObject;
 import org.apache.jena.atlas.json.JsonString;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.app.Indexer;
+import org.elasticsearch.app.api.server.exceptions.ConnectionLost;
 import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
 import org.elasticsearch.client.Request;
@@ -31,8 +33,6 @@ public class DashboardManager {
 
     private static final ESLogger logger = Loggers.getLogger(ConfigManager.class);
 
-    private final int cacheDurationInSeconds = 10;
-
     private final Indexer indexer;
 
     private final CacheManager cacheManager;
@@ -44,6 +44,32 @@ public class DashboardManager {
         this.indexer = indexer;
         this.cacheManager = cacheManager;
         this.taskScheduler = taskScheduler;
+    }
+
+    public void deleteIndex(String name) throws ConnectionLost {
+        checkConnection();
+        DeleteIndexRequest deleteIndexRequest = new DeleteIndexRequest(name);
+        try {
+            indexer.clientES.indices().delete(deleteIndexRequest, RequestOptions.DEFAULT);
+        } catch (IOException | ElasticsearchException e) {
+            logger.error(e.getMessage());
+        }
+    }
+
+    public String getKibanaHost() {
+        return indexer.clientKibana.getLowLevelClient().getNodes().get(0).getHost().toString();
+    }
+
+    public void checkConnection() throws ConnectionLost {
+        try {
+            boolean ping = indexer.clientES.ping(RequestOptions.DEFAULT);
+            Response response = indexer.clientKibana.getLowLevelClient().performRequest(new Request("GET", "/api/features"));
+            if (ping && Objects.nonNull(response))
+                return;
+        } catch (IOException | ElasticsearchException e) {
+            logger.error(e.getMessage());
+        }
+        throw new ConnectionLost("Could not connect to ElasticSearch or Kibana");
     }
 
     @Cacheable("dashboardsInfo")
@@ -65,14 +91,14 @@ public class DashboardManager {
                 for (String indexPatternRegex : dashboardsIndexPatterns) {
                     if (!mapIndexDashboards.containsKey(indexPatternRegex))
                         mapIndexDashboards.put(indexPatternRegex, new HashMap<>());
-                    mapIndexDashboards.get(indexPatternRegex).put(dashboard.getFirst().replace("dashboard:",""), dashboard.getSecond());
+                    mapIndexDashboards.get(indexPatternRegex).put(dashboard.getFirst().replace("dashboard:", ""), dashboard.getSecond());
 
                 }
             }
         } catch (IOException | ElasticsearchException e) {
             logger.error(e.getMessage());
         }
-        cacheEvictAfter("dashboardsInfo", cacheDurationInSeconds);
+        cacheEvictAfter("dashboardsInfo", indexer.cacheDurationInSeconds);
         return mapIndexDashboards;
     }
 
@@ -82,5 +108,4 @@ public class DashboardManager {
             logger.debug("Cache '{}' cleared", cacheName);
         }, cacheDurationInSeconds, TimeUnit.SECONDS);
     }
-
 }
