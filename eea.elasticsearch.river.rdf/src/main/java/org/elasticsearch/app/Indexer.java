@@ -55,7 +55,7 @@ public class Indexer {
     private final static String HOST = "localhost";
     private final static int PORT = 9200;
 
-    private String RIVER_INDEX = "eeariver";
+    private String RIVER_INDEX = "eeardf";
 
     public String getRIVER_INDEX() {
         return RIVER_INDEX;
