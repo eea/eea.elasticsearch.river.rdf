@@ -2,7 +2,6 @@ package org.elasticsearch.app.support;
 
 import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.*;
-import javafx.util.Pair;
 import org.elasticsearch.app.EEASettings;
 import org.elasticsearch.app.Harvester;
 import org.elasticsearch.app.debug.JSONMap;
@@ -10,6 +9,24 @@ import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
 
 import java.util.*;
+
+class Pair<X, Y> {
+    public final X value;
+    public final Y language;
+
+    public Pair(X value, Y language) {
+        this.value = value;
+        this.language = language;
+    }
+
+    public Y getLanguage() {
+        return language;
+    }
+
+    public X getValue() {
+        return value;
+    }
+}
 
 public class ESNormalizer {
     private Harvester harvester;
@@ -88,9 +105,10 @@ public class ESNormalizer {
             processProperty(prop);
         }
 
-        addSharedPropertiesToLanguages();
-
         normalizeMissing();
+
+        if (jsonMaps.keySet().size() > 1)
+            addSharedPropertiesToLanguages();
     }
 
     private void addSharedPropertiesToLanguages() {
@@ -99,10 +117,10 @@ public class ESNormalizer {
             if (lang.equals("")) continue;
             HashMap<String, Object> languageJson = jsonMaps.get(lang);
             for (String prop : sharedPropertiesJson.keySet()) {
-                ArrayList<Object> collection = (ArrayList<Object>) sharedPropertiesJson.get(prop);
-                if(languageJson.containsKey(prop))
-                    collection.addAll((Collection<?>) languageJson.get(prop));
-                languageJson.put(prop,collection);
+                ArrayList<Object> temp = (ArrayList<Object>) sharedPropertiesJson.get(prop);
+                if (languageJson.containsKey(prop))
+                    temp.addAll((Collection<?>) languageJson.get(prop));
+                languageJson.put(prop, temp);
             }
         }
         jsonMaps.remove("");
@@ -128,15 +146,16 @@ public class ESNormalizer {
                         res.add(miss_values.toString());
                     }
                 }
-                if (res.size() == 1)
-                    jsonMaps.get("").put(it.getKey(), res.get(0));
-                else
-                    jsonMaps.get("").put(it.getKey(), res);
+//                if (res.size() == 1)
+//                    jsonMaps.get("").put(it.getKey(), res.get(0));
+//                else
+                jsonMaps.get("").put(it.getKey(), res);
             }
         }
     }
 
     private void processProperty(Property prop) {
+
         NodeIterator niter = model.listObjectsOfProperty(rs, prop);
         String property = prop.toString();
         //todo: optimize
@@ -150,16 +169,16 @@ public class ESNormalizer {
             RDFNode node = niter.next();
             currValue = getStringForResult(node, getPropLabel);
             //todo: here
-            lang = currValue.getValue();
+            lang = currValue.getLanguage();
             rdfLanguages.add(lang);
             if (!jsonMaps.keySet().contains(lang))
                 jsonMaps.put(lang, new JSONMap());
             if (!lang.equals(""))
                 jsonMaps.get(lang).put("language", lang);
 
-            String shortValue = currValue.getKey();
+            String shortValue = currValue.getValue();
 
-            int currLen = currValue.getKey().length();
+            int currLen = currValue.getValue().length();
             // Unquote string
             /*if (currLen > 1)
                 shortValue = currValue.substring(1, currLen - 1);*/
@@ -180,8 +199,8 @@ public class ESNormalizer {
                     results.add(normalizeObj.get(shortValue));
                 }
             } else {
-                if (!results.contains(currValue.getKey())) {
-                    results.add(currValue.getKey());
+                if (!results.contains(currValue.getValue())) {
+                    results.add(currValue.getValue());
                 }
             }
 
@@ -202,7 +221,7 @@ public class ESNormalizer {
 //                                if (results.size() == 1)
 //                                    jsonMaps.get(lang).put(property, results.get(0));
 //                                else
-                                    jsonMaps.get(lang).put(property, results);
+                                jsonMaps.get(lang).put(property, results);
                             } else {
                                 jsonMaps.get(lang).put(property, results);
                             }
@@ -210,7 +229,7 @@ public class ESNormalizer {
 //                            if (results.size() == 1)
 //                                jsonMaps.get(lang).put(property, results.get(0));
 //                            else
-                                jsonMaps.get(lang).put(property, results);
+                            jsonMaps.get(lang).put(property, results);
                         }
                     } else {
 
@@ -226,7 +245,7 @@ public class ESNormalizer {
 //                                        if (results.size() == 1)
 //                                            jsonMaps.get(lang).put(norm_prop, results.get(0));
 //                                        else
-                                            jsonMaps.get(lang).put(norm_prop, results);
+                                        jsonMaps.get(lang).put(norm_prop, results);
                                     } else {
                                         results.add(temp);
                                         jsonMaps.get(lang).put(norm_prop, results);
@@ -235,7 +254,7 @@ public class ESNormalizer {
 //                                    if (results.size() == 1)
 //                                        jsonMaps.get(lang).put(norm_prop, results.get(0));
 //                                    else
-                                        jsonMaps.get(lang).put(norm_prop, results);
+                                    jsonMaps.get(lang).put(norm_prop, results);
                                 }
                             }
 
@@ -250,12 +269,12 @@ public class ESNormalizer {
 //                                    if (results.size() == 1)
 //                                        jsonMaps.get(lang).put(property, results.get(0));
 //                                    else
-                                        jsonMaps.get(lang).put(property, results.toArray());
+                                    jsonMaps.get(lang).put(property, results.toArray());
                                 } else {
 //                                    if (results.size() == 1)
 //                                        jsonMaps.get(lang).put(property, results.get(0));
 //                                    else
-                                        jsonMaps.get(lang).put(property, results);
+                                    jsonMaps.get(lang).put(property, results);
 
                                 }
                                 //jsonMaps.get(property).addAll(results);
@@ -263,7 +282,7 @@ public class ESNormalizer {
 //                                if (results.size() == 1)
 //                                    jsonMaps.get(lang).put(property, results.get(0));
 //                                else
-                                    jsonMaps.get(lang).put(property, results);
+                                jsonMaps.get(lang).put(property, results);
 
                             }
                             logger.error("Normalizer error:", norm_property);
@@ -286,7 +305,7 @@ public class ESNormalizer {
 //            if (results.size() == 1)
 //                jsonMaps.get("").put("about", results.get(0));
 //            else
-                jsonMaps.get("").put("about", results);
+            jsonMaps.get("").put("about", results);
 
         }
     }
@@ -312,7 +331,7 @@ public class ESNormalizer {
      */
     private Pair<String, String> getStringForResult(RDFNode node, boolean getNodeLabel) {
         String result = "";
-        Pair<String, String> res = new Pair<>(null, null);
+        Pair<String, String> res = new Pair<>("", "");
         boolean quote = false;
 
         if (node.isLiteral()) {
@@ -346,7 +365,7 @@ public class ESNormalizer {
             if (Objects.isNull(result))
                 result = node.asResource().toString();
             quote = true;
-            res = new Pair<>(result, null);
+            res = new Pair<>(result, "");
         }
         //TODO: ?
         if (quote) {

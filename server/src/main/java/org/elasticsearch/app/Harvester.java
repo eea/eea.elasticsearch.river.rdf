@@ -1764,15 +1764,10 @@ public class Harvester implements Runnable, RunningHarvester {
         }
 
         ResIterator resIt = model.listSubjects();
-
         int jsonMapCounter = 0;
         while (resIt.hasNext()) {
             if (stopped) return null;
             Resource rs = resIt.nextResource();
-
-            //TODO: delete if
-            if (rs.asNode().toString().equals("https://slovník.gov.cz/generický/eu-directive-1999-37-ec/pojem/prochází-technickou-prohlídkou"))
-                System.out.println("here");
 
             long startJsonMap = System.currentTimeMillis();
 

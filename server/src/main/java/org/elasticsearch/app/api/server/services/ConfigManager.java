@@ -2,6 +2,11 @@ package org.elasticsearch.app.api.server.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
+import org.elasticsearch.action.admin.indices.shrink.ResizeRequest;
+import org.elasticsearch.action.admin.indices.shrink.ResizeResponse;
+import org.elasticsearch.action.admin.indices.shrink.ResizeType;
 import org.elasticsearch.app.Indexer;
 import org.elasticsearch.app.api.server.dao.RiverDAO;
 import org.elasticsearch.app.api.server.dto.ConfigInfoDTO;
@@ -14,12 +19,15 @@ import org.elasticsearch.app.api.server.scheduler.RunningHarvester;
 import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
 import org.elasticsearch.app.api.server.entities.River;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.common.settings.Settings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
@@ -188,5 +196,31 @@ public class ConfigManager {
 
     private String convertPatternToRegex(String indexPatternRegex) {
         return "^" + indexPatternRegex.replace(".", "\\.").replace("*", ".*");
+    }
+
+    public void cloneIndexes(String source, String target) {
+        UpdateSettingsRequest settingsRequest = new UpdateSettingsRequest(source);
+        Settings settings = Settings.builder().put("index.blocks.write", true).build();
+        settingsRequest.settings(settings);
+        try {
+            indexer.clientES.indices().putSettings(settingsRequest, RequestOptions.DEFAULT);
+        } catch (ElasticsearchException | IOException e) {
+            logger.error("Could not set index.blocks.write=true on index " + source, e);
+            return;
+        }
+        ResizeRequest cloneRequest = new ResizeRequest(target, source);
+        cloneRequest.setResizeType(ResizeType.CLONE);
+        try {
+            ResizeResponse clone = indexer.clientES.indices().clone(cloneRequest, RequestOptions.DEFAULT);
+            if (!clone.isAcknowledged() || !clone.isShardsAcknowledged()) {
+                logger.error("Cloning index {} to {} was not successful:\n\t\t\t\t\t\t\t\t\t\t\t\t\t" +
+                                "Acknowledged:{}\n\t\t\t\t\t\t\t\t\t\t\t\t\tShardsAcknowledged:{}"
+                        , source, target, clone.isAcknowledged(), clone.isShardsAcknowledged());
+                return;
+            }
+        } catch (ElasticsearchException | IOException e) {
+            logger.error("Could not clone index {} to {}", source, target, e);
+            return;
+        }
     }
 }
