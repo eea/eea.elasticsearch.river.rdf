@@ -26,8 +26,9 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - esData:/usr/share/elasticsearch/data
+      - esData/data:/usr/share/elasticsearch/data
       - certs:$CERTS_DIR
+      - esData/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
     networks:
       - elastic
     healthcheck:
@@ -47,13 +48,14 @@ services:
       ELASTICSEARCH_URL: https://es01:9200
       ELASTICSEARCH_HOSTS: https://es01:9200
       ELASTICSEARCH_USERNAME: kibana_system
-      ELASTICSEARCH_PASSWORD: GRpvJoefkW2ReV08uG6M
+      ELASTICSEARCH_PASSWORD: JUzARnqpaisk1Y1eQifU
       ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES: $CERTS_DIR/ca/ca.crt
       SERVER_SSL_ENABLED: "true"
       SERVER_SSL_KEY: $CERTS_DIR/kibana01/kibana01.key
       SERVER_SSL_CERTIFICATE: $CERTS_DIR/kibana01/kibana01.crt
     volumes:
       - certs:$CERTS_DIR
+      - kibanaConfig:/usr/share/kibana/config
     networks:
       - elastic
 
@@ -96,6 +98,8 @@ services:
 
 volumes:
   esData:
+    driver: local
+  kibanaConfig:
     driver: local
   certs:
     driver: local
