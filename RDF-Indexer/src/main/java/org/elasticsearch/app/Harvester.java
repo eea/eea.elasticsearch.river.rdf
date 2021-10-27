@@ -46,7 +46,7 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.support.replication.ReplicationResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
-import org.elasticsearch.app.api.server.RunningHarvester;
+import org.elasticsearch.app.api.server.scheduler.RunningHarvester;
 import org.elasticsearch.app.logging.ESLogger;
 
 import org.elasticsearch.app.logging.Loggers;
@@ -640,7 +640,7 @@ public class Harvester implements Runnable, RunningHarvester {
         indexer.harvesterPoolAdd(this);
 
         if (checkRiverNotExists()) {
-            SearchRequest searchRequest = new SearchRequest(indexer.getRIVER_INDEX());
+            SearchRequest searchRequest = new SearchRequest(indexer.getRiverIndex());
             SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
             searchSourceBuilder.query(QueryBuilders.matchAllQuery());
             searchRequest.source(searchSourceBuilder);
@@ -1395,7 +1395,7 @@ public class Harvester implements Runnable, RunningHarvester {
 
     private boolean checkRiverNotExists() {
         if (indexer.isUsingAPI()) return false;
-        GetRequest getRequest = new GetRequest(indexer.getRIVER_INDEX(), "river", riverName);
+        GetRequest getRequest = new GetRequest(indexer.getRiverIndex(), "river", riverName);
         try {
             GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
             if (getResponse.isExists()) {

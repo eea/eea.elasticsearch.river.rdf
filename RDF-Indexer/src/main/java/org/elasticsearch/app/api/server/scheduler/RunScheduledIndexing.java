@@ -1,4 +1,4 @@
-package org.elasticsearch.app.api.server;
+package org.elasticsearch.app.api.server.scheduler;
 
 import org.elasticsearch.app.Indexer;
 import org.elasticsearch.app.river.River;

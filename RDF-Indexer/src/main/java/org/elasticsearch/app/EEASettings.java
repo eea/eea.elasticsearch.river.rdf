@@ -9,6 +9,12 @@ import java.util.List;
  */
 public abstract class EEASettings {
 
+	public final static String USER = "";
+	public final static String PASS = "";
+	public final static String ELASTICSEARCH_HOST = "localhost";
+	public final static int ELASTICSEARCH_PORT = 9200;
+	public final static String KIBANA_HOST = "localhost";
+	public final static int KIBANA_PORT = 5601;
 	public final static String DEFAULT_INDEX_NAME = "rdfdata";
 	public final static String DEFAULT_TYPE_NAME = "resource";
 	public final static int DEFAULT_BULK_SIZE = 30;

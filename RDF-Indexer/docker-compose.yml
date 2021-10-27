@@ -22,6 +22,10 @@ services:
 
       elastic_port: '9200'            # the elastic host port
 
+      kibana_host: 192.168.0.101      # the kibana host ip
+
+      kibana_port: '5601'             # the kibana host port
+
       elastic_user: 'user'            # the elastic username
 
       elastic_pass: 'pass'            # the elastic password

@@ -16,7 +16,7 @@ import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 
 import org.elasticsearch.action.search.*;
-import org.elasticsearch.app.api.server.RunningHarvester;
+import org.elasticsearch.app.api.server.scheduler.RunningHarvester;
 import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
 import org.elasticsearch.app.river.River;
@@ -36,16 +36,8 @@ import java.util.concurrent.TimeUnit;
 
 
 public class Indexer {
-    private final static String USER = "user_rw";
-    private final static String PASS = "rw_pass";
-    private final static String HOST = "localhost";
-    private final static int PORT = 9200;
 
-    private String RIVER_INDEX = "eeardf";
-
-    public String getRIVER_INDEX() {
-        return RIVER_INDEX;
-    }
+    private String riverIndex = "eeardf";
 
     private boolean MULTITHREADING_ACTIVE = true;
     private int THREADS = 4;
@@ -63,7 +55,8 @@ public class Indexer {
 
     private static final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
-    public RestHighLevelClient client;
+    public final RestHighLevelClient clientES;
+    public final RestHighLevelClient clientKibana;
 
     private static ExecutorService executorService;
 
@@ -79,7 +72,7 @@ public class Indexer {
 
         if (indexer.rivers.size() == 0) {
             logger.info("No rivers detected");
-            logger.info("No rivers added in " + indexer.RIVER_INDEX + " index.Stopping...");
+            logger.info("No rivers added in " + indexer.riverIndex + " index.Stopping...");
             indexer.close();
         }
 
@@ -102,8 +95,8 @@ public class Indexer {
         for (River river : rivers) {
             Harvester h = new Harvester();
 
-            h.client(client).riverName(river.getRiverName())
-                    .riverIndex(RIVER_INDEX)
+            h.client(clientES).riverName(river.getRiverName())
+                    .riverIndex(riverIndex)
                     .indexer(this);
             this.addHarvesterSettings(h, river.getRiverSettings());
 
@@ -121,8 +114,8 @@ public class Indexer {
             Indexer.executorService.awaitTermination(1, TimeUnit.DAYS);
 
             try {
-                DeleteIndexRequest request = new DeleteIndexRequest(RIVER_INDEX);
-                client.indices().delete(request, RequestOptions.DEFAULT);
+                DeleteIndexRequest request = new DeleteIndexRequest(riverIndex);
+                clientES.indices().delete(request, RequestOptions.DEFAULT);
                 logger.info("Deleting river index!!!");
 
             } catch (ElasticsearchException exception) {
@@ -152,7 +145,7 @@ public class Indexer {
                 Boolean switchA = (Boolean) ind.get("switchAlias");
 
                 if (switchA != null && switchA) {
-                    RestClient lowclient = client.getLowLevelClient();
+                    RestClient lowclient = clientES.getLowLevelClient();
 
                     switchAliases(lowclient, this);
                 }
@@ -175,6 +168,10 @@ public class Indexer {
 
     public boolean isUsingAPI() {
         return usingAPI;
+    }
+
+    public String getRiverIndex() {
+        return riverIndex;
     }
 
     public void setUsingAPI(boolean usingAPI) {
@@ -287,12 +284,15 @@ public class Indexer {
         Map<String, String> env = System.getenv();
         this.envMap = env;
 
-        String host = (env.get("elastic_host") != null) ? env.get("elastic_host") : HOST;
+        String hostES = (env.get("elastic_host") != null) ? env.get("elastic_host") : EEASettings.ELASTICSEARCH_HOST;
+        int portES = (env.get("elastic_port") != null) ? Integer.parseInt(env.get("elastic_port")) : EEASettings.ELASTICSEARCH_PORT;
 
-        int port = (env.get("elastic_port") != null) ? Integer.parseInt(env.get("elastic_port")) : PORT;
-        String user = (env.get("elastic_user") != null) ? env.get("elastic_user") : USER;
-        String pass = (env.get("elastic_pass") != null) ? env.get("elastic_pass") : PASS;
-        this.RIVER_INDEX = (env.get("river_index") != null) ? env.get("river_index") : this.RIVER_INDEX;
+        String hostKibana = (env.get("kibana_host") != null) ? env.get("kibana_host") : EEASettings.KIBANA_HOST;
+        int portKibana = (env.get("kibana_port") != null) ? Integer.parseInt(env.get("kibana_port")) : EEASettings.KIBANA_PORT;
+
+        String user = (env.get("elastic_user") != null) ? env.get("elastic_user") : EEASettings.USER;
+        String pass = (env.get("elastic_pass") != null) ? env.get("elastic_pass") : EEASettings.PASS;
+        this.riverIndex = (env.get("river_index") != null) ? env.get("river_index") : this.riverIndex;
         this.MULTITHREADING_ACTIVE = (env.get("indexer_multithreading") != null) ?
                 Boolean.parseBoolean(env.get("indexer_multithreading")) : this.MULTITHREADING_ACTIVE;
         this.THREADS = (env.get("threads") != null) ? Integer.parseInt(env.get("threads")) : this.THREADS;
@@ -301,28 +301,34 @@ public class Indexer {
         credentialsProvider.setCredentials(AuthScope.ANY,
                 new UsernamePasswordCredentials(user, pass));
 
-        client = new RestHighLevelClient(
-                RestClient.builder(
-                        new HttpHost(host, port, "http")
-                ).setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider))
-                        .setFailureListener(new RestClient.FailureListener() {
-                            @Override
-                            public void onFailure(Node node) {
-                                super.onFailure(node);
-                                logger.error("Connection failure: [{}]", host);
-                            }
-                        })
-        );
+        clientES = getRestClient(hostES, portES, "http");
+        clientKibana = getRestClient(hostKibana, portKibana, "http");
 
         logger.debug("Username: " + user);
         logger.debug("Password: " + pass);
-        logger.debug("HOST: " + host);
-        logger.debug("PORT: " + port);
-        logger.debug("RIVER INDEX: " + this.RIVER_INDEX);
+        logger.debug("HOST: " + hostES);
+        logger.debug("PORT: " + portES);
+        logger.debug("RIVER INDEX: " + this.riverIndex);
         logger.debug("MULTITHREADING_ACTIVE: " + this.MULTITHREADING_ACTIVE);
         logger.debug("THREADS: " + this.THREADS);
         logger.info("LOG_LEVEL: " + this.loglevel);
         logger.debug("DOCUMENT BULK: ", Integer.toString(EEASettings.DEFAULT_BULK_REQ));
+    }
+
+
+    private RestHighLevelClient getRestClient(String host, int port, String protocol) {
+        return new RestHighLevelClient(
+                RestClient.builder(
+                        new HttpHost(host, port, protocol)
+                ).setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(new BasicCredentialsProvider()))
+                        .setFailureListener(new RestClient.FailureListener() {
+                            @Override
+                            public void onFailure(Node node) {
+                                super.onFailure(node);
+                                logger.error("Connection failure: [{}]", "localhost");
+                            }
+                        })
+        );
     }
 
     public void getRivers() {
@@ -335,14 +341,14 @@ public class Indexer {
         ArrayList<SearchHit> searchHitsA = new ArrayList<>();
 
         final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(1L));
-        SearchRequest searchRequest = new SearchRequest(this.RIVER_INDEX);
+        SearchRequest searchRequest = new SearchRequest(this.riverIndex);
         searchRequest.scroll(scroll);
 
         SearchResponse searchResponse = null;
         try {
             logger.info("{}", searchRequest);
-            searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
-            logger.info("River index {} found", this.RIVER_INDEX);
+            searchResponse = clientES.search(searchRequest, RequestOptions.DEFAULT);
+            logger.info("River index {} found", this.riverIndex);
             String scrollId = searchResponse.getScrollId();
             SearchHit[] searchHits = searchResponse.getHits().getHits();
 
@@ -352,7 +358,7 @@ public class Indexer {
             while (searchHits != null && searchHits.length > 0) {
                 SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
                 scrollRequest.scroll(scroll);
-                searchResponse = client.searchScroll(scrollRequest, RequestOptions.DEFAULT);
+                searchResponse = clientES.searchScroll(scrollRequest, RequestOptions.DEFAULT);
                 scrollId = searchResponse.getScrollId();
                 searchHits = searchResponse.getHits().getHits();
 
@@ -362,14 +368,14 @@ public class Indexer {
 
             ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
             clearScrollRequest.addScrollId(scrollId);
-            ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+            ClearScrollResponse clearScrollResponse = clientES.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
             boolean succeeded = clearScrollResponse.isSucceeded();
         } catch (IOException e) {
-            logger.info("River index " + this.RIVER_INDEX + " not found");
+            logger.info("River index " + this.riverIndex + " not found");
             System.exit(0);
         } catch (ElasticsearchStatusException ex) {
             logger.info(ex.toString());
-            logger.info("River index " + this.RIVER_INDEX + " not found");
+            logger.info("River index " + this.riverIndex + " not found");
             System.exit(0);
         }
 

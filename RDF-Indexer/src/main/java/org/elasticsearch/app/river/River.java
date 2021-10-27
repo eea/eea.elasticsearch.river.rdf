@@ -129,4 +129,11 @@ public class River {
     }
 
 
+    public String  getLastUpdate() {
+        return "TODO: in river";
+    }
+
+    public Object getDuration() {
+        return "TODO: in river";
+    }
 }

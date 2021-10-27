@@ -6,16 +6,14 @@ import org.elasticsearch.app.Indexer;
 import org.elasticsearch.app.api.server.exceptions.AlreadyRunningException;
 import org.elasticsearch.app.api.server.exceptions.ParsingException;
 import org.elasticsearch.app.api.server.exceptions.SettingNotFoundException;
+import org.elasticsearch.app.api.server.scheduler.RunningHarvester;
 import org.elasticsearch.app.river.River;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 
 @RestController
@@ -33,8 +31,8 @@ public class IndexerController {
     }
 
     @GetMapping("/config")
-    public Map<String, Object> getConfigs() {
-        return configManager.getListOfConfigs();
+    public List<Map<String, Object>> getConfigs() {
+        return configManager.getMapOfIndexes();
     }
 
     @GetMapping("/running")
@@ -48,7 +46,7 @@ public class IndexerController {
     }
 
     @PutMapping(path = "/config", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public String saveConfig(@RequestBody String s)  {
+    public String saveConfig(@RequestBody String s) {
         Map<String, Object> map = null;
         try {
             map = new ObjectMapper().readValue(s, Map.class);
