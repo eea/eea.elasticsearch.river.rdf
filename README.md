@@ -1,7 +1,5 @@
 ## Instalation
 
-**Execute in directory *RDF-Indexer* .**
-
 ### 1. Pull images for Elasticsearch and Kibana
 
 Execute folowing commands to pull Elasticsearch and Kibana images to docker:
@@ -11,11 +9,11 @@ Execute folowing commands to pull Elasticsearch and Kibana images to docker:
 
 ### 2.  Building server application
 	
-Copy production build of frontend application ([link](https://gitlab.fel.cvut.cz/svagrmic/bp-application)) to *RDF-Indexer/frontend/build* 
+Copy production build of frontend application ([link](https://gitlab.fel.cvut.cz/svagrmic/bp-application)) to *frontend/build* 
 
 Build server aplication:
 
-	    mvn install
+	    mvn clean install
 
 ### 3. Create docker containers
 

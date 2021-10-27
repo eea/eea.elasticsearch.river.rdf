@@ -670,6 +670,7 @@ public class Harvester implements Runnable, RunningHarvester {
             this.close();
         }
 
+        try {
         while (!closed && !synced) {
             boolean success;
 
@@ -692,61 +693,64 @@ public class Harvester implements Runnable, RunningHarvester {
                     break;
                 }
             }
+                setHarvestState(HarvestStates.HARVESTING_ENDPOINT);
+                if (indexAll && !synced)
+                    success = runIndexAll();
+                else
+                    success = runSync();
 
-            setHarvestState(HarvestStates.HARVESTING_ENDPOINT);
-            if (indexAll && !synced)
-                success = runIndexAll();
-            else
-                success = runSync();
+                //TODO: async ?
+                if (success && !stopped) {
+                    updateRecord.setFinishState(UpdateStates.SUCCESS);
+                    setLastUpdate(new Date(startTime));
+                    renameIndex();
 
-            //TODO: async ?
-            if (success && !stopped) {
-                updateRecord.setFinishState(UpdateStates.SUCCESS);
-                setLastUpdate(new Date(startTime));
-                renameIndex();
+                    synced = true;
 
-                synced = true;
-
-                Harvester that = this;
-                new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-                long duration = System.currentTimeMillis() - startTime;
-                String time = duration % 1000 + "ms";
-                if ((duration /= 1000) > 0)
-                    time = duration % 60 + "s " + time;
-                if ((duration /= 60) > 0)
-                    time = duration % 60 + "m " + time;
-                if ((duration /= 60) > 0)
-                    time = duration % 24 + "h " + time;
-                if ((duration /= 24) > 0)
-                    time = duration + "days " + time;
-                logger.info("===============================================================================");
-                logger.info("TOTAL TIME:  {}", time);
-                logger.info("===============================================================================");
+                    Harvester that = this;
+                    new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                    long duration = System.currentTimeMillis() - startTime;
+                    String time = duration % 1000 + "ms";
+                    if ((duration /= 1000) > 0)
+                        time = duration % 60 + "s " + time;
+                    if ((duration /= 60) > 0)
+                        time = duration % 60 + "m " + time;
+                    if ((duration /= 60) > 0)
+                        time = duration % 24 + "h " + time;
+                    if ((duration /= 24) > 0)
+                        time = duration + "days " + time;
+                    logger.info("===============================================================================");
+                    logger.info("TOTAL TIME:  {}", time);
+                    logger.info("===============================================================================");
 
 
-                if (!indexer.isUsingAPI()) {
-                    // deleting river cluster from riverIndex
-                    DeleteRequest deleteRequest = new DeleteRequest(riverIndex, "river", riverName);
-                    client.deleteAsync(deleteRequest, RequestOptions.DEFAULT, new ActionListener<DeleteResponse>() {
-                        @Override
-                        public void onResponse(DeleteResponse deleteResponse) {
-                            logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
-                            //setClusterStatus("synced");
-                            that.close();
-                            indexer.closeHarvester(that);
-                        }
+                    if (!indexer.isUsingAPI()) {
+                        // deleting river cluster from riverIndex
+                        DeleteRequest deleteRequest = new DeleteRequest(riverIndex, "river", riverName);
+                        client.deleteAsync(deleteRequest, RequestOptions.DEFAULT, new ActionListener<DeleteResponse>() {
+                            @Override
+                            public void onResponse(DeleteResponse deleteResponse) {
+                                logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
+                                //setClusterStatus("synced");
+                                that.close();
+                                indexer.closeHarvester(that);
+                            }
 
-                        @Override
-                        public void onFailure(Exception e) {
-                            logger.error("Could not delete river :" + riverIndex + "/" + riverName);
-                            //setClusterStatus("synced");
-                            logger.error("Reason: [{}]", e.getMessage());
-                            that.close();
-                            indexer.closeHarvester(that);
-                        }
-                    });
+                            @Override
+                            public void onFailure(Exception e) {
+                                logger.error("Could not delete river :" + riverIndex + "/" + riverName);
+                                //setClusterStatus("synced");
+                                logger.error("Reason: [{}]", e.getMessage());
+                                that.close();
+                                indexer.closeHarvester(that);
+                            }
+                        });
+                    }
                 }
             }
+
+        }catch (Exception e){
+            logger.error(e.getMessage());
         }
 
         if (stopped) {
@@ -755,7 +759,7 @@ public class Harvester implements Runnable, RunningHarvester {
         }
 
         if (indexer.isUsingAPI() && Objects.nonNull(indexer.configManager)) {
-            if(!updateRecord.getFinishState().equals(UpdateStates.STOPPED))
+            if (!updateRecord.getFinishState().equals(UpdateStates.STOPPED))
                 updateRecord.setLastUpdateDuration(System.currentTimeMillis() - startTime);
             updateRecord.setLastUpdateStartDate(new Date(System.currentTimeMillis()));
             indexer.configManager.addUpdateRecordToRiver(indexName, updateRecord);
@@ -1567,6 +1571,7 @@ public class Harvester implements Runnable, RunningHarvester {
      */
     private void harvest(QueryExecution qExec) {
         boolean retry;
+        int retryCount = 0;
         do {
             retry = false;
             try {
@@ -1580,7 +1585,7 @@ public class Harvester implements Runnable, RunningHarvester {
                     addModelToES(model, bulkRequest, true);
                 }
             } catch (QueryExceptionHTTP e) {
-                if (e.getResponseCode() >= 500) {
+                if (retryCount++ < 5 && e.getResponseCode() >= 500) {
                     retry = true;
                     logger.error("Encountered an internal server error "
                             + "while harvesting. Retrying!");
@@ -1623,6 +1628,8 @@ public class Harvester implements Runnable, RunningHarvester {
             qExec.setTimeout(-1);
             try {
                 harvest(qExec);
+            } catch (QueryExceptionHTTP e) {
+                throw e;
             } catch (Exception e) {
                 logger.error("Exception [{}] occurred while harvesting", e.getLocalizedMessage());
             } finally {
