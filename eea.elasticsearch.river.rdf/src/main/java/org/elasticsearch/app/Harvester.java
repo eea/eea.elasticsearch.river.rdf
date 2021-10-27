@@ -18,7 +18,6 @@ import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.sparql.ARQException;
 import com.hp.hpl.jena.sparql.engine.http.QueryExceptionHTTP;
-import org.apache.http.HttpEntity;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFLanguages;
@@ -28,7 +27,10 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.shrink.ResizeRequest;
+import org.elasticsearch.action.admin.indices.shrink.ResizeResponse;
 import org.elasticsearch.action.admin.indices.shrink.ResizeType;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -39,21 +41,22 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.*;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.support.replication.ReplicationResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.app.ApiSpringServer.RunningHarvester;
 import org.elasticsearch.app.logging.ESLogger;
 
 import org.elasticsearch.app.logging.Loggers;
 
 
 import org.elasticsearch.app.support.ESNormalizer;
-import org.elasticsearch.client.Request;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -61,7 +64,6 @@ import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.springframework.http.RequestEntity;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -76,10 +78,11 @@ import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 /**
  * @author iulia
  */
-public class Harvester implements Runnable {
+public class Harvester implements Runnable, RunningHarvester {
     private static boolean DEBUG_TIME = false;
 
     private boolean synced = false;
+
 
     private enum QueryType {
         SELECT,
@@ -93,6 +96,7 @@ public class Harvester implements Runnable {
 
     private Indexer indexer;
 
+    private boolean stopped = false;
 
     private String rdfEndpoint = "";
 
@@ -168,7 +172,7 @@ public class Harvester implements Runnable {
         this.indexer = indexer;
     }
 
-    private HashMap<String, String> uriLabelCache = new HashMap<String, String>();
+    private HashMap<String, String> uriLabelCache = new HashMap<>();
 
     public HashMap<String, String> getUriLabelCache() {
         return this.uriLabelCache;
@@ -592,7 +596,7 @@ public class Harvester implements Runnable {
             }
         } catch (IOException e) {
             logger.error("Bulk error: [{}]", e.getMessage());
-            e.printStackTrace();
+            logger.error(e.getMessage());
         }
 
     }
@@ -606,7 +610,7 @@ public class Harvester implements Runnable {
 
         //TODO: move to async ?
         try {
-            GetResponse getResponse = client.get(getRequest,RequestOptions.DEFAULT);
+            GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
 
             if (!getResponse.isSourceEmpty()) {
                 Integer updated_at = (Integer) getResponse.getSource().get("updated_at");
@@ -623,8 +627,8 @@ public class Harvester implements Runnable {
 
     public void run() {
         logger.setLevel(this.indexer.loglevel);
-        indexer.threadPoolAdd(Thread.currentThread());
         Thread.currentThread().setName(riverName);
+        indexer.harvesterPoolAdd(this);
 
         if (checkRiverNotExists()) {
             SearchRequest searchRequest = new SearchRequest(indexer.getRIVER_INDEX());
@@ -633,7 +637,7 @@ public class Harvester implements Runnable {
             searchRequest.source(searchSourceBuilder);
 
             try {
-                SearchResponse searchResponse = client.search(searchRequest,RequestOptions.DEFAULT);
+                SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
                 SearchHits hits = searchResponse.getHits();
                 long totalHits = hits.getTotalHits().value;
                 if (totalHits == 0) {
@@ -641,35 +645,39 @@ public class Harvester implements Runnable {
                 }
             } catch (IOException e) {
                 indexer.close();
-                e.printStackTrace();
+                logger.error(e.getMessage());
             }
 
             this.close();
         }
 
-        while (!this.closed && !synced) {
+        while (!closed && !synced) {
             long currentTime = System.currentTimeMillis();
             boolean success;
 
-            /*SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-            Long ts = Long.valueOf(0);
-            try {
-                ts = sdf.parse(startTime).getTime() / 1000;
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }*/
-            //TODO: WTF not working with first indexing... Does not give any error
             if (startTime.isEmpty()) startTime = getLastUpdate();
 
-            if ( startTime.isEmpty() ) startTime = getLastUpdate();
+            //delete leftover temporary index if exists
+            try {
+                AcknowledgedResponse delete = client.indices().delete(new DeleteIndexRequest(indexName + indexPostfix), RequestOptions.DEFAULT);
+                if (delete.isAcknowledged()) logger.warn("Deleted {} before indexing", indexName + indexPostfix);
+            } catch (IOException e) {
+                logger.error("Could not delete index {} before indexing", indexName + indexPostfix);
+                return;
+            } catch (ElasticsearchException e) {
+                if (e.status() != RestStatus.NOT_FOUND) {
+                    logger.error("Could not delete index {} before indexing", indexName + indexPostfix);
+                    return;
+                }
+            }
 
-			if (indexAll && !synced)
+            if (indexAll && !synced)
                 success = runIndexAll();
             else
                 success = runSync();
 
             //TODO: async ?
-            if (success) {
+            if (success && !stopped) {
                 setLastUpdate(new Date(currentTime));
                 renameIndex();
 
@@ -679,14 +687,24 @@ public class Harvester implements Runnable {
                 DeleteRequest deleteRequest = new DeleteRequest(riverIndex, "river", riverName);
 
                 Harvester that = this;
-
+                new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                long duration = System.currentTimeMillis() - currentTime;
+                String time = duration % 1000 + "ms";
+                if ((duration /= 1000) > 0)
+                    time = duration % 60 + "s " + time;
+                if ((duration /= 60) > 0)
+                    time = duration % 60 + "m " + time;
+                if ((duration /= 60) > 0)
+                    time = duration % 24 + "h " + time;
+                if ((duration /= 24) > 0)
+                    time = duration + "days " + time;
                 logger.info("===============================================================================");
-                logger.info("TOTAL TIME:  {} ms", System.currentTimeMillis() - currentTime);
+                logger.info("TOTAL TIME:  {}", time);
                 logger.info("===============================================================================");
 
 
                 if (!indexer.isUsingAPI())
-                    client.deleteAsync(deleteRequest,RequestOptions.DEFAULT, new ActionListener<DeleteResponse>() {
+                    client.deleteAsync(deleteRequest, RequestOptions.DEFAULT, new ActionListener<DeleteResponse>() {
                         @Override
                         public void onResponse(DeleteResponse deleteResponse) {
                             logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
@@ -707,11 +725,16 @@ public class Harvester implements Runnable {
 
             }
         }
-        indexer.threadPoolRemove(Thread.currentThread());
 
-        if (this.closed) {
-            logger.info("Thread closed");
+        if (stopped) {
+            rollback();
+            logger.info("Stopped {} harvest", indexName);
         }
+
+        indexer.harvesterPoolRemove(this);
+
+
+        logger.info("Thread closed");
 		/* Any code after this step would not be executed as
 		   the master will interrupt the harvester thread after
 		   deleting the _river.
@@ -719,14 +742,59 @@ public class Harvester implements Runnable {
     }
 
     private void renameIndex() {
-        ResizeRequest request = new ResizeRequest(indexName + indexPostfix, indexName);
-        request.setResizeType(ResizeType.CLONE);
+        logger.info("Moving index from {} to {}", indexName + indexPostfix, indexName);
+        //Setting as cloneable
+        UpdateSettingsRequest settingsRequest = new UpdateSettingsRequest(indexName + indexPostfix);
+        Settings settings = Settings.builder().put("index.blocks.write", true).build();
+        settingsRequest.settings(settings);
         try {
-            client.indices().clone(request, RequestOptions.DEFAULT);
-        } catch (IOException e) {
-            e.printStackTrace();
+            client.indices().putSettings(settingsRequest, RequestOptions.DEFAULT);
+        } catch (ElasticsearchException | IOException e) {
+            logger.error("Could not set index.blocks.write=true on index " + indexName + indexPostfix, e);
+            return;
         }
 
+        //Delete old index
+        DeleteIndexRequest deleteRequest = new DeleteIndexRequest(indexName);
+        try {
+            client.indices().delete(deleteRequest, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            logger.error("Could not delete index " + indexName, e);
+        } catch (ElasticsearchException e) {
+            if (e.status() != RestStatus.NOT_FOUND)
+                logger.error("Could not delete index " + indexName, e);
+        }
+
+        //Cloning
+        ResizeRequest cloneRequest = new ResizeRequest(indexName, indexName + indexPostfix);
+        cloneRequest.setResizeType(ResizeType.CLONE);
+        try {
+            ResizeResponse clone = client.indices().clone(cloneRequest, RequestOptions.DEFAULT);
+            if (!clone.isAcknowledged() || !clone.isShardsAcknowledged()) {
+                logger.error("Cloning index {} to {} was not successful:\n\t\t\t\t\t\t\t\t\t\t\t\t\t" +
+                                "Acknowledged:{}\n\t\t\t\t\t\t\t\t\t\t\t\t\tShardsAcknowledged:{}"
+                        , indexName + indexPostfix, indexName, clone.isAcknowledged(), clone.isShardsAcknowledged());
+                return;
+            }
+        } catch (ElasticsearchException | IOException e) {
+            logger.error("Could not clone index {} to {}", indexName + indexPostfix, indexName, e);
+            return;
+        }
+
+        //delete temp index
+        deleteRequest = new DeleteIndexRequest(indexName + indexPostfix);
+        try {
+            client.indices().delete(deleteRequest, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            logger.error("Could not delete index " + indexName + indexPostfix, e);
+            return;
+        } catch (ElasticsearchException e) {
+            if (e.status() != RestStatus.NOT_FOUND) {
+                logger.error("Could not delete index " + indexName + indexPostfix, e);
+                return;
+            }
+        }
+        logger.info("Moving index from {} to {} - Successful", indexName + indexPostfix, indexName);
 
     }
 
@@ -762,7 +830,7 @@ public class Harvester implements Runnable {
         logger.info("Start executeSyncQuery");
         logger.info("QUERY:");
         logger.info(rdfQuery);
-        HashSet<String> rdfUrls = new HashSet<String>();
+        HashSet<String> rdfUrls = new HashSet<>();
 
         Query query;
         try {
@@ -922,7 +990,7 @@ public class Harvester implements Runnable {
 
         SearchResponse searchResponse = null;
         try {
-            searchResponse = client.search(searchRequest,RequestOptions.DEFAULT);
+            searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
             String scrollId = searchResponse.getScrollId();
             SearchHit[] searchHits = searchResponse.getHits().getHits();
 
@@ -945,7 +1013,7 @@ public class Harvester implements Runnable {
                     continue;
 
                 DeleteRequest deleteRequest = new DeleteRequest(indexName, typeName, hit.getId());
-                DeleteResponse deleteResponse = client.delete(deleteRequest,RequestOptions.DEFAULT);
+                DeleteResponse deleteResponse = client.delete(deleteRequest, RequestOptions.DEFAULT);
 
                 ReplicationResponse.ShardInfo shardInfo = deleteResponse.getShardInfo();
                 if (shardInfo.getTotal() != shardInfo.getSuccessful()) {
@@ -965,7 +1033,7 @@ public class Harvester implements Runnable {
             while (searchHits != null && searchHits.length > 0) {
                 SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
                 scrollRequest.scroll(scroll);
-                searchResponse = client.searchScroll(scrollRequest,RequestOptions.DEFAULT);
+                searchResponse = client.searchScroll(scrollRequest, RequestOptions.DEFAULT);
                 scrollId = searchResponse.getScrollId();
                 searchHits = searchResponse.getHits().getHits();
 
@@ -987,7 +1055,7 @@ public class Harvester implements Runnable {
                         continue;
 
                     DeleteRequest deleteRequest = new DeleteRequest(indexName, typeName, hit.getId());
-                    DeleteResponse deleteResponse = client.delete(deleteRequest,RequestOptions.DEFAULT);
+                    DeleteResponse deleteResponse = client.delete(deleteRequest, RequestOptions.DEFAULT);
 
                     ReplicationResponse.ShardInfo shardInfo = deleteResponse.getShardInfo();
                     if (shardInfo.getTotal() != shardInfo.getSuccessful()) {
@@ -1007,10 +1075,10 @@ public class Harvester implements Runnable {
 
             ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
             clearScrollRequest.addScrollId(scrollId);
-            ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest,RequestOptions.DEFAULT);
+            ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
             boolean succeeded = clearScrollResponse.isSucceeded();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage());
         } catch (ElasticsearchStatusException es) {
             logger.warn("Index not found: [{}]", es.getMessage());
         } catch (ElasticsearchException exception) {
@@ -1030,12 +1098,12 @@ public class Harvester implements Runnable {
 
         GetRequest getRequest = new GetRequest(statusIndex, "last_update", riverName);
         try {
-            GetResponse getResponse = client.get(getRequest,RequestOptions.DEFAULT);
+            GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
             if (getResponse.getSource().get("status") == "indexing") {
                 indexing = true;
             }
         } catch (IOException e) {
-            //e.printStackTrace();
+            logger.error(e.getMessage());
         }
 
         if (!indexing) {
@@ -1044,7 +1112,7 @@ public class Harvester implements Runnable {
             UpdateRequest request = new UpdateRequest(statusIndex, "last_update", riverName)
                     .doc(jsonMap);
             try {
-                UpdateResponse updateResponse = client.update(request,RequestOptions.DEFAULT);
+                UpdateResponse updateResponse = client.update(request, RequestOptions.DEFAULT);
                 logger.info("Updating index {} status to: indexing", riverName);
             } catch (IOException e) {
                 logger.error("{}", e);
@@ -1076,6 +1144,7 @@ public class Harvester implements Runnable {
                 startTime);
 
         Set<String> syncUris = executeSyncQuery(queryStr, "resource", rdfUrlssyncQueryCounter);
+        if (stopped) return false;
         rdfUrlssyncQueryCounter++;
         //TODO : if error retry
         if (syncUris == null) {
@@ -1126,6 +1195,7 @@ public class Harvester implements Runnable {
         ArrayList<String> currentBulk = new ArrayList<String>();
 
         for (String uri : syncUris) {
+            if (stopped) return false;
             currentBulk.add(uri);
 
             if (currentBulk.size() == EEASettings.DEFAULT_BULK_SIZE) {
@@ -1148,6 +1218,7 @@ public class Harvester implements Runnable {
 
         while (true) {
             for (ArrayList<String> bulk : bulks) {
+                if (stopped) return false;
                 //TODO: break in 3 parts
                 String syncQuery = getSyncQueryStr(bulk);
                 logger.info("QUERY:");
@@ -1196,6 +1267,7 @@ public class Harvester implements Runnable {
                         }
 
                         ArrayList<String> urisWithESErrors = addModelToES(constructModel, bulkRequest, false, modelCounter);
+                        if (closed) return false;
 
                         count += bulk.size() - urisWithESErrors.size();
 
@@ -1245,7 +1317,7 @@ public class Harvester implements Runnable {
                             }
                         }
 
-                        e.printStackTrace();
+                        logger.error(e.getMessage());
 
                     } finally {
                         qExec.close();
@@ -1315,7 +1387,7 @@ public class Harvester implements Runnable {
         if (indexer.isUsingAPI()) return false;
         GetRequest getRequest = new GetRequest(indexer.getRIVER_INDEX(), "river", riverName);
         try {
-            GetResponse getResponse = client.get(getRequest,RequestOptions.DEFAULT);
+            GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
             if (getResponse.isExists()) {
                 return false;
             } else {
@@ -1326,7 +1398,7 @@ public class Harvester implements Runnable {
                 return true;
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage());
             logger.error("River doesn't exist anymore");
             logger.error("INDEXING CANCELLED");
             this.close();
@@ -1360,12 +1432,14 @@ public class Harvester implements Runnable {
             if (!rdfQueries.isEmpty()) {
                 //TODO: not updated for ES6
                 harvestFromEndpoint();
+                if (stopped) return false;
             }
 
             /**
              * Harvest from RDF dumps
              */
             harvestFromDumps();
+            if (stopped) return false;
 
             closed = true;
         }
@@ -1403,6 +1477,7 @@ public class Harvester implements Runnable {
         ResultSet results = qExec.execSelect();
 
         while (results.hasNext()) {
+            if (stopped) return null;
             QuerySolution sol = results.next();
             String subject;
             String predicate;
@@ -1463,7 +1538,9 @@ public class Harvester implements Runnable {
         do {
             retry = false;
             try {
+                logger.info("Creating model");
                 Model model = getModel(qExec);
+                if (!stopped) logger.info("Creating model - DONE");
 
 
                 BulkRequest bulkRequest = new BulkRequest();
@@ -1479,7 +1556,7 @@ public class Harvester implements Runnable {
                     throw e;
                 }
             }
-        } while (retry);
+        } while (retry && !stopped);
     }
 
     /**
@@ -1493,7 +1570,7 @@ public class Harvester implements Runnable {
         QueryExecution qExec;
 
         for (String rdfQuery : rdfQueries) {
-            if (closed) break;
+            if (closed) return;
 
             logger.info(
                     "Harvesting with query: [{}] on index [{}] and type [{}]",
@@ -1527,6 +1604,7 @@ public class Harvester implements Runnable {
      */
     private void harvestFromDumps() {
         for (String uri : rdfUris) {
+            if (stopped) return;
             uri = uri.trim();
             if (uri.isEmpty()) continue;
 
@@ -1536,7 +1614,7 @@ public class Harvester implements Runnable {
             Lang lang = RDFLanguages.RDFXML;
             try {
                 RDFDataMgr.read(model, uri, lang);
-
+                if (stopped) return;
                 BulkRequest bulkRequest = new BulkRequest();
 
                 addModelToES(model, bulkRequest, true);
@@ -1615,6 +1693,7 @@ public class Harvester implements Runnable {
     @SuppressWarnings("Duplicates")
     private void addModelToES(Model model, BulkRequest bulkRequest, boolean getPropLabel) {
         addModelToES(model, bulkRequest, getPropLabel, 0);
+
     }
 
 
@@ -1643,6 +1722,7 @@ public class Harvester implements Runnable {
 
         int jsonMapCounter = 0;
         while (resIt.hasNext()) {
+            if (stopped) return null;
             Resource rs = resIt.nextResource();
 
             long startJsonMap = System.currentTimeMillis();
@@ -1675,9 +1755,9 @@ public class Harvester implements Runnable {
 
                 //TODO: make request async
                 try {
-                    bulkResponse = client.bulk(bulkRequest,RequestOptions.DEFAULT);
+                    bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage());
                 }
 
                 if (bulkResponse.hasFailures()) {
@@ -1694,9 +1774,9 @@ public class Harvester implements Runnable {
             //BulkResponse response = bulkRequest.execute().actionGet();
             BulkResponse response = null;
             try {
-                response = client.bulk(bulkRequest,RequestOptions.DEFAULT);
+                response = client.bulk(bulkRequest, RequestOptions.DEFAULT);
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage());
             }
 
             // Handle failure by iterating through each bulk response item
@@ -1762,5 +1842,24 @@ public class Harvester implements Runnable {
         return result.toString();
     }
 
+    private void rollback() {
+        logger.info("Rollback on {} harvest", indexName);
+        DeleteIndexRequest deleteRequest = new DeleteIndexRequest(indexName + indexPostfix);
+        try {
+            client.indices().delete(deleteRequest, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            logger.error("Rollback: Could not delete index " + indexName + indexPostfix, e);
+        } catch (ElasticsearchException e) {
+            if (e.status() != RestStatus.NOT_FOUND) {
+                logger.error("Rollback: Could not delete index " + indexName + indexPostfix, e);
+            }
+        }
+    }
 
+    @Override
+    public void stop() {
+        logger.info("Stopping {} harvest", indexName);
+        closed = true;
+        stopped = true;
+    }
 }

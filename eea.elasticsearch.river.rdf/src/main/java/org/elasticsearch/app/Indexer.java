@@ -8,7 +8,6 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 
 import org.apache.http.nio.entity.NStringEntity;
 import org.apache.http.util.EntityUtils;
@@ -17,6 +16,7 @@ import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 
 import org.elasticsearch.action.search.*;
+import org.elasticsearch.app.ApiSpringServer.RunningHarvester;
 import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
 import org.elasticsearch.app.river.River;
@@ -51,7 +51,7 @@ public class Indexer {
     private int THREADS = 4;
     public String loglevel;
 
-    private final Set<Thread> threadPool = new HashSet<>();
+    private final Set<RunningHarvester> harvesterPool = new HashSet<>();
 
     private boolean usingAPI = true;
 
@@ -120,13 +120,13 @@ public class Indexer {
         logger.info("All tasks submitted.");
     }
 
-    public void awaitIndexingFinish(){
+    public void awaitIndexingFinish() {
         try {
             Indexer.executorService.awaitTermination(1, TimeUnit.DAYS);
 
             try {
                 DeleteIndexRequest request = new DeleteIndexRequest(RIVER_INDEX);
-                client.indices().delete(request,RequestOptions.DEFAULT);
+                client.indices().delete(request, RequestOptions.DEFAULT);
                 logger.info("Deleting river index!!!");
 
             } catch (ElasticsearchException exception) {
@@ -165,16 +165,16 @@ public class Indexer {
         }
     }
 
-    public void threadPoolAdd(Thread thread) {
-        threadPool.add(thread);
+    public void harvesterPoolAdd(Harvester harvester) {
+        harvesterPool.add(harvester);
     }
 
-    public void threadPoolRemove(Thread thread) {
-        threadPool.remove(thread);
+    public void harvesterPoolRemove(Harvester harvester) {
+        harvesterPool.remove(harvester);
     }
 
-    public Set<Thread> getThreadPool() {
-        return threadPool;
+    public Set<RunningHarvester> getHarvesterPool() {
+        return harvesterPool;
     }
 
     public boolean isUsingAPI() {
@@ -308,19 +308,14 @@ public class Indexer {
         client = new RestHighLevelClient(
                 RestClient.builder(
                         new HttpHost(host, port, "http")
-                ).setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-                    @Override
-                    public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                        return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-                    }
-                })
-                        .setFailureListener(/*new RestClient.FailureListener() {
+                ).setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider))
+                        .setFailureListener(new RestClient.FailureListener() {
                             @Override
-                            public void onFailure(HttpHost host) {
-                                super.onFailure(host);
+                            public void onFailure(Node node) {
+                                super.onFailure(node);
                                 logger.error("Connection failure: [{}]", host);
                             }
-                        }*/ new RestClient.FailureListener())
+                        })
         );
 
         logger.debug("Username: " + this.envMap.get("elastic_user"));
@@ -350,7 +345,7 @@ public class Indexer {
         SearchResponse searchResponse = null;
         try {
             logger.info("{}", searchRequest);
-            searchResponse = client.search(searchRequest,RequestOptions.DEFAULT);
+            searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
             logger.info("River index {} found", this.RIVER_INDEX);
             String scrollId = searchResponse.getScrollId();
             SearchHit[] searchHits = searchResponse.getHits().getHits();
@@ -361,7 +356,7 @@ public class Indexer {
             while (searchHits != null && searchHits.length > 0) {
                 SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
                 scrollRequest.scroll(scroll);
-                searchResponse = client.searchScroll(scrollRequest,RequestOptions.DEFAULT);
+                searchResponse = client.searchScroll(scrollRequest, RequestOptions.DEFAULT);
                 scrollId = searchResponse.getScrollId();
                 searchHits = searchResponse.getHits().getHits();
 
@@ -371,7 +366,7 @@ public class Indexer {
 
             ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
             clearScrollRequest.addScrollId(scrollId);
-            ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest,RequestOptions.DEFAULT);
+            ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
             boolean succeeded = clearScrollResponse.isSucceeded();
         } catch (IOException e) {
             logger.info("River index " + this.RIVER_INDEX + " not found");

@@ -1,12 +1,16 @@
-package org.elasticsearch.app.API;
+package org.elasticsearch.app.ApiSpringServer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.app.ApiServer;
+import org.elasticsearch.app.ApiSpringServer.Exceptions.AlreadyRunningException;
+import org.elasticsearch.app.ApiSpringServer.Exceptions.ParsingException;
+import org.elasticsearch.app.ApiSpringServer.Exceptions.SettingNotFoundException;
 import org.elasticsearch.app.river.River;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,19 +38,24 @@ public class IndexerController {
         return configManager.getListOfConfigs();
     }
 
-    @GetMapping("/threads")
-    public ArrayList<String> threads() {
+    @GetMapping("/running")
+    public ArrayList<String> runningHarvests() {
         ArrayList<String> s = new ArrayList<>();
-        for (Thread thread : ApiServer.indexer.getThreadPool()) {
-            s.add(thread.getName());
+        for (RunningHarvester harvester : ApiServer.indexer.getHarvesterPool()) {
+            s.add(harvester.getIndexName());
         }
         Collections.sort(s);
         return s;
     }
 
     @PutMapping(path = "/config", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public String SaveConfig(@RequestBody String s) throws JsonProcessingException {
-        Map<String, Object> map = new ObjectMapper().readValue(s, Map.class);
+    public String SaveConfig(@RequestBody String s)  {
+        Map<String, Object> map = null;
+        try {
+            map = new ObjectMapper().readValue(s, Map.class);
+        } catch (JsonProcessingException e) {
+            throw new ParsingException("Could not parse input JSON");
+        }
 
         River river = new River(map);
 
@@ -56,15 +65,14 @@ public class IndexerController {
     }
 
     @PostMapping("/config/{id}/start")
+    @ResponseStatus(HttpStatus.ACCEPTED)
     public void StartIndex(@PathVariable String id) {
         River river = configManager.getRiver(id);
         if (Objects.isNull(river)) {
-            //TODO throw Exception
-            return;
+            throw new SettingNotFoundException("Settings of index '" + id + "', not found");
         }
-        if (threads().contains(river.riverName())) {
-            //TODO throw Exception
-            return;
+        if (runningHarvests().contains(river.riverName())) {
+            throw new AlreadyRunningException("Indexing of index '" + id + "', already running");
         }
 
         ApiServer.indexer.setRivers(river);
@@ -74,7 +82,7 @@ public class IndexerController {
     }
 
     @PostMapping(path = "/configAndIndex", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public String SaveConfigAndStart(@RequestBody String s) throws JsonProcessingException {
+    public String SaveConfigAndStart(@RequestBody String s) {
         String id = SaveConfig(s);
         StartIndex(id);
         return id;
@@ -84,17 +92,20 @@ public class IndexerController {
     public void DeleteIndex(@PathVariable String id) {
         River river = configManager.getRiver(id);
         if (Objects.isNull(river)) {
-            //TODO throw Exception
-            return;
+            throw new SettingNotFoundException("Settings of index '" + id + "', not found");
         }
         configManager.delete(river);
     }
 
     @PostMapping("/config/{id}/stop")
     public void StopIndex(@PathVariable String id) {
-        for (Thread thread : ApiServer.indexer.getThreadPool()) {
-            if (thread.getName().equals(id)) thread.interrupt();
+        for (RunningHarvester harvester : ApiServer.indexer.getHarvesterPool()) {
+            if (harvester.getIndexName().equals(id)) {
+                harvester.stop();
+                return;
+            }
         }
+        throw new SettingNotFoundException("Indexing of index '" + id + "' is not running");
     }
 
 

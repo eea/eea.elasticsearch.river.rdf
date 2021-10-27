@@ -1,7 +1,5 @@
-package org.elasticsearch.app.API;
+package org.elasticsearch.app.ApiSpringServer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.app.DAO.RiverDAO;
 import org.elasticsearch.app.river.River;
 import org.slf4j.Logger;
