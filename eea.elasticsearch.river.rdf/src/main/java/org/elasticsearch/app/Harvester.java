@@ -1395,7 +1395,7 @@ public class Harvester implements Runnable {
             Node objNode;
             if (object.isLiteral()) {
                 Literal obj = object.asLiteral();
-                objNode = NodeFactory.createLiteral(obj.getString(), obj.getDatatype());
+                objNode = NodeFactory.createLiteral(obj.getString(), obj.getLanguage(), obj.getDatatype());
             } else {
                 objNode = NodeFactory.createLiteral(object.toString());
             }
