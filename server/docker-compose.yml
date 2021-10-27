@@ -26,6 +26,7 @@ services:
         soft: -1
         hard: -1
     volumes:
+      - esData:/usr/share/elasticsearch/data
       - certs:$CERTS_DIR
     networks:
       - elastic
@@ -94,6 +95,8 @@ services:
     build: .
 
 volumes:
+  esData:
+    driver: local
   certs:
     driver: local
   indexerDB:
