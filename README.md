@@ -19,4 +19,4 @@ Build server aplication:
 
 Change settings in *docker-compose.yml* file.
 
-		docker-compose up
+		docker compose up
