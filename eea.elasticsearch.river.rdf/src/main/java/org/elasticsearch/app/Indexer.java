@@ -61,8 +61,8 @@ public class Indexer {
         return RIVER_INDEX;
     }
 
-    private boolean MULTITHREADING_ACTIVE = false;
-    private int THREADS = 1;
+    private boolean MULTITHREADING_ACTIVE = true;
+    private int THREADS = 4;
     public String loglevel;
 
     private static final ESLogger logger = Loggers.getLogger(Indexer.class);
@@ -82,6 +82,7 @@ public class Indexer {
         logger.info("Starting application...");
 
         Indexer indexer = new Indexer();
+
         logger.setLevel(indexer.loglevel);
 
         if (indexer.rivers.size() == 0) {
@@ -120,9 +121,10 @@ public class Indexer {
             Indexer.executorService.awaitTermination(1, TimeUnit.DAYS);
 
             try {
-                DeleteIndexRequest request = new DeleteIndexRequest(indexer.RIVER_INDEX);
-                indexer.client.indices().delete(request);
-                logger.info("Deleting river index!!!");
+                //TODO: Testing
+//                DeleteIndexRequest request = new DeleteIndexRequest(indexer.RIVER_INDEX);
+//                indexer.client.indices().delete(request);
+//                logger.info("Deleting river index!!!");
 
             } catch (ElasticsearchException exception) {
                 if (exception.status() == RestStatus.NOT_FOUND) {

@@ -673,25 +673,26 @@ public class Harvester implements Runnable {
                 logger.info("===============================================================================");
                 logger.info("TOTAL TIME:  {} ms", System.currentTimeMillis() - currentTime);
                 logger.info("===============================================================================");
+//TODO: Testing
 
-                client.deleteAsync(deleteRequest, new ActionListener<DeleteResponse>() {
-                    @Override
-                    public void onResponse(DeleteResponse deleteResponse) {
-                        logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
-                        //setClusterStatus("synced");
-                        that.close();
-                        indexer.closeHarvester(that);
-                    }
-
-                    @Override
-                    public void onFailure(Exception e) {
-                        logger.error("Could not delete river :" + riverIndex + "/" + riverName);
-                        //setClusterStatus("synced");
-                        logger.error("Reason: [{}]", e.getMessage());
-                        that.close();
-                        indexer.closeHarvester(that);
-                    }
-                });
+//                client.deleteAsync(deleteRequest, new ActionListener<DeleteResponse>() {
+//                    @Override
+//                    public void onResponse(DeleteResponse deleteResponse) {
+//                        logger.info("Deleted river index entry: " + riverIndex + "/" + riverName);
+//                        //setClusterStatus("synced");
+//                        that.close();
+//                        indexer.closeHarvester(that);
+//                    }
+//
+//                    @Override
+//                    public void onFailure(Exception e) {
+//                        logger.error("Could not delete river :" + riverIndex + "/" + riverName);
+//                        //setClusterStatus("synced");
+//                        logger.error("Reason: [{}]", e.getMessage());
+//                        that.close();
+//                        indexer.closeHarvester(that);
+//                    }
+//                });
 
             }
         }
