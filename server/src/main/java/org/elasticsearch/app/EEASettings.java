@@ -39,9 +39,11 @@ public abstract class EEASettings {
     public final static Boolean DEFAULT_ADD_COUNTING = false;
     public final static String DEFAULT_LANGUAGE = "en";
     public final static Boolean DEFAULT_ADD_URI = true;
-    public final static String DEFAULT_URI_DESCRIPTION =
-            "[http://www.w3.org/2000/01/rdf-schema#label,"
-                    + "http://purl.org/dc/terms/title]";
+    public final static String DEFAULT_URI_DESCRIPTION = "[" +
+            "http://www.w3.org/2004/02/skos/core#prefLabel,"
+            + "http://purl.org/dc/terms/title," +
+            "http://www.w3.org/2000/01/rdf-schema#label" +
+            "]";
     public final static String DEFAULT_SYNC_COND = "";
     public final static String DEFAULT_SYNC_TIME_PROP =
             "http://cr.eionet.europa.eu/ontologies/contreg.rdf#lastRefreshed";

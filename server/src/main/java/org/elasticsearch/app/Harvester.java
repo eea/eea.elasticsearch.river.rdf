@@ -1791,7 +1791,6 @@ public class Harvester implements Runnable, RunningHarvester {
 
                 //TODO: prepareIndex - DONE ; make request async?
                 IndexRequest indexRequest = new IndexRequest(indexWithPrefix, typeName, rs.toString()).source(jsonMap.get(lang));
-                //TODO: delete if
                 indexRequest = indexRequest.id(indexRequest.id() + "@" + lang);
                 //.source(mapToString(jsonMap)));
                 bulkRequest.add(indexRequest);

@@ -11,8 +11,8 @@ import org.elasticsearch.app.logging.Loggers;
 import java.util.*;
 
 class Pair<X, Y> {
-    public final X value;
-    public final Y language;
+    private final X value;
+    private final Y language;
 
     public Pair(X value, Y language) {
         this.value = value;
@@ -154,6 +154,28 @@ public class ESNormalizer {
         }
     }
 
+    private String getPrefLbl(String iri, String prefLblIri) {
+        try {
+            Statement requiredProperty = model.getRequiredProperty(model.getResource(iri), model.getProperty(prefLblIri));
+            RDFNode object = requiredProperty.getObject();
+            if (object.isLiteral()) return object.asLiteral().getLexicalForm();
+        } catch (Exception e) {
+            logger.warn("Could not find {} for {}", prefLblIri, iri);
+        }
+        return iri;
+    }
+
+    private Object getInstanceOfCorrectType(String stringValue) {
+        Object res = stringValue;
+        try {
+            res = Integer.parseInt(stringValue);
+        } catch (NumberFormatException ignored) {}
+        try {
+            res = Double.parseDouble(stringValue);
+        } catch (NumberFormatException ignored) {}
+        return res;
+    }
+
     private void processProperty(Property prop) {
 
         NodeIterator niter = model.listObjectsOfProperty(rs, prop);
@@ -170,13 +192,18 @@ public class ESNormalizer {
             currValue = getStringForResult(node, getPropLabel);
             //todo: here
             lang = currValue.getLanguage();
+            if (property.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") && currValue.getValue().startsWith("https://slovník.gov.cz/základní/pojem/")) {
+//                currValue = new Pair<>(getLabelForUri(currValue.getValue()), currValue.getLanguage());
+                currValue = new Pair<>(getPrefLbl(currValue.getValue(), "http://www.w3.org/2004/02/skos/core#prefLabel"), currValue.getLanguage());
+            } else if (property.equals("http://www.w3.org/2004/02/skos/core#inScheme"))
+                currValue = new Pair<>(getPrefLbl(currValue.getValue(), "http://purl.org/dc/terms/title"), currValue.getLanguage());
             rdfLanguages.add(lang);
-            if (!jsonMaps.keySet().contains(lang))
+            if (!jsonMaps.containsKey(lang))
                 jsonMaps.put(lang, new JSONMap());
             if (!lang.equals(""))
                 jsonMaps.get(lang).put("language", lang);
 
-            String shortValue = currValue.getValue();
+            Object shortValue = getInstanceOfCorrectType(currValue.getValue());
 
             int currLen = currValue.getValue().length();
             // Unquote string
@@ -199,8 +226,8 @@ public class ESNormalizer {
                     results.add(normalizeObj.get(shortValue));
                 }
             } else {
-                if (!results.contains(currValue.getValue())) {
-                    results.add(currValue.getValue());
+                if (!results.contains(shortValue)) {
+                    results.add(shortValue);
                 }
             }
 

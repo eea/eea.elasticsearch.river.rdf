@@ -13,6 +13,7 @@ import org.elasticsearch.app.api.server.dto.ConfigInfoDTO;
 import org.elasticsearch.app.api.server.entities.UpdateRecord;
 import org.elasticsearch.app.api.server.exceptions.ConfigNotFoundException;
 import org.elasticsearch.app.api.server.exceptions.ConnectionLost;
+import org.elasticsearch.app.api.server.exceptions.CouldNotCloneIndex;
 import org.elasticsearch.app.api.server.exceptions.ParsingException;
 import org.elasticsearch.app.api.server.scheduler.RunScheduledIndexing;
 import org.elasticsearch.app.api.server.scheduler.RunningHarvester;
@@ -198,7 +199,7 @@ public class ConfigManager {
         return "^" + indexPatternRegex.replace(".", "\\.").replace("*", ".*");
     }
 
-    public void cloneIndexes(String source, String target) {
+    public void cloneIndexes(String source, String target) throws CouldNotCloneIndex {
         UpdateSettingsRequest settingsRequest = new UpdateSettingsRequest(source);
         Settings settings = Settings.builder().put("index.blocks.write", true).build();
         settingsRequest.settings(settings);
@@ -206,7 +207,7 @@ public class ConfigManager {
             indexer.clientES.indices().putSettings(settingsRequest, RequestOptions.DEFAULT);
         } catch (ElasticsearchException | IOException e) {
             logger.error("Could not set index.blocks.write=true on index " + source, e);
-            return;
+            throw new CouldNotCloneIndex("Could not set index.blocks.write=true on index " + source);
         }
         ResizeRequest cloneRequest = new ResizeRequest(target, source);
         cloneRequest.setResizeType(ResizeType.CLONE);
@@ -216,11 +217,13 @@ public class ConfigManager {
                 logger.error("Cloning index {} to {} was not successful:\n\t\t\t\t\t\t\t\t\t\t\t\t\t" +
                                 "Acknowledged:{}\n\t\t\t\t\t\t\t\t\t\t\t\t\tShardsAcknowledged:{}"
                         , source, target, clone.isAcknowledged(), clone.isShardsAcknowledged());
-                return;
+                throw new CouldNotCloneIndex(String.format("Cloning index %s to %s was not successful:\n\t\t\t\t\t\t\t\t\t\t\t\t\t" +
+                        "Acknowledged:%s\n\t\t\t\t\t\t\t\t\t\t\t\t\tShardsAcknowledged:%s"
+                        , source, target, clone.isAcknowledged(), clone.isShardsAcknowledged()));
             }
         } catch (ElasticsearchException | IOException e) {
             logger.error("Could not clone index {} to {}", source, target, e);
-            return;
+            throw new CouldNotCloneIndex(String.format("Could not clone index %s to %s", source, target));
         }
     }
 }
