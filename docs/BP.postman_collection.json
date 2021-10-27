@@ -1,0 +1,415 @@
+{
+	"info": {
+		"_postman_id": "e2c95ba6-412c-476b-8b70-e15a3ea5694e",
+		"name": "BP",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "ManagingIndexes",
+			"item": [
+				{
+					"name": "loadSSP",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"type\" : \"eeaRDF\",\r\n    \"eeaRDF\" : {\r\n         \"endpoint\" : \"https://xn--slovnk-7va.gov.cz/sparql\",\r\n         \"query\" : [\"SELECT * WHERE { ?s a <http://www.w3.org/2004/02/skos/core#Concept> ; ?p ?o . FILTER(isIri(?o) || isLiteral(?o))}\"],\r\n         \"queryType\" : \"select\" \r\n    },\r\n    \"syncReq\": {\r\n        \r\n    },\r\n    \"index\": {\r\n        \"index\": \"ssptest\",\r\n        \"type\": \"rdf\"\r\n    }\r\n }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:9200/eeardf/river/sparql",
+							"host": [
+								"localhost"
+							],
+							"port": "9200",
+							"path": [
+								"eeardf",
+								"river",
+								"sparql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete index",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:9200/ssp",
+							"host": [
+								"localhost"
+							],
+							"port": "9200",
+							"path": [
+								"ssp"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "putTestEndpoint",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"type\": \"eeaRDF\",\r\n    \"eeaRDF\": {\r\n        \"uris\" : [\r\n                \"http://dd.eionet.europa.eu/vocabulary/aq/measurementmethod/rdf\",\r\n                \"http://dd.eionet.europa.eu/vocabulary/aq/pollutant/rdf\"\r\n                ]\r\n    },\r\n    \"syncReq\": {\r\n\r\n    },\r\n    \"index\": {\r\n        \"index\": \"testrdf\",\r\n        \"type\": \"rdf\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:9200/eeardf/river/end",
+							"host": [
+								"localhost"
+							],
+							"port": "9200",
+							"path": [
+								"eeardf",
+								"river",
+								"end"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete EEARDF",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:9200/eeardf/",
+							"host": [
+								"localhost"
+							],
+							"port": "9200",
+							"path": [
+								"eeardf",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "KibanaAPI",
+			"item": [
+				{
+					"name": "GetDashboardInfo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5601/api/kibana/dashboards/export?dashboard=025623a0-947b-11eb-bbd2-eb9fd2920b1e",
+							"host": [
+								"localhost"
+							],
+							"port": "5601",
+							"path": [
+								"api",
+								"kibana",
+								"dashboards",
+								"export"
+							],
+							"query": [
+								{
+									"key": "dashboard",
+									"value": "025623a0-947b-11eb-bbd2-eb9fd2920b1e"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetAllDashboards",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"query\": {\r\n        \"regexp\": {\r\n            \"type\": {\r\n                \"value\": \"dashboard\"\r\n            }\r\n        }\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:9200/_search?pretty=true&size=10000",
+							"host": [
+								"localhost"
+							],
+							"port": "9200",
+							"path": [
+								"_search"
+							],
+							"query": [
+								{
+									"key": "pretty",
+									"value": "true"
+								},
+								{
+									"key": "size",
+									"value": "10000"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Ping",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5601/api/features",
+							"host": [
+								"localhost"
+							],
+							"port": "5601",
+							"path": [
+								"api",
+								"features"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "IndexerApi",
+			"item": [
+				{
+					"name": "GetRunningHarvests",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/api/running",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"running"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetIndexes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/api/configs",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"configs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetIndex",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/api/configs/test",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"configs",
+								"test"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SaveIndex",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"schedule\": {\r\n        \"schedule\": \"*/30 * * * * *\",\r\n        \"automatic\": false\r\n    },\r\n    \"config\": {\r\n        \"type\": \"eeaRDF\",\r\n        \"eeaRDF\": {\r\n            \"endpoint\": \"https://xn--slovnk-7va.gov.cz/sparql\",\r\n            \"query\": [\r\n                \"SELECT * WHERE { ?s a <http://www.w3.org/2004/02/skos/core#Concept> ; ?p ?o . FILTER(isIri(?o) || isLiteral(?o))}\"\r\n            ],\r\n            \"queryType\": \"select\"\r\n        },\r\n        \"syncReq\": {},\r\n        \"index\": {\r\n            \"index\": \"test\",\r\n            \"type\": \"rdf\"\r\n        }\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8080/api/configs",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"configs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "saveIndexAndIndex",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"schedule\": {\r\n        \"schedule\": \"*/30 * * * * *\",\r\n        \"automatic\": false\r\n    },\r\n    \"config\": {\r\n        \"type\": \"eeaRDF\",\r\n        \"eeaRDF\": {\r\n            \"endpoint\": \"https://xn--slovnk-7va.gov.cz/sparql\",\r\n            \"query\": [\r\n                \"SELECT * WHERE { ?s a <http://www.w3.org/2004/02/skos/core#Concept> ; ?p ?o . FILTER(isIri(?o) || isLiteral(?o))}\"\r\n            ],\r\n            \"queryType\": \"select\"\r\n        },\r\n        \"syncReq\": {},\r\n        \"index\": {\r\n            \"index\": \"sspapi\",\r\n            \"type\": \"rdf\"\r\n        }\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8080/api/configAndIndex",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"configAndIndex"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "saveIndexAndIndex LargeOne",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"schedule\": {\r\n        \"schedule\": \"0 0 0 0 0 0\",\r\n        \"automatic\": false\r\n    },\r\n    \"config\": {\r\n        \"type\": \"eeaRDF\",\r\n        \"eeaRDF\": {\r\n            \"uris\" : [\r\n                \"http://192.168.0.130/a.ttl\"\r\n                ]\r\n        },\r\n        \"syncReq\": {},\r\n        \"index\": {\r\n            \"index\": \"aaa\",\r\n            \"type\": \"rdf\"\r\n        }\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8080/api/configAndIndex",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"configAndIndex"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "startIndexing",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/api/configs/sspapi/start",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"configs",
+								"sspapi",
+								"start"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "StopIndexing",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/api/configs/sspapi/stop",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"configs",
+								"sspapi",
+								"stop"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DeleteIndex",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/api/configs/sspapi?deleteData=false",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"configs",
+								"sspapi"
+							],
+							"query": [
+								{
+									"key": "deleteData",
+									"value": "false"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

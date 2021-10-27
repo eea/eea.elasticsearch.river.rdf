@@ -1,9 +1,5 @@
 package org.elasticsearch.app.support;
 
-/*import com.google.common.collect.Maps;
-import org.apache.jena.query.*;
-import org.apache.jena.rdf.model.*;*/
-
 import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.*;
 import org.elasticsearch.app.EEASettings;
@@ -70,7 +66,7 @@ public class ESNormalizer {
         this.addLanguage = addLanguage;
     }
 
-    public ESNormalizer(){
+    public ESNormalizer() {
     }
 
     public ESNormalizer(Resource rs, Set<Property> properties, Model model, boolean getPropLabel, Harvester harvester) {
@@ -84,7 +80,7 @@ public class ESNormalizer {
     public void process() {
         addUriForResource();
 
-        for(Property prop: properties) {
+        for (Property prop : properties) {
             processProperty(prop);
         }
         addLanguage();
@@ -112,7 +108,7 @@ public class ESNormalizer {
                         res.add(miss_values.toString());
                     }
                 }
-                if(res.size() == 1)
+                if (res.size() == 1)
                     jsonMap.put(it.getKey(), res.get(0));
                 else
                     jsonMap.put(it.getKey(), res);
@@ -121,7 +117,7 @@ public class ESNormalizer {
     }
 
     private void processProperty(Property prop) {
-        NodeIterator niter = model.listObjectsOfProperty(rs,prop);
+        NodeIterator niter = model.listObjectsOfProperty(rs, prop);
         String property = prop.toString();
         ArrayList<Object> results = new ArrayList<Object>();
 
@@ -150,11 +146,11 @@ public class ESNormalizer {
                 continue;
             }
             if (normalizeObj.containsKey(shortValue)) {
-                if (!results.contains( normalizeObj.get(shortValue)  )){
-                    results.add( normalizeObj.get(shortValue) );
+                if (!results.contains(normalizeObj.get(shortValue))) {
+                    results.add(normalizeObj.get(shortValue));
                 }
             } else {
-                if (!results.contains(currValue)){
+                if (!results.contains(currValue)) {
                     results.add(currValue);
                 }
             }
@@ -166,48 +162,48 @@ public class ESNormalizer {
 
             if (normalizeProp.containsKey(property)) {
                 Object norm_property = normalizeProp.get(property);
-                if (norm_property instanceof String){
+                if (norm_property instanceof String) {
                     property = norm_property.toString();
 
                     if (jsonMap.containsKey(property)) {
                         Object temp = jsonMap.get(property);
-                        if(temp instanceof List){
+                        if (temp instanceof List) {
                             results.addAll((List) temp);
 
-                            if( results.size() == 1)
-                                jsonMap.put(property,results.get(0));
+                            if (results.size() == 1)
+                                jsonMap.put(property, results.get(0));
                             else
-                                jsonMap.put(property,results );
+                                jsonMap.put(property, results);
                         } else {
                             jsonMap.put(property, results);
                         }
                     } else {
-                        if(results.size() == 1)
+                        if (results.size() == 1)
                             jsonMap.put(property, results.get(0));
                         else
                             jsonMap.put(property, results);
                     }
                 } else {
 
-                    if (norm_property instanceof List<?>){
+                    if (norm_property instanceof List<?>) {
 
                         for (String norm_prop : ((List<String>) norm_property)) {
 
                             //TODO:
                             if (jsonMap.containsKey(norm_prop)) {
                                 Object temp = jsonMap.get(norm_prop);
-                                if(temp instanceof List){
+                                if (temp instanceof List) {
                                     results.addAll((List) temp);
-                                    if( results.size() == 1)
-                                        jsonMap.put(norm_prop,results.get(0));
+                                    if (results.size() == 1)
+                                        jsonMap.put(norm_prop, results.get(0));
                                     else
-                                        jsonMap.put(norm_prop,results );
+                                        jsonMap.put(norm_prop, results);
                                 } else {
                                     results.add(temp);
                                     jsonMap.put(norm_prop, results);
                                 }
                             } else {
-                                if(results.size() == 1)
+                                if (results.size() == 1)
                                     jsonMap.put(norm_prop, results.get(0));
                                 else
                                     jsonMap.put(norm_prop, results);
@@ -220,14 +216,14 @@ public class ESNormalizer {
                         if (jsonMap.containsKey(property)) {
                             Object temp = jsonMap.get(property);
                             //TODO:
-                            if(temp instanceof List){
+                            if (temp instanceof List) {
                                 //((List) temp).addAll(results);
-                                if(results.size() == 1)
+                                if (results.size() == 1)
                                     jsonMap.put(property, results.get(0));
                                 else
                                     jsonMap.put(property, results.toArray());
                             } else {
-                                if(results.size() == 1)
+                                if (results.size() == 1)
                                     jsonMap.put(property, results.get(0));
                                 else
                                     jsonMap.put(property, results);
@@ -235,13 +231,13 @@ public class ESNormalizer {
                             }
                             //jsonMap.get(property).addAll(results);
                         } else {
-                            if(results.size() == 1)
+                            if (results.size() == 1)
                                 jsonMap.put(property, results.get(0));
                             else
                                 jsonMap.put(property, results);
 
                         }
-                        logger.error("Normalizer error:" , norm_property);
+                        logger.error("Normalizer error:", norm_property);
                     }
                 }
             } else {
@@ -253,9 +249,9 @@ public class ESNormalizer {
 
     private void addUriForResource() {
         ArrayList<Object> results = new ArrayList<Object>();
-        if(addUriForResource) {
-            results.add( rs.toString() );
-            if(results.size() == 1)
+        if (addUriForResource) {
+            results.add(rs.toString());
+            if (results.size() == 1)
                 jsonMap.put("about", results.get(0));
             else
                 jsonMap.put("about", results);
@@ -264,20 +260,20 @@ public class ESNormalizer {
     }
 
     private void addLanguage() {
-        if(addLanguage) {
+        if (addLanguage) {
             HashSet<Property> allProperties = new HashSet<Property>();
 
             StmtIterator it = model.listStatements();
-            while(it.hasNext()) {
+            while (it.hasNext()) {
                 Statement st = it.nextStatement();
                 Property prop = st.getPredicate();
 
                 allProperties.add(prop);
             }
 
-            for(Property prop: allProperties) {
+            for (Property prop : allProperties) {
                 String property = prop.toString();
-                NodeIterator niter = model.listObjectsOfProperty(rs,prop);
+                NodeIterator niter = model.listObjectsOfProperty(rs, prop);
                 String lang;
 
                 while (niter.hasNext()) {
@@ -286,20 +282,20 @@ public class ESNormalizer {
                         if (node.isLiteral()) {
                             lang = node.asLiteral().getLanguage();
                             if (!lang.isEmpty()) {
-                                rdfLanguages.add( lang );
+                                rdfLanguages.add(lang);
                             }
                         }
                     }
                 }
             }
 
-            if(rdfLanguages.isEmpty() && !language.isEmpty())
+            if (rdfLanguages.isEmpty() && !language.isEmpty())
                 rdfLanguages.add(language);
-            if(!rdfLanguages.isEmpty()){
-                if(rdfLanguages.size() == 1 ){
+            if (!rdfLanguages.isEmpty()) {
+                if (rdfLanguages.size() == 1) {
                     Iterator iter = rdfLanguages.iterator();
                     Object first = iter.next();
-                    if(first instanceof List<?>){
+                    if (first instanceof List<?>) {
                         logger.info("is LIST");
                     }
                     jsonMap.put("language", first);
@@ -312,14 +308,15 @@ public class ESNormalizer {
         }
     }
 
-    public HashMap<String,Object> getJsonMap() {
+    public HashMap<String, Object> getJsonMap() {
         return jsonMap;
     }
 
     /**
      * Builds a String result for Elastic Search from an RDFNode
+     *
      * @param node An RDFNode representing the value of a property for a given
-     * resource
+     *             resource
      * @return If the RDFNode has a Literal value, among Boolean, Byte, Double,
      * Float, Integer Long, Short, this value is returned, converted to String
      * <p>If the RDFNode has a String Literal value, this value will be
@@ -333,7 +330,7 @@ public class ESNormalizer {
         String result = "";
         boolean quote = false;
 
-        if(node.isLiteral()) {
+        if (node.isLiteral()) {
             Object literalValue = node.asLiteral().getValue();
             try {
                 Class<?> literalJavaClass = node.asLiteral()
@@ -359,15 +356,16 @@ public class ESNormalizer {
                 quote = true;
             }
 
-        } else if(node.isResource()) {
+        } else if (node.isResource()) {
             result = node.asResource().getURI();
-            if(getNodeLabel) {
+            if (getNodeLabel) {
                 result = getLabelForUri(result);
             }
+            if (Objects.isNull(result)) result = node.asResource().toString();
             quote = true;
         }
         //TODO: ?
-        if(quote) {
+        if (quote) {
             //result = "\"" + result + "\"";
         }
         return result;
@@ -380,7 +378,7 @@ public class ESNormalizer {
      * returned. The value is obtained by querying the endpoint and the
      * endpoint is queried repeatedly until it gives a response (value or the
      * lack of it)
-     *
+     * <p>
      * It is highly recommended that the list contains properties like labels
      * or titles, with test values.
      *
@@ -395,7 +393,7 @@ public class ESNormalizer {
             return harvester.getUriLabelCache().get(uri);
         }
 
-        for(String prop:harvester.getUriDescriptionList()) {
+        for (String prop : harvester.getUriDescriptionList()) {
             String innerQuery = "SELECT ?r WHERE {<" + uri + "> <" +
                     prop + "> ?r } LIMIT 1";
 
@@ -404,32 +402,30 @@ public class ESNormalizer {
                 QueryExecution qExec = QueryExecutionFactory.sparqlService(
                         harvester.getRdfEndpoint(),
                         query);
-                boolean keepTrying = true;
-                while(keepTrying) {
-                    keepTrying = false;
+                int retrycount = 0;
+                while (retrycount++ < 5) {
 
                     //TODO : try finally?
                     try {
                         ResultSet results = qExec.execSelect();
 
-                        if(results.hasNext()) {
+                        if (results.hasNext()) {
                             QuerySolution sol = results.nextSolution();
                             result = EEASettings.parseForJson(
                                     sol.getLiteral("r").getLexicalForm());
-                            if(!result.isEmpty()) {
+                            if (!result.isEmpty()) {
                                 harvester.putToUriLabelCache(uri, result);
                                 return result;
                             }
-                        }
-                    } catch(Exception e) {
-                        keepTrying = true;
-                        //TODO:LOG - DONE
-                        logger.warn("Could not get label for uri {}. Retrying.",
-                                uri);
-                    } finally { qExec.close();}
+                        }else {break;}
+                    } catch (Exception e) {
+                        logger.warn("Could not get label for uri {}. Retrying {}/5.",
+                                uri, retrycount);
+                    } finally {
+                        qExec.close();
+                    }
                 }
             } catch (QueryParseException qpe) {
-                //TODO:LOG - DONE
                 logger.error("Exception for query {}. The label cannot be obtained",
                         innerQuery);
             }

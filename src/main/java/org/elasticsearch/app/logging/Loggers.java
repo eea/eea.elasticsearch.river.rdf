@@ -21,7 +21,6 @@ package org.elasticsearch.app.logging;
 
 import com.google.common.collect.Lists;
 
-import org.elasticsearch.app.river.RiverName;
 import org.elasticsearch.common.Classes;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.Index;
@@ -73,11 +72,10 @@ public class Loggers {
         return getLogger(clazz, settings, Lists.asList(SPACE, index.getName(), prefixes).toArray(new String[0]));
     }
 
-    public static ESLogger getLogger(Class clazz, Settings settings, RiverName riverName, String... prefixes) {
+    public static ESLogger getLogger(Class clazz, Settings settings, String riverName, String... prefixes) {
         List<String> l = Lists.newArrayList();
         l.add(SPACE);
-        l.add(riverName.type());
-        l.add(riverName.name());
+        l.add(riverName);
         l.addAll(Lists.newArrayList(prefixes));
         return getLogger(clazz, settings, l.toArray(new String[l.size()]));
     }

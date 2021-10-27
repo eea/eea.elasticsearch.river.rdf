@@ -1,42 +1,28 @@
-package  org.elasticsearch.app;
+package org.elasticsearch.app;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.org.apache.xpath.internal.operations.Bool;
-import jdk.nashorn.internal.parser.JSONParser;
-import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
-import org.apache.http.RequestLine;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 
 import org.apache.http.nio.entity.NStringEntity;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
-import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse;
-import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 
-import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.*;
+import org.elasticsearch.app.api.server.services.ConfigManager;
+import org.elasticsearch.app.api.server.scheduler.RunningHarvester;
 import org.elasticsearch.app.logging.ESLogger;
 import org.elasticsearch.app.logging.Loggers;
-import org.elasticsearch.app.river.River;
-import org.elasticsearch.app.river.RiverName;
-import org.elasticsearch.app.river.RiverSettings;
+import org.elasticsearch.app.api.server.entities.River;
 import org.elasticsearch.client.*;
 
-import org.elasticsearch.cluster.metadata.AliasMetaData;
-import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.rest.RestStatus;
@@ -49,21 +35,22 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+
 public class Indexer {
-    private final static String USER = "user_rw";
-    private final static String PASS = "rw_pass";
-    private final static String HOST = "localhost";
-    private final static int PORT = 9200;
 
-    private String RIVER_INDEX = "eeariver";
+    public final int cacheDurationInSeconds;
 
-    public String getRIVER_INDEX() {
-        return RIVER_INDEX;
-    }
+    private String riverIndex = "eeardf";
 
-    private boolean MULTITHREADING_ACTIVE = false;
-    private int THREADS = 1;
+    private boolean MULTITHREADING_ACTIVE = true;
+    private int THREADS = 4;
     public String loglevel;
+
+    public ConfigManager configManager;
+
+    private final Set<RunningHarvester> harvesterPool = new HashSet<>();
+
+    private boolean usingAPI = true;
 
     private static final ESLogger logger = Loggers.getLogger(Indexer.class);
 
@@ -73,63 +60,78 @@ public class Indexer {
 
     private static final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
-    public RestHighLevelClient client;
+    public final RestHighLevelClient clientES;
+    public final RestHighLevelClient clientKibana;
 
     private static ExecutorService executorService;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
 
         logger.info("Starting application...");
 
         Indexer indexer = new Indexer();
+        indexer.setUsingAPI(false);
+        indexer.getAllRivers();
+
         logger.setLevel(indexer.loglevel);
 
-        if(indexer.rivers.size() == 0){
+        if (indexer.rivers.size() == 0) {
             logger.info("No rivers detected");
-            logger.info("No rivers added in " + indexer.RIVER_INDEX + " index.Stopping...");
+            logger.info("No rivers added in " + indexer.riverIndex + " index.Stopping...");
             indexer.close();
         }
 
-        //TODO: loop for all rivers
-        if(indexer.MULTITHREADING_ACTIVE){
-        /*Indexer.executorService = EsExecutors.newAutoQueueFixed("threadPool", 1, 5, 5, 26,2,
-                TimeValue.timeValueHours(10), EsExecutors.daemonThreadFactory("esapp"), new ThreadContext(Builder.EMPTY_SETTINGS));*/
-            Indexer.executorService = Executors.newFixedThreadPool(indexer.THREADS);
-            //Indexer.executorService = Executors.newWorkStealingPool(4);
 
+        indexer.startIndexing();
+        indexer.awaitIndexingFinish();
+        indexer.close();
+
+    }
+
+    public void startIndexing() {
+
+        //TODO: loop for all rivers
+        if (MULTITHREADING_ACTIVE) {
+            Indexer.executorService = Executors.newFixedThreadPool(THREADS);
         } else {
             Indexer.executorService = Executors.newSingleThreadExecutor();
         }
 
-        for(River river : indexer.rivers){
+        for (River river : rivers) {
             Harvester h = new Harvester();
 
-            h.client(indexer.client).riverName(river.riverName())
-                    .riverIndex(indexer.RIVER_INDEX)
-                    .indexer(indexer);
-            indexer.addHarvesterSettings(h, river.getRiverSettings());
+            h.client(clientES).riverName(river.getRiverName())
+                    .riverIndex(riverIndex)
+                    .indexer(this);
+            this.addHarvesterSettings(h, river.getRiverSettings());
 
             Indexer.executorService.submit(h);
-            logger.info("Created thread for river: {}", river.riverName());
+            logger.info("Created thread for river: {}", river.getRiverName());
         }
 
         Indexer.executorService.shutdown();
 
         logger.info("All tasks submitted.");
+    }
+
+    public void awaitIndexingFinish() {
         try {
             Indexer.executorService.awaitTermination(1, TimeUnit.DAYS);
 
             try {
-                DeleteIndexRequest request = new DeleteIndexRequest(indexer.RIVER_INDEX);
-                indexer.client.indices().delete(request);
+                DeleteIndexRequest request = new DeleteIndexRequest(riverIndex);
+                clientES.indices().delete(request, RequestOptions.DEFAULT);
                 logger.info("Deleting river index!!!");
 
             } catch (ElasticsearchException exception) {
                 if (exception.status() == RestStatus.NOT_FOUND) {
                     logger.error("River index not found");
                     logger.info("Tasks interrupted by missing river index.");
-                    indexer.close();
+                    this.close();
                 }
+            } catch (IOException e) {
+                logger.error("Unable to delete river index!!!");
+                this.close();
             }
 
         } catch (InterruptedException ignored) {
@@ -138,25 +140,57 @@ public class Indexer {
         logger.info("All tasks completed.");
 
         // Switching alias
-        if(indexer.rivers.size() > 0){
-            River riv = indexer.rivers.get(0);
+        if (rivers.size() > 0) {
+            River riv = rivers.get(0);
 
-            HashMap set = (HashMap) riv.getRiverSettings().getSettings().get("syncReq");
+            HashMap set = (HashMap) riv.getRiverSettings().get("syncReq");
             HashMap ind = (HashMap) set.get("index");
 
-            if(ind != null){
+            if (ind != null) {
                 Boolean switchA = (Boolean) ind.get("switchAlias");
 
-                if(switchA != null && switchA){
-                    RestClient lowclient = indexer.client.getLowLevelClient();
+                if (switchA != null && switchA) {
+                    RestClient lowclient = clientES.getLowLevelClient();
 
-                    switchAliases(lowclient, indexer);
+                    switchAliases(lowclient, this);
                 }
 
             }
         }
-        indexer.close();
+    }
 
+    public void harvesterPoolAdd(Harvester harvester) {
+        harvesterPool.add(harvester);
+    }
+
+    public void harvesterPoolRemove(Harvester harvester) {
+        harvesterPool.remove(harvester);
+    }
+
+    public Set<RunningHarvester> getHarvesterPool() {
+        return harvesterPool;
+    }
+
+    public boolean isUsingAPI() {
+        return usingAPI;
+    }
+
+    public String getRiverIndex() {
+        return riverIndex;
+    }
+
+    public void setUsingAPI(boolean usingAPI) {
+        this.usingAPI = usingAPI;
+    }
+
+    public void setRivers(ArrayList<River> rivers) {
+        this.rivers = rivers;
+    }
+
+    public void setRivers(River river) {
+        ArrayList<River> rivers = new ArrayList<>();
+        rivers.add(river);
+        this.rivers = rivers;
     }
 
     private static void switchAliases(RestClient lowclient, Indexer indexer) {
@@ -164,7 +198,7 @@ public class Indexer {
         String indexA = "";
 
         try {
-            response = lowclient.performRequest("GET", "global-search/_mappings");
+            response = lowclient.performRequest(new Request("GET", "global-search/_mappings"));
             String responseBody = EntityUtils.toString(response.getEntity());
 
             HashMap myMap = new HashMap<String, String>();
@@ -178,9 +212,9 @@ public class Indexer {
 
                 String alias = reali.replace("_green", "").replace("_blue", "");
                 // switching aliases
-                if(reali.contains("_green")){
+                if (reali.contains("_green")) {
                     indexA = reali.replace("_green", "_blue");
-                } else if(reali.contains("_blue")){
+                } else if (reali.contains("_blue")) {
                     indexA = reali.replace("_blue", "_green");
                 }
 
@@ -188,59 +222,65 @@ public class Indexer {
 
                 String jsonStringRemove = "{ " +
                         "\"actions\" : [ " +
-                            "{ \"remove\" : {" +
-                                "\"index\" : \""+ reali +"\"," +
-                                "\"alias\" : \""+ alias +"\"" +
-                                "}" +
-                            " }" + "," +
-                            "{ \"remove\" : {" +
-                                "\"index\" : \""+ reali + "_status" +"\"," +
-                                "\"alias\" : \""+ alias + "_status" +"\"" +
-                                "}" +
-                            " }" +
+                        "{ \"remove\" : {" +
+                        "\"index\" : \"" + reali + "\"," +
+                        "\"alias\" : \"" + alias + "\"" +
+                        "}" +
+                        " }" + "," +
+                        "{ \"remove\" : {" +
+                        "\"index\" : \"" + reali + "_status" + "\"," +
+                        "\"alias\" : \"" + alias + "_status" + "\"" +
+                        "}" +
+                        " }" +
                         "]}";
 
                 HttpEntity entityR = new NStringEntity(jsonStringRemove, ContentType.APPLICATION_JSON);
-                Response responseRemove = lowclient.performRequest("POST", "/_aliases", params, entityR);
+                Request req = new Request("POST", "/_aliases");
+                req.addParameters(params);
+                req.setEntity(entityR);
+                Response responseRemove = lowclient.performRequest(req);
 
-                if(responseRemove.getStatusLine().getStatusCode() == 200){
-                    logger.info("{}", EntityUtils.toString(responseRemove.getEntity()) );
+                if (responseRemove.getStatusLine().getStatusCode() == 200) {
+                    logger.info("{}", EntityUtils.toString(responseRemove.getEntity()));
                     logger.info("Removed alias from index: " + reali);
                 }
 
                 String jsonStringAdd = "{ " +
                         "\"actions\" : [ " +
-                            "{ \"add\" : {" +
-                                "\"index\" : \""+ indexA +"\"," +
-                                "\"alias\" : \""+ alias +"\"" +
-                                "}" +
-                            " }" + "," +
                         "{ \"add\" : {" +
-                                "\"index\" : \""+ indexA + "_status" +"\"," +
-                                "\"alias\" : \""+ alias + "_status" +"\"" +
-                                "}" +
-                            " }" +
+                        "\"index\" : \"" + indexA + "\"," +
+                        "\"alias\" : \"" + alias + "\"" +
+                        "}" +
+                        " }" + "," +
+                        "{ \"add\" : {" +
+                        "\"index\" : \"" + indexA + "_status" + "\"," +
+                        "\"alias\" : \"" + alias + "_status" + "\"" +
+                        "}" +
+                        " }" +
                         "]}";
 
                 HttpEntity entityAdd = new NStringEntity(jsonStringAdd, ContentType.APPLICATION_JSON);
                 try {
-                    Response responseAdd = lowclient.performRequest("POST", "/_aliases", params, entityAdd);
+                    Request req1 = new Request("POST", "/_aliases");
+                    req1.setEntity(entityAdd);
+                    req1.addParameters(params);
+                    Response responseAdd = lowclient.performRequest(req1);
 
-                    if(responseAdd.getStatusLine().getStatusCode() == 200){
-                        logger.info("{}", EntityUtils.toString(responseAdd.getEntity()) );
+                    if (responseAdd.getStatusLine().getStatusCode() == 200) {
+                        logger.info("{}", EntityUtils.toString(responseAdd.getEntity()));
                         logger.info("Added alias to index: " + indexA);
                     }
 
-                } catch (IOException exe){
+                } catch (IOException exe) {
                     logger.error("Could not add alias to index : {}; reason: {}", indexA, exe.getMessage());
                 }
 
 
-            } catch (IOException ex){
+            } catch (IOException ex) {
                 logger.error("Could not remove alias from index : {}; reason: {}", reali, ex.getMessage());
             }
 
-        } catch (IOException e){
+        } catch (IOException e) {
             logger.error("Could not get aliases from index; reason: {}", e.getMessage());
         }
     }
@@ -249,68 +289,72 @@ public class Indexer {
         Map<String, String> env = System.getenv();
         this.envMap = env;
 
-        String host = (env.get("elastic_host") != null) ? env.get("elastic_host") : HOST;
+        String hostES = (env.get("elastic_host") != null) ? env.get("elastic_host") : EEASettings.ELASTICSEARCH_HOST;
+        int portES = (env.get("elastic_port") != null) ? Integer.parseInt(env.get("elastic_port")) : EEASettings.ELASTICSEARCH_PORT;
 
-        int port = (env.get("elastic_port") != null) ? Integer.parseInt(env.get("elastic_port")) : PORT;
-        String user = (env.get("elastic_user") != null) ? env.get("elastic_user") : USER;
-        String pass = (env.get("elastic_pass") != null) ? env.get("elastic_pass") : PASS;
-        this.RIVER_INDEX = ( env.get("river_index") != null) ? env.get("river_index") : this.RIVER_INDEX;
-        this.MULTITHREADING_ACTIVE  = (env.get("indexer_multithreading") != null) ?
+        String hostKibana = (env.get("kibana_host") != null) ? env.get("kibana_host") : EEASettings.KIBANA_HOST;
+        int portKibana = (env.get("kibana_port") != null) ? Integer.parseInt(env.get("kibana_port")) : EEASettings.KIBANA_PORT;
+
+        String user = (env.get("elastic_user") != null) ? env.get("elastic_user") : EEASettings.USER;
+        String pass = (env.get("elastic_pass") != null) ? env.get("elastic_pass") : EEASettings.PASS;
+        this.riverIndex = (env.get("river_index") != null) ? env.get("river_index") : this.riverIndex;
+        this.MULTITHREADING_ACTIVE = (env.get("indexer_multithreading") != null) ?
                 Boolean.parseBoolean(env.get("indexer_multithreading")) : this.MULTITHREADING_ACTIVE;
         this.THREADS = (env.get("threads") != null) ? Integer.parseInt(env.get("threads")) : this.THREADS;
-        this.loglevel = ( env.get("LOG_LEVEL") != null) ? env.get("LOG_LEVEL") : "info";
+        this.loglevel = (env.get("log_level") != null) ? env.get("log_level") : EEASettings.LOG_LEVEL;
+        this.cacheDurationInSeconds = (env.get("cache_duration_in_seconds") != null) ? Integer.parseInt(env.get("cache_duration_in_seconds")) : EEASettings.CACHE_DURATION_IN_SECONDS;
 
         credentialsProvider.setCredentials(AuthScope.ANY,
-                new UsernamePasswordCredentials(user , pass));
+                new UsernamePasswordCredentials(user, pass));
 
-        client = new RestHighLevelClient(
-            RestClient.builder(
-                    new HttpHost( host , port, "http")
-            ).setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-                @Override
-                public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                    return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-                }
-            })
-            .setFailureListener(new RestClient.FailureListener(){
-                @Override
-                public void onFailure(HttpHost host) {
-                    super.onFailure(host);
-                    logger.error("Connection failure: [{}]", host);
-                }
-            })
-        );
+        clientES = getRestClient(hostES, portES, "http");
+        clientKibana = getRestClient(hostKibana, portKibana, "http");
 
-        logger.debug("Username: " + this.envMap.get("elastic_user"));
-        logger.debug("Password: " + this.envMap.get("elastic_pass"));
-        logger.debug("HOST: " + this.envMap.get("elastic_host"));
-        logger.debug("PORT: " + this.envMap.get("elastic_port"));
-        logger.debug("RIVER INDEX: " + this.RIVER_INDEX);
+        logger.debug("Username: " + user);
+        logger.debug("Password: " + pass);
+        logger.debug("HOST: " + hostES);
+        logger.debug("PORT: " + portES);
+        logger.debug("RIVER INDEX: " + this.riverIndex);
         logger.debug("MULTITHREADING_ACTIVE: " + this.MULTITHREADING_ACTIVE);
         logger.debug("THREADS: " + this.THREADS);
-        logger.info("LOG_LEVEL: " + this.envMap.get("LOG_LEVEL") );
-        logger.debug("DOCUMENT BULK: ", Integer.toString(EEASettings.DEFAULT_BULK_REQ) );
-        getAllRivers();
+        logger.info("LOG_LEVEL: " + this.loglevel);
+        logger.debug("DOCUMENT BULK: ", Integer.toString(EEASettings.DEFAULT_BULK_REQ));
     }
 
-    public void getRivers(){
+
+    private RestHighLevelClient getRestClient(String host, int port, String protocol) {
+        return new RestHighLevelClient(
+                RestClient.builder(
+                        new HttpHost(host, port, protocol)
+                ).setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(new BasicCredentialsProvider()))
+                        .setFailureListener(new RestClient.FailureListener() {
+                            @Override
+                            public void onFailure(Node node) {
+                                super.onFailure(node);
+                                logger.error("Connection failure: [{}]", "localhost");
+                            }
+                        })
+        );
+    }
+
+    public void getRivers() {
         this.getAllRivers();
 
     }
 
     private void getAllRivers() {
         this.rivers.clear();
-        ArrayList< SearchHit > searchHitsA = new ArrayList<>();
+        ArrayList<SearchHit> searchHitsA = new ArrayList<>();
 
         final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(1L));
-        SearchRequest searchRequest = new SearchRequest(this.RIVER_INDEX);
+        SearchRequest searchRequest = new SearchRequest(this.riverIndex);
         searchRequest.scroll(scroll);
 
         SearchResponse searchResponse = null;
         try {
-            logger.info("{}",searchRequest);
-            searchResponse = client.search(searchRequest);
-            logger.info("River index {} found", this.RIVER_INDEX);
+            logger.info("{}", searchRequest);
+            searchResponse = clientES.search(searchRequest, RequestOptions.DEFAULT);
+            logger.info("River index {} found", this.riverIndex);
             String scrollId = searchResponse.getScrollId();
             SearchHit[] searchHits = searchResponse.getHits().getHits();
 
@@ -320,7 +364,7 @@ public class Indexer {
             while (searchHits != null && searchHits.length > 0) {
                 SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
                 scrollRequest.scroll(scroll);
-                searchResponse = client.searchScroll(scrollRequest);
+                searchResponse = clientES.searchScroll(scrollRequest, RequestOptions.DEFAULT);
                 scrollId = searchResponse.getScrollId();
                 searchHits = searchResponse.getHits().getHits();
 
@@ -330,52 +374,48 @@ public class Indexer {
 
             ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
             clearScrollRequest.addScrollId(scrollId);
-            ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest);
+            ClearScrollResponse clearScrollResponse = clientES.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
             boolean succeeded = clearScrollResponse.isSucceeded();
         } catch (IOException e) {
-            logger.info("River index " + this.RIVER_INDEX + " not found");
+            logger.info("River index " + this.riverIndex + " not found");
             System.exit(0);
-        } catch (ElasticsearchStatusException ex){
+        } catch (ElasticsearchStatusException ex) {
             logger.info(ex.toString());
-            logger.info("River index " + this.RIVER_INDEX + " not found");
+            logger.info("River index " + this.riverIndex + " not found");
             System.exit(0);
         }
 
-        for (SearchHit  sh: searchHitsA ){
+        for (SearchHit sh : searchHitsA) {
             Map<String, Object> source = sh.getSourceAsMap();
             //logger.debug("{}", source.containsKey("eeaRDF"));
 
-            if(source.containsKey("eeaRDF")){
-                RiverSettings riverSettings = new RiverSettings(source);
-                RiverName riverName = new RiverName("eeaRDF", sh.getId());
+            if (source.containsKey("eeaRDF")) {
                 River river = new River()
-                        .setRiverName( riverName.name() )
-                        .setRiverSettings( riverSettings );
+                        .setRiverName(sh.getId())
+                        .setRiverSettings(source);
                 rivers.add(river);
                 continue;
             }
 
-            if ( !((Map)source.get("syncReq")).containsKey("eeaRDF")) {
-                logger.error( "not has river settings: " + sh.getId() );
+            if (!((Map) source.get("syncReq")).containsKey("eeaRDF")) {
+                logger.error("not has river settings: " + sh.getId());
                 throw new IllegalArgumentException(
                         "There are no eeaRDF settings in the river settings");
 
             } else {
-                RiverSettings riverSettings = new RiverSettings(source);
-                RiverName riverName = new RiverName("eeaRDF", sh.getId());
                 River river = new River()
-                        .setRiverName( riverName.name() )
-                        .setRiverSettings( riverSettings );
+                        .setRiverName(sh.getId())
+                        .setRiverSettings(source);
                 rivers.add(river);
             }
 
         }
     }
 
-    private void addHarvesterSettings(Harvester harv, RiverSettings settings) {
-        if(settings.getSettings().containsKey("eeaRDF")){
+    private void addHarvesterSettings(Harvester harv, Map<String, Object> settings) {
+        if (settings.containsKey("eeaRDF")) {
 
-        } else if ( ! (((HashMap)settings.getSettings().get("syncReq")).containsKey("eeaRDF")) ) {
+        } else if (!(((HashMap) settings.get("syncReq")).containsKey("eeaRDF"))) {
             logger.error("There are no syncReq settings in the river settings");
             throw new IllegalArgumentException(
                     "There are no eeaRDF settings in the river settings");
@@ -386,7 +426,7 @@ public class Indexer {
         harv.rdfIndexType(XContentMapValues.nodeStringValue(
                 rdfSettings.get("indexType"), "full"))
                 .rdfStartTime(XContentMapValues.nodeStringValue(
-                        rdfSettings.get("startTime"),""))
+                        rdfSettings.get("startTime"), ""))
                 .rdfUris(XContentMapValues.nodeStringValue(
                         rdfSettings.get("uris"), "[]"))
                 .rdfEndpoint(XContentMapValues.nodeStringValue(
@@ -431,29 +471,29 @@ public class Indexer {
         if (rdfSettings.containsKey("proplist")) {
             harv.rdfPropList(getStrListFromSettings(rdfSettings, "proplist"));
         }
-        if(rdfSettings.containsKey("query")) {
+        if (rdfSettings.containsKey("query")) {
             harv.rdfQuery(getStrListFromSettings(rdfSettings, "query"));
         } else {
             harv.rdfQuery(EEASettings.DEFAULT_QUERIES);
         }
 
-        if(rdfSettings.containsKey("normProp")) {
+        if (rdfSettings.containsKey("normProp")) {
             harv.rdfNormalizationProp(getStrObjMapFromSettings(rdfSettings, "normProp"));
         }
-        if(rdfSettings.containsKey("normMissing")) {
+        if (rdfSettings.containsKey("normMissing")) {
             harv.rdfNormalizationMissing(getStrObjMapFromSettings(rdfSettings, "normMissing"));
         }
-        if(rdfSettings.containsKey("normObj")) {
+        if (rdfSettings.containsKey("normObj")) {
             harv.rdfNormalizationObj(getStrStrMapFromSettings(rdfSettings, "normObj"));
         }
-        if(rdfSettings.containsKey("blackMap")) {
+        if (rdfSettings.containsKey("blackMap")) {
             harv.rdfBlackMap(getStrObjMapFromSettings(rdfSettings, "blackMap"));
         }
-        if(rdfSettings.containsKey("whiteMap")) {
+        if (rdfSettings.containsKey("whiteMap")) {
             harv.rdfWhiteMap(getStrObjMapFromSettings(rdfSettings, "whiteMap"));
         }
         //TODO : change to index
-        if(settings.getSettings().containsKey("index")){
+        if (settings.containsKey("index")) {
             Map<String, Object> indexSettings = extractSettings(settings, "index");
             harv.index(XContentMapValues.nodeStringValue(
                     indexSettings.get("index"),
@@ -463,24 +503,23 @@ public class Indexer {
                             indexSettings.get("type"),
                             EEASettings.DEFAULT_TYPE_NAME)
 
-            )
-                    .statusIndex(XContentMapValues.nodeStringValue(indexSettings.get("statusIndex"),EEASettings.DEFAULT_INDEX_NAME + "_status")
-            );
-        }
-        else {
+                    )
+                    .statusIndex(XContentMapValues.nodeStringValue(indexSettings.get("statusIndex"), EEASettings.DEFAULT_INDEX_NAME + "_status")
+                    );
+        } else {
             //TODO: don't know if is correct
-            if( settings.getSettings().containsKey("syncReq")){
-                harv.index(  ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("index").toString() );
-                harv.type( ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("type").toString() );
+            if (settings.containsKey("syncReq")) {
+                harv.index(((HashMap) ((HashMap) settings.get("syncReq")).get("index")).get("index").toString());
+                harv.type(((HashMap) ((HashMap) settings.get("syncReq")).get("index")).get("type").toString());
 
-                String indexName = ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index")).get("index").toString();
+                String indexName = ((HashMap) ((HashMap) settings.get("syncReq")).get("index")).get("index").toString();
 
-                HashMap indexMap = ((HashMap)((HashMap)settings.getSettings().get("syncReq")).get("index"));
+                HashMap indexMap = ((HashMap) ((HashMap) settings.get("syncReq")).get("index"));
                 String statusI = indexMap.get("statusIndex") != null ? indexMap.get("statusIndex").toString() : indexName + "_status";
-                harv.statusIndex( statusI );
+                harv.statusIndex(statusI);
             } else {
                 harv.index(EEASettings.DEFAULT_INDEX_NAME);
-                harv.type( "river" );
+                harv.type("river");
                 harv.statusIndex(EEASettings.DEFAULT_INDEX_NAME + "_status");
             }
 
@@ -488,14 +527,16 @@ public class Indexer {
 
     }
 
-    /** Type casting accessors for river settings **/
+    /**
+     * Type casting accessors for river settings
+     **/
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> extractSettings(RiverSettings settings,
+    private static Map<String, Object> extractSettings(Map<String, Object> settings,
                                                        String key) {
-        if(settings.getSettings().containsKey("eeaRDF")){
-            return (Map<String, Object>) ( (Map<String, Object>)settings.getSettings()).get(key);
+        if (settings.containsKey("eeaRDF")) {
+            return (Map<String, Object>) settings.get(key);
         } else {
-            return (Map<String, Object>) ( (Map<String, Object>)settings.getSettings().get("syncReq")).get(key);
+            return (Map<String, Object>) ((Map<String, Object>) settings.get("syncReq")).get(key);
         }
 
     }
@@ -503,19 +544,19 @@ public class Indexer {
     @SuppressWarnings("unchecked")
     private static Map<String, String> getStrStrMapFromSettings(Map<String, Object> settings,
                                                                 String key) {
-        return (Map<String, String>)settings.get(key);
+        return (Map<String, String>) settings.get(key);
     }
 
     @SuppressWarnings("unchecked")
     private static Map<String, Object> getStrObjMapFromSettings(Map<String, Object> settings,
                                                                 String key) {
-        return (Map<String, Object>)settings.get(key);
+        return (Map<String, Object>) settings.get(key);
     }
 
     @SuppressWarnings("unchecked")
     private static List<String> getStrListFromSettings(Map<String, Object> settings,
                                                        String key) {
-        return (List<String>)settings.get(key);
+        return (List<String>) settings.get(key);
     }
 
     public void start() {
