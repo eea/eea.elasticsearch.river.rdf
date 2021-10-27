@@ -2,6 +2,7 @@ package org.elasticsearch.app.support;
 
 import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.*;
+import javafx.util.Pair;
 import org.elasticsearch.app.EEASettings;
 import org.elasticsearch.app.Harvester;
 import org.elasticsearch.app.debug.JSONMap;
@@ -29,7 +30,7 @@ public class ESNormalizer {
 
     private final ESLogger logger = Loggers.getLogger(ESNormalizer.class);
 
-    private Set<String> rdfLanguages = new HashSet<String>();
+    private Set<String> rdfLanguages = new HashSet<>();
     private Map<String, Object> normalizeMissing;
 
 
@@ -78,12 +79,13 @@ public class ESNormalizer {
     }
 
     public void process() {
+        //todo: return multiple terms
         addUriForResource();
 
         for (Property prop : properties) {
             processProperty(prop);
         }
-        addLanguage();
+//        addLanguage();
 
         normalizeMissing();
     }
@@ -91,7 +93,7 @@ public class ESNormalizer {
     private void normalizeMissing() {
         for (Map.Entry<String, Object> it : normalizeMissing.entrySet()) {
             if (!jsonMap.containsKey(it.getKey())) {
-                ArrayList<Object> res = new ArrayList<Object>();
+                ArrayList<Object> res = new ArrayList<>();
                 Object miss_values = it.getValue();
 
                 if (miss_values instanceof String) {
@@ -119,17 +121,20 @@ public class ESNormalizer {
     private void processProperty(Property prop) {
         NodeIterator niter = model.listObjectsOfProperty(rs, prop);
         String property = prop.toString();
-        ArrayList<Object> results = new ArrayList<Object>();
+        ArrayList<Object> results = new ArrayList<>();
 
-        String currValue;
+        Pair<String, String> currValue;
         //hasWorkflowState
         while (niter.hasNext()) {
             RDFNode node = niter.next();
             currValue = getStringForResult(node, getPropLabel);
+            //todo: here
+            rdfLanguages.add(currValue.getValue());
+            jsonMap.put("language", rdfLanguages);
 
-            String shortValue = currValue;
+            String shortValue = currValue.getKey();
 
-            int currLen = currValue.length();
+            int currLen = currValue.getKey().length();
             // Unquote string
             /*if (currLen > 1)
                 shortValue = currValue.substring(1, currLen - 1);*/
@@ -150,8 +155,8 @@ public class ESNormalizer {
                     results.add(normalizeObj.get(shortValue));
                 }
             } else {
-                if (!results.contains(currValue)) {
-                    results.add(currValue);
+                if (!results.contains(currValue.getKey())) {
+                    results.add(currValue.getKey());
                 }
             }
         }
@@ -326,49 +331,49 @@ public class ESNormalizer {
      * surrounded by double quotes.</p>
      * Otherwise, the URI will be returned
      */
-    private String getStringForResult(RDFNode node, boolean getNodeLabel) {
+    private Pair<String, String> getStringForResult(RDFNode node, boolean getNodeLabel) {
         String result = "";
+        Pair<String, String> res = new Pair<>(null, null);
         boolean quote = false;
 
         if (node.isLiteral()) {
-            Object literalValue = node.asLiteral().getValue();
-            try {
-                Class<?> literalJavaClass = node.asLiteral()
-                        .getDatatype()
-                        .getJavaClass();
-                String literalJavaClassName = node.asLiteral()
-                        .getDatatype()
-                        .getJavaClass().getName();
+            Literal literal = node.asLiteral();
+            Object literalValue = literal.getValue();
 
-                boolean BoolOrNumber = literalJavaClassName.equals(Boolean.class.getName())
+            if (literal.getDatatype() == null || literal.getDatatype().getJavaClass() == null) {
+                result = EEASettings.parseForJson(
+                        literal.getLexicalForm());
+                quote = true;
+            } else {
+                Class<?> literalJavaClass = literal.getDatatype().getJavaClass();
+
+                boolean BoolOrNumber = literalJavaClass.getName().equals(Boolean.class.getName())
                         || Number.class.isAssignableFrom(literalJavaClass);
 
                 if (BoolOrNumber) {
                     result += literalValue;
                 } else {
                     result = EEASettings.parseForJson(
-                            node.asLiteral().getLexicalForm());
+                            literal.getLexicalForm());
                     quote = true;
                 }
-            } catch (java.lang.NullPointerException npe) {
-                result = EEASettings.parseForJson(
-                        node.asLiteral().getLexicalForm());
-                quote = true;
             }
-
+            res = new Pair<>(result, literal.getLanguage());
         } else if (node.isResource()) {
             result = node.asResource().getURI();
             if (getNodeLabel) {
                 result = getLabelForUri(result);
             }
-            if (Objects.isNull(result)) result = node.asResource().toString();
+            if (Objects.isNull(result))
+                result = node.asResource().toString();
             quote = true;
+            res = new Pair<>(result, null);
         }
         //TODO: ?
         if (quote) {
             //result = "\"" + result + "\"";
         }
-        return result;
+        return res;
     }
 
     /**
@@ -417,7 +422,9 @@ public class ESNormalizer {
                                 harvester.putToUriLabelCache(uri, result);
                                 return result;
                             }
-                        }else {break;}
+                        } else {
+                            break;
+                        }
                     } catch (Exception e) {
                         logger.warn("Could not get label for uri {}. Retrying {}/5.",
                                 uri, retrycount);
