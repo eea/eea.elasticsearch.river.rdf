@@ -402,9 +402,8 @@ public class ESNormalizer {
                 QueryExecution qExec = QueryExecutionFactory.sparqlService(
                         harvester.getRdfEndpoint(),
                         query);
-                boolean keepTrying = true;
-                while (keepTrying) {
-                    keepTrying = false;
+                int retrycount = 0;
+                while (retrycount++ < 5) {
 
                     //TODO : try finally?
                     try {
@@ -418,11 +417,10 @@ public class ESNormalizer {
                                 harvester.putToUriLabelCache(uri, result);
                                 return result;
                             }
-                        }
+                        }else {break;}
                     } catch (Exception e) {
-                        keepTrying = true;
-                        logger.warn("Could not get label for uri {}. Retrying.",
-                                uri);
+                        logger.warn("Could not get label for uri {}. Retrying {}/5.",
+                                uri, retrycount);
                     } finally {
                         qExec.close();
                     }
