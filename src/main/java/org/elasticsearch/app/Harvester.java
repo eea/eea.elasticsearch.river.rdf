@@ -1754,6 +1754,7 @@ public class Harvester implements Runnable, RunningHarvester {
             Property prop = st.getPredicate();
             String property = prop.toString();
 
+
             if (rdfPropList.isEmpty()
                     || (isWhitePropList && rdfPropList.contains(property))
                     || (!isWhitePropList && !rdfPropList.contains(property))
@@ -1766,52 +1767,61 @@ public class Harvester implements Runnable, RunningHarvester {
 
         int jsonMapCounter = 0;
         while (resIt.hasNext()) {
-                if (stopped) return null;
-                Resource rs = resIt.nextResource();
+            if (stopped) return null;
+            Resource rs = resIt.nextResource();
 
-                long startJsonMap = System.currentTimeMillis();
+            //TODO: delete if
+            if(rs.asNode().toString().equals("https://slovník.gov.cz/generický/eu-directive-1999-37-ec/pojem/prochází-technickou-prohlídkou"))
+                System.out.println("here");
 
-                //TODO: optimize - this takes a long time cca 1150ms with 1mil TTL
-                Map<String, Object> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
-                long endJsonMap = System.currentTimeMillis();
+            long startJsonMap = System.currentTimeMillis();
 
-                if (DEBUG_TIME) {
-                    logger.info("jsonMapTime : #" + modelCounter + "|" + jsonMapCounter + " : " + "{}",
-                            endJsonMap - startJsonMap
-                    );
+            //TODO: optimize - this takes a long time cca 1150ms with 1mil TTL
+            Map<String, Object> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
+            long endJsonMap = System.currentTimeMillis();
+
+            if (DEBUG_TIME) {
+                logger.info("jsonMapTime : #" + modelCounter + "|" + jsonMapCounter + " : " + "{}",
+                        endJsonMap - startJsonMap
+                );
+            }
+
+            jsonMapCounter++;
+
+            if (addCounting) {
+                jsonMap = addCountingToJsonMap(jsonMap);
+            }
+
+            //TODO: prepareIndex - DONE ; make request async?
+            IndexRequest indexRequest = new IndexRequest(indexWithPrefix, typeName, rs.toString()).source(jsonMap);
+            //TODO: delete if
+            if(indexRequest.id().equals("https://slovník.gov.cz/generický/eu-directive-1999-37-ec/pojem/prochází-technickou-prohlídkou")) {
+                System.out.println("here");
+                indexRequest=indexRequest.id(indexRequest.id()+"@"+bulkLength);
+            }
+            //.source(mapToString(jsonMap)));
+            bulkRequest.add(indexRequest);
+
+            bulkLength++;
+
+            // We want to execute the bulk for every  DEFAULT_BULK_SIZE requests
+            if (bulkLength % EEASettings.DEFAULT_BULK_SIZE == 0) {
+                BulkResponse bulkResponse = null;
+
+                //TODO: make request async
+                try {
+                    bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+                } catch (IOException e) {
+                    logger.error(e.getMessage());
                 }
 
-                jsonMapCounter++;
-
-                if (addCounting) {
-                    jsonMap = addCountingToJsonMap(jsonMap);
+                if (bulkResponse.hasFailures()) {
+                    urisWithESErrors = processBulkResponseFailure(bulkResponse);
                 }
 
-                //TODO: prepareIndex - DONE ; make request async?
-                bulkRequest.add(new IndexRequest(indexWithPrefix, typeName, rs.toString())
-                        //.source(mapToString(jsonMap)));
-                        .source(jsonMap));
-
-                bulkLength++;
-
-                // We want to execute the bulk for every  DEFAULT_BULK_SIZE requests
-                if (bulkLength % EEASettings.DEFAULT_BULK_SIZE == 0) {
-                    BulkResponse bulkResponse = null;
-
-                    //TODO: make request async
-                    try {
-                        bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-                    } catch (IOException e) {
-                        logger.error(e.getMessage());
-                    }
-
-                    if (bulkResponse.hasFailures()) {
-                        urisWithESErrors = processBulkResponseFailure(bulkResponse);
-                    }
-
-                    // After executing, flush the BulkRequestBuilder.
-                    bulkRequest = new BulkRequest();
-                }
+                // After executing, flush the BulkRequestBuilder.
+                bulkRequest = new BulkRequest();
+            }
         }
 
         // Execute remaining requests
