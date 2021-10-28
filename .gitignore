@@ -14,3 +14,7 @@ pom.xml.releaseBackup
 
 *.db
 /frontend/build/*
+
+/certs
+/DB
+eea-rdf-river-indexer.iml
