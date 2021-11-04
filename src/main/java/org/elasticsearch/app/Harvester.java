@@ -1485,7 +1485,11 @@ public class Harvester implements Runnable, RunningHarvester {
      * @return model retrieved by querying the endpoint
      */
     private Model getConstructModel(QueryExecution qExec) {
-        return qExec.execConstruct(ModelFactory.createDefaultModel());
+        logger.info("Executing CONSTRUCT");
+        Model model = qExec.execConstruct(ModelFactory.createDefaultModel());
+        logger.info("Executing CONSTRUCT - done");
+        logger.info("Creating model");
+        return model;
     }
 
     /**
@@ -1495,7 +1499,11 @@ public class Harvester implements Runnable, RunningHarvester {
      * @return model retrieved by querying the endpoint
      */
     private Model getDescribeModel(QueryExecution qExec) {
-        return qExec.execDescribe(ModelFactory.createDefaultModel());
+        logger.info("Executing DESCRIBE");
+        Model model = qExec.execDescribe(ModelFactory.createDefaultModel());
+        logger.info("Executing DESCRIBE - done");
+        logger.info("Creating model");
+        return model;
     }
 
     /**
@@ -1507,8 +1515,13 @@ public class Harvester implements Runnable, RunningHarvester {
     private Model getSelectModel(QueryExecution qExec) {
         Model model = ModelFactory.createDefaultModel();
         Graph graph = model.getGraph();
-        ResultSet results = qExec.execSelect();
 
+        logger.info("Executing SELECT");
+        ResultSet results = qExec.execSelect();
+        logger.info("Executing SELECT - done");
+
+        setHarvestState(HarvestStates.CREATING_MODEL);
+        logger.info("Creating model");
         while (results.hasNext()) {
             if (stopped) return null;
             QuerySolution sol = results.next();
@@ -1550,7 +1563,7 @@ public class Harvester implements Runnable, RunningHarvester {
      * @return model retrieved by querying the endpoint
      */
     private Model getModel(QueryExecution qExec) {
-        setHarvestState(HarvestStates.CREATING_MODEL);
+        setHarvestState(HarvestStates.EXECUTING_QUERY);
         switch (rdfQueryType) {
             case CONSTRUCT:
                 return getConstructModel(qExec);
@@ -1573,7 +1586,6 @@ public class Harvester implements Runnable, RunningHarvester {
         do {
             retry = false;
             try {
-                logger.info("Creating model");
                 Model model = getModel(qExec);
                 if (!stopped) logger.info("Creating model - DONE");
 
