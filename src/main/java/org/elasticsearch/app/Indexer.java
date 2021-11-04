@@ -313,6 +313,7 @@ public class Indexer {
         String hostKibana = (env.get("kibana_host") != null) ? env.get("kibana_host") : EEASettings.KIBANA_HOST;
         int portKibana = (env.get("kibana_port") != null) ? Integer.parseInt(env.get("kibana_port")) : EEASettings.KIBANA_PORT;
 
+        boolean ssl = (env.get("ssl_connection") != null) ? Boolean.parseBoolean(env.get("ssl_connection")) : EEASettings.SSL;
         String user = (env.get("elastic_user") != null) ? env.get("elastic_user") : EEASettings.USER;
         String pass = (env.get("elastic_pass") != null) ? env.get("elastic_pass") : EEASettings.PASS;
         this.riverIndex = (env.get("river_index") != null) ? env.get("river_index") : this.riverIndex;
@@ -327,24 +328,26 @@ public class Indexer {
                 new UsernamePasswordCredentials(user, pass));
 
         //TODO: ssl
-        SSLContext sslContext = null;
-        try {
-            sslContext = getSSLContext();
-        } catch (CertificateException | IOException | KeyStoreException | NoSuchAlgorithmException | KeyManagementException e) {
-            e.printStackTrace();
-        }
-        final CredentialsProvider credentialsProvider =
-                new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY,
-                new UsernamePasswordCredentials(user, pass));
+        if (ssl) {
+            SSLContext sslContext = null;
+            try {
+                sslContext = getSSLContext();
+            } catch (CertificateException | IOException | KeyStoreException | NoSuchAlgorithmException | KeyManagementException e) {
+                e.printStackTrace();
+            }
 
-        clientES = getRestClient(hostES, portES, "https", sslContext, credentialsProvider);
-        clientKibana = getRestClient(hostKibana, portKibana, "https", sslContext, credentialsProvider);
+            clientES = getRestClient(hostES, portES, sslContext);
+            clientKibana = getRestClient(hostKibana, portKibana, sslContext);
+        } else {
+            clientES = getRestClient(hostES, portES);
+            clientKibana = getRestClient(hostKibana, portKibana);
+        }
 
         logger.debug("Username: " + user);
         logger.debug("Password: " + pass);
         logger.debug("HOST: " + hostES);
         logger.debug("PORT: " + portES);
+        logger.debug("SSL connection: " + ssl);
         logger.debug("RIVER INDEX: " + this.riverIndex);
         logger.debug("MULTITHREADING_ACTIVE: " + this.MULTITHREADING_ACTIVE);
         logger.debug("THREADS: " + this.THREADS);
@@ -355,7 +358,6 @@ public class Indexer {
     //todo: ssl
     private SSLContext getSSLContext() throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
         Path caCertificatePath = Paths.get("certs/ca/ca.crt");
-        caCertificatePath.getParent();
         CertificateFactory factory =
                 CertificateFactory.getInstance("X.509");
         Certificate trustedCa;
@@ -370,14 +372,31 @@ public class Indexer {
         return sslContextBuilder.build();
     }
 
-    private RestHighLevelClient getRestClient(String host, int port, String protocol, SSLContext sslContext, CredentialsProvider credentialsProvider) {
+    private RestHighLevelClient getRestClient(String host, int port, SSLContext sslContext) {
+        String protocol = "https";
         return new RestHighLevelClient(
                 RestClient.builder(
                                 new HttpHost(host, port, protocol)
                         ).setHttpClientConfigCallback(
-                                //todo: ssl
-                                //httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(new BasicCredentialsProvider()) // OG
                                 httpClientBuilder -> httpClientBuilder.setSSLContext(sslContext).setDefaultCredentialsProvider(credentialsProvider)
+                        )
+                        .setFailureListener(new RestClient.FailureListener() {
+                            @Override
+                            public void onFailure(Node node) {
+                                super.onFailure(node);
+                                logger.error("Connection failure: [{}://{}:{}]", protocol, host, port);
+                            }
+                        })
+        );
+    }
+
+    private RestHighLevelClient getRestClient(String host, int port) {
+        String protocol = "http";
+        return new RestHighLevelClient(
+                RestClient.builder(
+                                new HttpHost(host, port, protocol)
+                        ).setHttpClientConfigCallback(
+                                httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider)
                         )
                         .setFailureListener(new RestClient.FailureListener() {
                             @Override

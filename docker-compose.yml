@@ -71,6 +71,8 @@ services:
 
       kibana_port: '5601'             # the kibana host port
 
+      ssl_connection: true            # to use HTTPS or not
+
       elastic_user: indexer           # the elastic username
 
       elastic_pass: indexer.1         # the elastic password

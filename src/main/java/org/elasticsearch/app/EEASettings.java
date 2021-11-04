@@ -11,6 +11,7 @@ public abstract class EEASettings {
 
     public final static String USER = "";
     public final static String PASS = "";
+    public final static boolean SSL = false;
     public final static String ELASTICSEARCH_HOST = "localhost";
     public final static int ELASTICSEARCH_PORT = 9200;
     public final static String KIBANA_HOST = "localhost";
