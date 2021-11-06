@@ -165,47 +165,37 @@ public class ESNormalizer {
         return iri;
     }
 
-    private Object getInstanceOfCorrectType(String stringValue) {
-        Object res = stringValue;
-        try {
-            res = Integer.parseInt(stringValue);
-        } catch (NumberFormatException ignored) {}
-        try {
-            res = Double.parseDouble(stringValue);
-        } catch (NumberFormatException ignored) {}
-        return res;
-    }
-
     private void processProperty(Property prop) {
 
         NodeIterator niter = model.listObjectsOfProperty(rs, prop);
         String property = prop.toString();
-        //todo: optimize
         ArrayList<Object> results;
         String lang;
 
-        Pair<String, String> currValue;
+        Pair<Object, String> currValue;
         //hasWorkflowState
         while (niter.hasNext()) {
             results = new ArrayList<>();
             RDFNode node = niter.next();
             currValue = getStringForResult(node, getPropLabel);
-            //todo: here
             lang = currValue.getLanguage();
-            if (property.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") && currValue.getValue().startsWith("https://slovník.gov.cz/základní/pojem/")) {
+            String currValueString = currValue.getValue().toString();
+
+            //todo: do separate config var for iris of predicates where object is to be changed to label
+            if (property.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") && currValueString.startsWith("https://slovník.gov.cz/základní/pojem/")) {
 //                currValue = new Pair<>(getLabelForUri(currValue.getValue()), currValue.getLanguage());
-                currValue = new Pair<>(getPrefLbl(currValue.getValue(), "http://www.w3.org/2004/02/skos/core#prefLabel"), currValue.getLanguage());
+                currValue = new Pair<>(getPrefLbl(currValueString, "http://www.w3.org/2004/02/skos/core#prefLabel"), currValue.getLanguage());
             } else if (property.equals("http://www.w3.org/2004/02/skos/core#inScheme"))
-                currValue = new Pair<>(getPrefLbl(currValue.getValue(), "http://purl.org/dc/terms/title"), currValue.getLanguage());
+                currValue = new Pair<>(getPrefLbl(currValueString, "http://purl.org/dc/terms/title"), currValue.getLanguage());
             rdfLanguages.add(lang);
             if (!jsonMaps.containsKey(lang))
                 jsonMaps.put(lang, new JSONMap());
             if (!lang.equals(""))
                 jsonMaps.get(lang).put("language", lang);
 
-            Object shortValue = getInstanceOfCorrectType(currValue.getValue());
+            Object shortValue = currValue.getValue();
 
-            int currLen = currValue.getValue().length();
+            int currLen = currValueString.length();
             // Unquote string
             /*if (currLen > 1)
                 shortValue = currValue.substring(1, currLen - 1);*/
@@ -356,9 +346,9 @@ public class ESNormalizer {
      * surrounded by double quotes.</p>
      * Otherwise, the URI will be returned
      */
-    private Pair<String, String> getStringForResult(RDFNode node, boolean getNodeLabel) {
+    private Pair<Object, String> getStringForResult(RDFNode node, boolean getNodeLabel) {
         String result = "";
-        Pair<String, String> res = new Pair<>("", "");
+        Pair<Object, String> res = new Pair<>("", "");
         boolean quote = false;
 
         if (node.isLiteral()) {
@@ -376,7 +366,7 @@ public class ESNormalizer {
                         || Number.class.isAssignableFrom(literalJavaClass);
 
                 if (BoolOrNumber) {
-                    result += literalValue;
+                    return new Pair<>(literalValue, literal.getLanguage());
                 } else {
                     result = EEASettings.parseForJson(
                             literal.getLexicalForm());

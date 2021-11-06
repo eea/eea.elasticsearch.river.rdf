@@ -1783,7 +1783,6 @@ public class Harvester implements Runnable, RunningHarvester {
 
             long startJsonMap = System.currentTimeMillis();
 
-            //TODO: optimize - this takes a long time cca 1150ms with 1mil TTL
             HashMap<String, HashMap<String, Object>> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
             long endJsonMap = System.currentTimeMillis();
 
