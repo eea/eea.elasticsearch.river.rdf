@@ -49,7 +49,7 @@ services:
       ELASTICSEARCH_URL: https://es01:9200
       ELASTICSEARCH_HOSTS: https://es01:9200
       ELASTICSEARCH_USERNAME: kibana_system
-      ELASTICSEARCH_PASSWORD: JUzARnqpaisk1Y1eQifU
+      ELASTICSEARCH_PASSWORD: yp4eInMXVI5ondvAMBcc
       ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES: $CERTS_DIR/ca/ca.crt
       SERVER_SSL_ENABLED: "true"
       SERVER_SSL_KEY: $CERTS_DIR/kibana01/kibana01.key
@@ -72,7 +72,7 @@ services:
 
       kibana_port: '5601'             # the kibana host port
 
-      ssl_connection: true            # to use SSL (HTTPS) or not
+      ssl_connection: 'true'            # to use SSL (HTTPS) or not
 
       elastic_user: indexer           # the elastic username for indexer
 

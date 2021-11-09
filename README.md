@@ -13,7 +13,7 @@ Build server aplication:
 
 Change settings in *docker-compose.yml* file. Then create images and start containers with command:
 
-	 docker compose up -d
+	 docker-compose up -d
 
 ## HTTPS
 
@@ -29,14 +29,14 @@ Build server aplication:
 
 Change settings in *docker-compose.yml* file. Then create images and start containers with command:
 
-	docker compose -f create-certs.yml run --rm create_certs
-	docker compose -f docker-compose-https.yml up -d
+	docker-compose -f create-certs.yml run --rm create_certs
+	docker-compose -f docker-compose-https.yml up -d
 
 Create initial passwords for Elasticsearch
 
 	docker exec es01 /bin/bash -c "bin/elasticsearch-setup-passwords auto --batch --url https://localhost:9200"
 
-Save generated password `elastic` and `kibana_system`. Edit `docker-compose.yml` by changing field `ELASTICSEARCH_PASSWORD` to saved password `kibana_system`.
+Save generated password `elastic` and `kibana_system`. Edit `docker-compose-https.yml` by changing field `ELASTICSEARCH_PASSWORD` to saved password `kibana_system`.
 
 	...
 	ELASTICSEARCH_USERNAME: kibana_system  
@@ -46,7 +46,7 @@ Save generated password `elastic` and `kibana_system`. Edit `docker-compose.yml`
 
 Recreate kibana containers.
 
-	docker compose -f docker-compose-https.yml up -d
+	docker-compose -f docker-compose-https.yml up -d
 
 Login to Kibana (https://localhost:5601) and create you own user with superuser role in `side menu > Stack Management > Users (under Security)`
 

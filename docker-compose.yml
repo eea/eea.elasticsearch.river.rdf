@@ -47,7 +47,7 @@ services:
 
       kibana_port: '5601'             # the kibana host port
 
-      ssl_connection: false           # to use SSL (HTTPS) or not
+      ssl_connection: 'false'           # to use SSL (HTTPS) or not
 
       river_index: 'eeardf'           # the name of the index where the rivers are created
 
