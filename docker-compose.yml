@@ -47,11 +47,7 @@ services:
 
       kibana_port: '5601'             # the kibana host port
 
-      ssl_connection: false           # to use HTTPS or not
-
-      elastic_user: indexer           # the elastic username
-
-      elastic_pass: indexer.1         # the elastic password
+      ssl_connection: false           # to use SSL (HTTPS) or not
 
       river_index: 'eeardf'           # the name of the index where the rivers are created
 
@@ -59,7 +55,7 @@ services:
 
       threads: 4                      # in case of multithreading, the max number of concurrent working threads
 
-      log_level: "info"               # the log level ( info or debug)
+      log_level: "info"               # the log level (info or debug)
 
       cache_duration_in_seconds: 10   # number of second to cache dashboard data
 
