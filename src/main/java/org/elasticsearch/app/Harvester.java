@@ -1485,7 +1485,11 @@ public class Harvester implements Runnable, RunningHarvester {
      * @return model retrieved by querying the endpoint
      */
     private Model getConstructModel(QueryExecution qExec) {
-        return qExec.execConstruct(ModelFactory.createDefaultModel());
+        logger.info("Executing CONSTRUCT");
+        Model model = qExec.execConstruct(ModelFactory.createDefaultModel());
+        logger.info("Executing CONSTRUCT - done");
+        logger.info("Creating model");
+        return model;
     }
 
     /**
@@ -1495,7 +1499,11 @@ public class Harvester implements Runnable, RunningHarvester {
      * @return model retrieved by querying the endpoint
      */
     private Model getDescribeModel(QueryExecution qExec) {
-        return qExec.execDescribe(ModelFactory.createDefaultModel());
+        logger.info("Executing DESCRIBE");
+        Model model = qExec.execDescribe(ModelFactory.createDefaultModel());
+        logger.info("Executing DESCRIBE - done");
+        logger.info("Creating model");
+        return model;
     }
 
     /**
@@ -1507,8 +1515,13 @@ public class Harvester implements Runnable, RunningHarvester {
     private Model getSelectModel(QueryExecution qExec) {
         Model model = ModelFactory.createDefaultModel();
         Graph graph = model.getGraph();
-        ResultSet results = qExec.execSelect();
 
+        logger.info("Executing SELECT");
+        ResultSet results = qExec.execSelect();
+        logger.info("Executing SELECT - done");
+
+        setHarvestState(HarvestStates.CREATING_MODEL);
+        logger.info("Creating model");
         while (results.hasNext()) {
             if (stopped) return null;
             QuerySolution sol = results.next();
@@ -1550,7 +1563,7 @@ public class Harvester implements Runnable, RunningHarvester {
      * @return model retrieved by querying the endpoint
      */
     private Model getModel(QueryExecution qExec) {
-        setHarvestState(HarvestStates.CREATING_MODEL);
+        setHarvestState(HarvestStates.EXECUTING_QUERY);
         switch (rdfQueryType) {
             case CONSTRUCT:
                 return getConstructModel(qExec);
@@ -1573,7 +1586,6 @@ public class Harvester implements Runnable, RunningHarvester {
         do {
             retry = false;
             try {
-                logger.info("Creating model");
                 Model model = getModel(qExec);
                 if (!stopped) logger.info("Creating model - DONE");
 
@@ -1705,8 +1717,8 @@ public class Harvester implements Runnable, RunningHarvester {
      *                     one of the properties set in {@link #uriDescriptionList}.
      * @return map of properties to be indexed for res
      */
-    private Map<String, Object> getJsonMap(Resource rs, Set<Property> properties, Model model,
-                                           boolean getPropLabel) {
+    private HashMap<String, HashMap<String, Object>> getJsonMap(Resource rs, Set<Property> properties, Model model,
+                                                                boolean getPropLabel) {
 
         ESNormalizer esNormalizer = new ESNormalizer(rs, properties, model, getPropLabel, this);
         esNormalizer.setAddUriForResource(addUriForResource);
@@ -1720,7 +1732,7 @@ public class Harvester implements Runnable, RunningHarvester {
 
         esNormalizer.process();
 
-        return esNormalizer.getJsonMap();
+        return esNormalizer.getJsonMaps();
     }
 
     /**
@@ -1754,6 +1766,7 @@ public class Harvester implements Runnable, RunningHarvester {
             Property prop = st.getPredicate();
             String property = prop.toString();
 
+
             if (rdfPropList.isEmpty()
                     || (isWhitePropList && rdfPropList.contains(property))
                     || (!isWhitePropList && !rdfPropList.contains(property))
@@ -1763,55 +1776,56 @@ public class Harvester implements Runnable, RunningHarvester {
         }
 
         ResIterator resIt = model.listSubjects();
-
         int jsonMapCounter = 0;
         while (resIt.hasNext()) {
-                if (stopped) return null;
-                Resource rs = resIt.nextResource();
+            if (stopped) return null;
+            Resource rs = resIt.nextResource();
 
-                long startJsonMap = System.currentTimeMillis();
+            long startJsonMap = System.currentTimeMillis();
 
-                //TODO: optimize - this takes a long time cca 1150ms with 1mil TTL
-                Map<String, Object> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
-                long endJsonMap = System.currentTimeMillis();
+            HashMap<String, HashMap<String, Object>> jsonMap = getJsonMap(rs, properties, model, getPropLabel);
+            long endJsonMap = System.currentTimeMillis();
 
-                if (DEBUG_TIME) {
-                    logger.info("jsonMapTime : #" + modelCounter + "|" + jsonMapCounter + " : " + "{}",
-                            endJsonMap - startJsonMap
-                    );
-                }
+            if (DEBUG_TIME) {
+                logger.info("jsonMapTime : #" + modelCounter + "|" + jsonMapCounter + " : " + "{}",
+                        endJsonMap - startJsonMap
+                );
+            }
 
-                jsonMapCounter++;
+            jsonMapCounter++;
 
-                if (addCounting) {
-                    jsonMap = addCountingToJsonMap(jsonMap);
-                }
+            if (addCounting) {
+                //TODO: repair hashmap to map
+                //jsonMap = addCountingToJsonMap(jsonMap.get(""));
+            }
+            for (String lang : jsonMap.keySet()) {
 
                 //TODO: prepareIndex - DONE ; make request async?
-                bulkRequest.add(new IndexRequest(indexWithPrefix, typeName, rs.toString())
-                        //.source(mapToString(jsonMap)));
-                        .source(jsonMap));
+                IndexRequest indexRequest = new IndexRequest(indexWithPrefix, typeName, rs.toString()).source(jsonMap.get(lang));
+                indexRequest = indexRequest.id(indexRequest.id() + "@" + lang);
+                //.source(mapToString(jsonMap)));
+                bulkRequest.add(indexRequest);
+            }
+            bulkLength++;
 
-                bulkLength++;
+            // We want to execute the bulk for every  DEFAULT_BULK_SIZE requests
+            if (bulkLength % EEASettings.DEFAULT_BULK_SIZE == 0) {
+                BulkResponse bulkResponse = null;
 
-                // We want to execute the bulk for every  DEFAULT_BULK_SIZE requests
-                if (bulkLength % EEASettings.DEFAULT_BULK_SIZE == 0) {
-                    BulkResponse bulkResponse = null;
-
-                    //TODO: make request async
-                    try {
-                        bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-                    } catch (IOException e) {
-                        logger.error(e.getMessage());
-                    }
-
-                    if (bulkResponse.hasFailures()) {
-                        urisWithESErrors = processBulkResponseFailure(bulkResponse);
-                    }
-
-                    // After executing, flush the BulkRequestBuilder.
-                    bulkRequest = new BulkRequest();
+                //TODO: make request async
+                try {
+                    bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+                } catch (IOException e) {
+                    logger.error(e.getMessage());
                 }
+
+                if (bulkResponse.hasFailures()) {
+                    urisWithESErrors = processBulkResponseFailure(bulkResponse);
+                }
+
+                // After executing, flush the BulkRequestBuilder.
+                bulkRequest = new BulkRequest();
+            }
         }
 
         // Execute remaining requests

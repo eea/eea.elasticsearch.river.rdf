@@ -85,5 +85,10 @@ public class IndexerController {
         configManager.stopIndexing(id);
     }
 
+    @PostMapping("/{source}/_clone/{target}")
+    public void cloneIndex(@PathVariable String source,@PathVariable String target){
+        configManager.cloneIndexes(source,target);
+    }
+
 
 }

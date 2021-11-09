@@ -1,6 +1,7 @@
 package org.elasticsearch.app;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -9,7 +10,11 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.nio.entity.NStringEntity;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
@@ -29,7 +34,20 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -295,6 +313,7 @@ public class Indexer {
         String hostKibana = (env.get("kibana_host") != null) ? env.get("kibana_host") : EEASettings.KIBANA_HOST;
         int portKibana = (env.get("kibana_port") != null) ? Integer.parseInt(env.get("kibana_port")) : EEASettings.KIBANA_PORT;
 
+        boolean ssl = (env.get("ssl_connection") != null) ? Boolean.parseBoolean(env.get("ssl_connection")) : EEASettings.SSL;
         String user = (env.get("elastic_user") != null) ? env.get("elastic_user") : EEASettings.USER;
         String pass = (env.get("elastic_pass") != null) ? env.get("elastic_pass") : EEASettings.PASS;
         this.riverIndex = (env.get("river_index") != null) ? env.get("river_index") : this.riverIndex;
@@ -304,16 +323,31 @@ public class Indexer {
         this.loglevel = (env.get("log_level") != null) ? env.get("log_level") : EEASettings.LOG_LEVEL;
         this.cacheDurationInSeconds = (env.get("cache_duration_in_seconds") != null) ? Integer.parseInt(env.get("cache_duration_in_seconds")) : EEASettings.CACHE_DURATION_IN_SECONDS;
 
+
         credentialsProvider.setCredentials(AuthScope.ANY,
                 new UsernamePasswordCredentials(user, pass));
 
-        clientES = getRestClient(hostES, portES, "http");
-        clientKibana = getRestClient(hostKibana, portKibana, "http");
+        //TODO: ssl
+        if (ssl) {
+            SSLContext sslContext = null;
+            try {
+                sslContext = getSSLContext();
+            } catch (CertificateException | IOException | KeyStoreException | NoSuchAlgorithmException | KeyManagementException e) {
+                e.printStackTrace();
+            }
+
+            clientES = getRestClient(hostES, portES, sslContext);
+            clientKibana = getRestClient(hostKibana, portKibana, sslContext);
+        } else {
+            clientES = getRestClient(hostES, portES);
+            clientKibana = getRestClient(hostKibana, portKibana);
+        }
 
         logger.debug("Username: " + user);
         logger.debug("Password: " + pass);
         logger.debug("HOST: " + hostES);
         logger.debug("PORT: " + portES);
+        logger.debug("SSL connection: " + ssl);
         logger.debug("RIVER INDEX: " + this.riverIndex);
         logger.debug("MULTITHREADING_ACTIVE: " + this.MULTITHREADING_ACTIVE);
         logger.debug("THREADS: " + this.THREADS);
@@ -321,17 +355,54 @@ public class Indexer {
         logger.debug("DOCUMENT BULK: ", Integer.toString(EEASettings.DEFAULT_BULK_REQ));
     }
 
+    //todo: ssl
+    private SSLContext getSSLContext() throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
+        Path caCertificatePath = Paths.get("certs/ca/ca.crt");
+        CertificateFactory factory =
+                CertificateFactory.getInstance("X.509");
+        Certificate trustedCa;
+        try (InputStream is = Files.newInputStream(caCertificatePath)) {
+            trustedCa = factory.generateCertificate(is);
+        }
+        KeyStore trustStore = KeyStore.getInstance("pkcs12");
+        trustStore.load(null, null);
+        trustStore.setCertificateEntry("ca", trustedCa);
+        SSLContextBuilder sslContextBuilder = SSLContexts.custom()
+                .loadTrustMaterial(trustStore, null);
+        return sslContextBuilder.build();
+    }
 
-    private RestHighLevelClient getRestClient(String host, int port, String protocol) {
+    private RestHighLevelClient getRestClient(String host, int port, SSLContext sslContext) {
+        String protocol = "https";
         return new RestHighLevelClient(
                 RestClient.builder(
-                        new HttpHost(host, port, protocol)
-                ).setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(new BasicCredentialsProvider()))
+                                new HttpHost(host, port, protocol)
+                        ).setHttpClientConfigCallback(
+                                httpClientBuilder -> httpClientBuilder.setSSLContext(sslContext).setDefaultCredentialsProvider(credentialsProvider)
+                        )
                         .setFailureListener(new RestClient.FailureListener() {
                             @Override
                             public void onFailure(Node node) {
                                 super.onFailure(node);
-                                logger.error("Connection failure: [{}]", "localhost");
+                                logger.error("Connection failure: [{}://{}:{}]", protocol, host, port);
+                            }
+                        })
+        );
+    }
+
+    private RestHighLevelClient getRestClient(String host, int port) {
+        String protocol = "http";
+        return new RestHighLevelClient(
+                RestClient.builder(
+                                new HttpHost(host, port, protocol)
+                        ).setHttpClientConfigCallback(
+                                httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider)
+                        )
+                        .setFailureListener(new RestClient.FailureListener() {
+                            @Override
+                            public void onFailure(Node node) {
+                                super.onFailure(node);
+                                logger.error("Connection failure: [{}://{}:{}]", protocol, host, port);
                             }
                         })
         );
@@ -424,7 +495,7 @@ public class Indexer {
         Map<String, Object> rdfSettings = extractSettings(settings, "eeaRDF");
 
         harv.rdfIndexType(XContentMapValues.nodeStringValue(
-                rdfSettings.get("indexType"), "full"))
+                        rdfSettings.get("indexType"), "full"))
                 .rdfStartTime(XContentMapValues.nodeStringValue(
                         rdfSettings.get("startTime"), ""))
                 .rdfUris(XContentMapValues.nodeStringValue(
@@ -496,9 +567,9 @@ public class Indexer {
         if (settings.containsKey("index")) {
             Map<String, Object> indexSettings = extractSettings(settings, "index");
             harv.index(XContentMapValues.nodeStringValue(
-                    indexSettings.get("index"),
-                    EEASettings.DEFAULT_INDEX_NAME)
-            )
+                            indexSettings.get("index"),
+                            EEASettings.DEFAULT_INDEX_NAME)
+                    )
                     .type(XContentMapValues.nodeStringValue(
                             indexSettings.get("type"),
                             EEASettings.DEFAULT_TYPE_NAME)

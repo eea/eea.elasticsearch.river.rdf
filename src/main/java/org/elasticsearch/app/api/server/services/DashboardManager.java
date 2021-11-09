@@ -63,7 +63,7 @@ public class DashboardManager {
     public void checkConnection() throws ConnectionLost {
         try {
             boolean ping = indexer.clientES.ping(RequestOptions.DEFAULT);
-            Response response = indexer.clientKibana.getLowLevelClient().performRequest(new Request("GET", "/api/features"));
+            Response response = indexer.clientKibana.getLowLevelClient().performRequest(new Request("GET", "/"));
             if (ping && Objects.nonNull(response))
                 return;
         } catch (IOException | ElasticsearchException e) {

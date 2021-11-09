@@ -10,6 +10,24 @@ import org.elasticsearch.app.logging.Loggers;
 
 import java.util.*;
 
+class Pair<X, Y> {
+    private final X value;
+    private final Y language;
+
+    public Pair(X value, Y language) {
+        this.value = value;
+        this.language = language;
+    }
+
+    public Y getLanguage() {
+        return language;
+    }
+
+    public X getValue() {
+        return value;
+    }
+}
+
 public class ESNormalizer {
     private Harvester harvester;
     private Resource rs;
@@ -17,7 +35,7 @@ public class ESNormalizer {
     private Model model;
     private boolean getPropLabel;
 
-    private HashMap<String, Object> jsonMap = new JSONMap();
+    private HashMap<String, HashMap<String, Object>> jsonMaps = new HashMap<>();
 
     private boolean addUriForResource;
     private Map<String, Object> normalizeProp;
@@ -29,7 +47,7 @@ public class ESNormalizer {
 
     private final ESLogger logger = Loggers.getLogger(ESNormalizer.class);
 
-    private Set<String> rdfLanguages = new HashSet<String>();
+    private Set<String> rdfLanguages = new HashSet<>();
     private Map<String, Object> normalizeMissing;
 
 
@@ -67,9 +85,11 @@ public class ESNormalizer {
     }
 
     public ESNormalizer() {
+        jsonMaps.put("", new JSONMap());
     }
 
     public ESNormalizer(Resource rs, Set<Property> properties, Model model, boolean getPropLabel, Harvester harvester) {
+        this();
         this.rs = rs;
         this.properties = properties;
         this.model = model;
@@ -78,20 +98,38 @@ public class ESNormalizer {
     }
 
     public void process() {
+        //todo: return multiple terms
         addUriForResource();
 
         for (Property prop : properties) {
             processProperty(prop);
         }
-        addLanguage();
 
         normalizeMissing();
+
+        if (jsonMaps.keySet().size() > 1)
+            addSharedPropertiesToLanguages();
+    }
+
+    private void addSharedPropertiesToLanguages() {
+        HashMap<String, Object> sharedPropertiesJson = jsonMaps.get("");
+        for (String lang : jsonMaps.keySet()) {
+            if (lang.equals("")) continue;
+            HashMap<String, Object> languageJson = jsonMaps.get(lang);
+            for (String prop : sharedPropertiesJson.keySet()) {
+                ArrayList<Object> temp = (ArrayList<Object>) sharedPropertiesJson.get(prop);
+                if (languageJson.containsKey(prop))
+                    temp.addAll((Collection<?>) languageJson.get(prop));
+                languageJson.put(prop, temp);
+            }
+        }
+        jsonMaps.remove("");
     }
 
     private void normalizeMissing() {
         for (Map.Entry<String, Object> it : normalizeMissing.entrySet()) {
-            if (!jsonMap.containsKey(it.getKey())) {
-                ArrayList<Object> res = new ArrayList<Object>();
+            if (!jsonMaps.get("").containsKey(it.getKey())) {
+                ArrayList<Object> res = new ArrayList<>();
                 Object miss_values = it.getValue();
 
                 if (miss_values instanceof String) {
@@ -108,28 +146,56 @@ public class ESNormalizer {
                         res.add(miss_values.toString());
                     }
                 }
-                if (res.size() == 1)
-                    jsonMap.put(it.getKey(), res.get(0));
-                else
-                    jsonMap.put(it.getKey(), res);
+//                if (res.size() == 1)
+//                    jsonMaps.get("").put(it.getKey(), res.get(0));
+//                else
+                jsonMaps.get("").put(it.getKey(), res);
             }
         }
     }
 
+    private String getPrefLbl(String iri, String prefLblIri) {
+        try {
+            Statement requiredProperty = model.getRequiredProperty(model.getResource(iri), model.getProperty(prefLblIri));
+            RDFNode object = requiredProperty.getObject();
+            if (object.isLiteral()) return object.asLiteral().getLexicalForm();
+        } catch (Exception e) {
+            logger.warn("Could not find {} for {}", prefLblIri, iri);
+        }
+        return iri;
+    }
+
     private void processProperty(Property prop) {
+
         NodeIterator niter = model.listObjectsOfProperty(rs, prop);
         String property = prop.toString();
-        ArrayList<Object> results = new ArrayList<Object>();
+        ArrayList<Object> results;
+        String lang;
 
-        String currValue;
+        Pair<Object, String> currValue;
         //hasWorkflowState
         while (niter.hasNext()) {
+            results = new ArrayList<>();
             RDFNode node = niter.next();
             currValue = getStringForResult(node, getPropLabel);
+            lang = currValue.getLanguage();
+            String currValueString = currValue.getValue().toString();
 
-            String shortValue = currValue;
+            //todo: do separate config var for iris of predicates where object is to be changed to label
+            if (property.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") && currValueString.startsWith("https://slovník.gov.cz/základní/pojem/")) {
+//                currValue = new Pair<>(getLabelForUri(currValue.getValue()), currValue.getLanguage());
+                currValue = new Pair<>(getPrefLbl(currValueString, "http://www.w3.org/2004/02/skos/core#prefLabel"), currValue.getLanguage());
+            } else if (property.equals("http://www.w3.org/2004/02/skos/core#inScheme"))
+                currValue = new Pair<>(getPrefLbl(currValueString, "http://purl.org/dc/terms/title"), currValue.getLanguage());
+            rdfLanguages.add(lang);
+            if (!jsonMaps.containsKey(lang))
+                jsonMaps.put(lang, new JSONMap());
+            if (!lang.equals(""))
+                jsonMaps.get(lang).put("language", lang);
 
-            int currLen = currValue.length();
+            Object shortValue = currValue.getValue();
+
+            int currLen = currValueString.length();
             // Unquote string
             /*if (currLen > 1)
                 shortValue = currValue.substring(1, currLen - 1);*/
@@ -150,166 +216,120 @@ public class ESNormalizer {
                     results.add(normalizeObj.get(shortValue));
                 }
             } else {
-                if (!results.contains(currValue)) {
-                    results.add(currValue);
+                if (!results.contains(shortValue)) {
+                    results.add(shortValue);
                 }
             }
-        }
 
 
-        // Do not index empty properties
-        if (!results.isEmpty()) {
+            // Do not index empty properties
+            if (!results.isEmpty()) {
 
-            if (normalizeProp.containsKey(property)) {
-                Object norm_property = normalizeProp.get(property);
-                if (norm_property instanceof String) {
-                    property = norm_property.toString();
-
-                    if (jsonMap.containsKey(property)) {
-                        Object temp = jsonMap.get(property);
-                        if (temp instanceof List) {
-                            results.addAll((List) temp);
-
-                            if (results.size() == 1)
-                                jsonMap.put(property, results.get(0));
-                            else
-                                jsonMap.put(property, results);
-                        } else {
-                            jsonMap.put(property, results);
-                        }
-                    } else {
-                        if (results.size() == 1)
-                            jsonMap.put(property, results.get(0));
-                        else
-                            jsonMap.put(property, results);
-                    }
-                } else {
-
-                    if (norm_property instanceof List<?>) {
-
-                        for (String norm_prop : ((List<String>) norm_property)) {
-
-                            //TODO:
-                            if (jsonMap.containsKey(norm_prop)) {
-                                Object temp = jsonMap.get(norm_prop);
-                                if (temp instanceof List) {
-                                    results.addAll((List) temp);
-                                    if (results.size() == 1)
-                                        jsonMap.put(norm_prop, results.get(0));
-                                    else
-                                        jsonMap.put(norm_prop, results);
-                                } else {
-                                    results.add(temp);
-                                    jsonMap.put(norm_prop, results);
-                                }
-                            } else {
-                                if (results.size() == 1)
-                                    jsonMap.put(norm_prop, results.get(0));
-                                else
-                                    jsonMap.put(norm_prop, results);
-                            }
-                        }
-
-                    } else {
+                if (normalizeProp.containsKey(property)) {
+                    Object norm_property = normalizeProp.get(property);
+                    if (norm_property instanceof String) {
                         property = norm_property.toString();
 
-                        if (jsonMap.containsKey(property)) {
-                            Object temp = jsonMap.get(property);
-                            //TODO:
+                        if (jsonMaps.get(lang).containsKey(property)) {
+                            Object temp = jsonMaps.get(lang).get(property);
                             if (temp instanceof List) {
-                                //((List) temp).addAll(results);
-                                if (results.size() == 1)
-                                    jsonMap.put(property, results.get(0));
-                                else
-                                    jsonMap.put(property, results.toArray());
+                                results.addAll((List) temp);
+//TODO: commented results.get(0)
+//                                if (results.size() == 1)
+//                                    jsonMaps.get(lang).put(property, results.get(0));
+//                                else
+                                jsonMaps.get(lang).put(property, results);
                             } else {
-                                if (results.size() == 1)
-                                    jsonMap.put(property, results.get(0));
-                                else
-                                    jsonMap.put(property, results);
+                                jsonMaps.get(lang).put(property, results);
+                            }
+                        } else {
+//                            if (results.size() == 1)
+//                                jsonMaps.get(lang).put(property, results.get(0));
+//                            else
+                            jsonMaps.get(lang).put(property, results);
+                        }
+                    } else {
+
+                        if (norm_property instanceof List<?>) {
+
+                            for (String norm_prop : ((List<String>) norm_property)) {
+
+                                //TODO:
+                                if (jsonMaps.get(lang).containsKey(norm_prop)) {
+                                    Object temp = jsonMaps.get(lang).get(norm_prop);
+                                    if (temp instanceof List) {
+                                        results.addAll((List) temp);
+//                                        if (results.size() == 1)
+//                                            jsonMaps.get(lang).put(norm_prop, results.get(0));
+//                                        else
+                                        jsonMaps.get(lang).put(norm_prop, results);
+                                    } else {
+                                        results.add(temp);
+                                        jsonMaps.get(lang).put(norm_prop, results);
+                                    }
+                                } else {
+//                                    if (results.size() == 1)
+//                                        jsonMaps.get(lang).put(norm_prop, results.get(0));
+//                                    else
+                                    jsonMaps.get(lang).put(norm_prop, results);
+                                }
+                            }
+
+                        } else {
+                            property = norm_property.toString();
+
+                            if (jsonMaps.get(lang).containsKey(property)) {
+                                Object temp = jsonMaps.get(lang).get(property);
+                                //TODO:
+                                if (temp instanceof List) {
+                                    //((List) temp).addAll(results);
+//                                    if (results.size() == 1)
+//                                        jsonMaps.get(lang).put(property, results.get(0));
+//                                    else
+                                    jsonMaps.get(lang).put(property, results.toArray());
+                                } else {
+//                                    if (results.size() == 1)
+//                                        jsonMaps.get(lang).put(property, results.get(0));
+//                                    else
+                                    jsonMaps.get(lang).put(property, results);
+
+                                }
+                                //jsonMaps.get(property).addAll(results);
+                            } else {
+//                                if (results.size() == 1)
+//                                    jsonMaps.get(lang).put(property, results.get(0));
+//                                else
+                                jsonMaps.get(lang).put(property, results);
 
                             }
-                            //jsonMap.get(property).addAll(results);
-                        } else {
-                            if (results.size() == 1)
-                                jsonMap.put(property, results.get(0));
-                            else
-                                jsonMap.put(property, results);
-
+                            logger.error("Normalizer error:", norm_property);
                         }
-                        logger.error("Normalizer error:", norm_property);
                     }
+                } else {
+                    if (jsonMaps.get(lang).containsKey(property))
+                        results.addAll((Collection<?>) jsonMaps.get(lang).get(property));
+                    jsonMaps.get(lang).put(property, results);
                 }
-            } else {
-                jsonMap.put(property, results);
             }
-        }
 
+        }
     }
 
     private void addUriForResource() {
         ArrayList<Object> results = new ArrayList<Object>();
         if (addUriForResource) {
             results.add(rs.toString());
-            if (results.size() == 1)
-                jsonMap.put("about", results.get(0));
-            else
-                jsonMap.put("about", results);
+//            if (results.size() == 1)
+//                jsonMaps.get("").put("about", results.get(0));
+//            else
+            jsonMaps.get("").put("about", results);
 
         }
     }
 
-    private void addLanguage() {
-        if (addLanguage) {
-            HashSet<Property> allProperties = new HashSet<Property>();
 
-            StmtIterator it = model.listStatements();
-            while (it.hasNext()) {
-                Statement st = it.nextStatement();
-                Property prop = st.getPredicate();
-
-                allProperties.add(prop);
-            }
-
-            for (Property prop : allProperties) {
-                String property = prop.toString();
-                NodeIterator niter = model.listObjectsOfProperty(rs, prop);
-                String lang;
-
-                while (niter.hasNext()) {
-                    RDFNode node = niter.next();
-                    if (addLanguage) {
-                        if (node.isLiteral()) {
-                            lang = node.asLiteral().getLanguage();
-                            if (!lang.isEmpty()) {
-                                rdfLanguages.add(lang);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (rdfLanguages.isEmpty() && !language.isEmpty())
-                rdfLanguages.add(language);
-            if (!rdfLanguages.isEmpty()) {
-                if (rdfLanguages.size() == 1) {
-                    Iterator iter = rdfLanguages.iterator();
-                    Object first = iter.next();
-                    if (first instanceof List<?>) {
-                        logger.info("is LIST");
-                    }
-                    jsonMap.put("language", first);
-                } else {
-                    jsonMap.put("language", rdfLanguages);
-                }
-            }
-
-
-        }
-    }
-
-    public HashMap<String, Object> getJsonMap() {
-        return jsonMap;
+    public HashMap<String, HashMap<String, Object>> getJsonMaps() {
+        return jsonMaps;
     }
 
     /**
@@ -326,49 +346,50 @@ public class ESNormalizer {
      * surrounded by double quotes.</p>
      * Otherwise, the URI will be returned
      */
-    private String getStringForResult(RDFNode node, boolean getNodeLabel) {
+    private Pair<Object, String> getStringForResult(RDFNode node, boolean getNodeLabel) {
         String result = "";
+        Pair<Object, String> res = new Pair<>("", "");
         boolean quote = false;
 
         if (node.isLiteral()) {
-            Object literalValue = node.asLiteral().getValue();
-            try {
-                Class<?> literalJavaClass = node.asLiteral()
-                        .getDatatype()
-                        .getJavaClass();
-                String literalJavaClassName = node.asLiteral()
-                        .getDatatype()
-                        .getJavaClass().getName();
+            Literal literal = node.asLiteral();
+            Object literalValue = literal.getValue();
 
-                boolean BoolOrNumber = literalJavaClassName.equals(Boolean.class.getName())
+            if (literal.getDatatype() == null || literal.getDatatype().getJavaClass() == null) {
+                result = EEASettings.parseForJson(
+                        literal.getLexicalForm());
+                quote = true;
+            } else {
+                Class<?> literalJavaClass = literal.getDatatype().getJavaClass();
+
+                boolean BoolOrNumber = literalJavaClass.getName().equals(Boolean.class.getName())
                         || Number.class.isAssignableFrom(literalJavaClass);
 
                 if (BoolOrNumber) {
-                    result += literalValue;
+                    return new Pair<>(literalValue, literal.getLanguage());
                 } else {
                     result = EEASettings.parseForJson(
-                            node.asLiteral().getLexicalForm());
+                            literal.getLexicalForm());
                     quote = true;
                 }
-            } catch (java.lang.NullPointerException npe) {
-                result = EEASettings.parseForJson(
-                        node.asLiteral().getLexicalForm());
-                quote = true;
             }
-
+            res = new Pair<>(result, literal.getLanguage());
         } else if (node.isResource()) {
             result = node.asResource().getURI();
             if (getNodeLabel) {
-                result = getLabelForUri(result);
+                //TODO: optimize
+//                result = getLabelForUri(result);
             }
-            if (Objects.isNull(result)) result = node.asResource().toString();
+            if (Objects.isNull(result))
+                result = node.asResource().toString();
             quote = true;
+            res = new Pair<>(result, "");
         }
         //TODO: ?
         if (quote) {
             //result = "\"" + result + "\"";
         }
-        return result;
+        return res;
     }
 
     /**
@@ -417,7 +438,9 @@ public class ESNormalizer {
                                 harvester.putToUriLabelCache(uri, result);
                                 return result;
                             }
-                        }else {break;}
+                        } else {
+                            break;
+                        }
                     } catch (Exception e) {
                         logger.warn("Could not get label for uri {}. Retrying {}/5.",
                                 uri, retrycount);

@@ -7,7 +7,8 @@ public enum HarvestStates {
     CREATING_MODEL( "Creating model"),
     INDEXING( "Indexing"),
     SWITCHING_TO_NEW_INDEX( "Setting as actual"),
-    STOPPING( "Stopping");
+    STOPPING( "Stopping"),
+    EXECUTING_QUERY("Executing query");
 
     private final String message;
 
