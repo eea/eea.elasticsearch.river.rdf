@@ -7,30 +7,55 @@ services:
       - "9200:9200"                   # [docker host port]:[in container port]
       - "9201:9201"                   # [docker host port]:[in container port]
     environment:
-      - node.name=es01
+      - node.name=kifarunix-demo-es
       - cluster.name=es-docker-cluster
       - discovery.type=single-node
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=true
+      - xpack.security.http.ssl.key=$CERTS_DIR/es01/es01.key
+      - xpack.security.http.ssl.certificate_authorities=$CERTS_DIR/ca/ca.crt
+      - xpack.security.http.ssl.certificate=$CERTS_DIR/es01/es01.crt
+      - xpack.security.transport.ssl.enabled=true
+      - xpack.security.transport.ssl.verification_mode=certificate
+      - xpack.security.transport.ssl.certificate_authorities=$CERTS_DIR/ca/ca.crt
+      - xpack.security.transport.ssl.certificate=$CERTS_DIR/es01/es01.crt
+      - xpack.security.transport.ssl.key=$CERTS_DIR/es01/es01.key
     ulimits:
       memlock:
         soft: -1
         hard: -1
     volumes:
+      - certs:$CERTS_DIR
       - esData:/usr/share/elasticsearch/data
-      - esConfig:/usr/share/elasticsearch/config/
+      - esConfig:/usr/share/elasticsearch/config
     networks:
       - elastic
+    healthcheck:
+      test: curl --cacert $CERTS_DIR/ca/ca.crt -s https://localhost:9200 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   kibana:
     container_name: "Kibana"
     image: "docker.elastic.co/kibana/kibana:${VERSION}"
+    depends_on: { "es01": { "condition": "service_healthy" } }
     ports:
       - "5601:5601"                   # [docker host port]:[in container port]
     environment:
-      ELASTICSEARCH_URL: http://es01:9200
-      ELASTICSEARCH_HOSTS: http://es01:9200
+      SERVERNAME: localhost
+      ELASTICSEARCH_URL: https://es01:9200
+      ELASTICSEARCH_HOSTS: https://es01:9200
+      ELASTICSEARCH_USERNAME: kibana_system
+      ELASTICSEARCH_PASSWORD: JUzARnqpaisk1Y1eQifU
+      ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES: $CERTS_DIR/ca/ca.crt
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_KEY: $CERTS_DIR/kibana01/kibana01.key
+      SERVER_SSL_CERTIFICATE: $CERTS_DIR/kibana01/kibana01.crt
     volumes:
+      - certs:$CERTS_DIR
       - kibanaConfig:/usr/share/kibana/config
     networks:
       - elastic
@@ -47,7 +72,7 @@ services:
 
       kibana_port: '5601'             # the kibana host port
 
-      ssl_connection: false           # to use HTTPS or not
+      ssl_connection: true            # to use HTTPS or not
 
       elastic_user: indexer           # the elastic username
 
@@ -69,6 +94,7 @@ services:
       - "8080:8080"                   # [docker host port]:[in container port]
     volumes:
       - indexerDB:/DB
+      - certs:/certs
     networks:
       - elastic
     build: .
@@ -79,6 +105,8 @@ volumes:
   esConfig:
     driver: local
   kibanaConfig:
+    driver: local
+  certs:
     driver: local
   indexerDB:
     driver: local
